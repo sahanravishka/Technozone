@@ -50,7 +50,7 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
 
   const AddButton = ({ className = '' }: { className?: string }) => (
     <button onClick={addToCart} disabled={stock <= 0}
-      className={`pressable btn-pill inline-flex h-12 items-center justify-center gap-2 text-[14.5px] font-semibold text-white transition-all disabled:cursor-not-allowed disabled:bg-line disabled:text-muted ${justAdded ? 'bg-ok pulse-ok' : 'bg-gradient-to-r from-volt to-volt-deep hover:shadow-[0_12px_28px_-8px_rgba(27,111,216,.5)] hover:-translate-y-0.5'} ${className}`}>
+      className={`pressable btn-pill inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap px-4 text-[14.5px] font-semibold text-white transition-all disabled:cursor-not-allowed disabled:bg-line disabled:text-muted ${justAdded ? 'bg-ok pulse-ok' : 'bg-gradient-to-r from-volt to-volt-deep hover:shadow-[0_12px_28px_-8px_rgba(27,111,216,.5)] hover:-translate-y-0.5'} ${className}`}>
       {stock > 0 && !justAdded && (
         <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
           <path d="M6 8h12l1 12a1.6 1.6 0 0 1-1.6 1.7H6.6A1.6 1.6 0 0 1 5 20L6 8Z"/><path d="M9 10V7a3 3 0 0 1 6 0v3"/>
@@ -64,7 +64,7 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
     <div className="grid gap-7 md:grid-cols-2 md:gap-12">
       {/* ---------- gallery ---------- */}
       <div>
-        <div className="img-zoom-scroll relative aspect-square overflow-hidden bg-card" style={{ borderRadius: '28px' }}>
+        <div className="img-zoom-scroll relative mx-auto aspect-square w-full max-w-[420px] overflow-hidden bg-card md:max-w-none" style={{ borderRadius: '28px' }}>
           {img && (
             <Image key={img.id} src={imageUrl(img.storage_path)} alt={img.alt ?? product.name}
               fill priority fetchPriority="high" sizes="(max-width: 768px) 100vw, 50vw"
@@ -129,15 +129,15 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
         )}
 
         {/* qty + add — with unique shapes */}
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-12 items-center bg-card" style={{ borderRadius: '16px' }}>
+        <div className="flex items-center gap-2">
+          <div className="flex h-12 shrink-0 items-center bg-card" style={{ borderRadius: '16px' }}>
             <button onClick={() => setQty(q => Math.max(1, q - 1))} aria-label="Decrease"
-              className="pressable h-full w-11 text-lg text-muted hover:text-ink">−</button>
-            <span className="w-7 text-center text-[14.5px] font-semibold">{qty}</span>
+              className="pressable h-full w-10 text-lg text-muted hover:text-ink">−</button>
+            <span className="w-6 text-center text-[14.5px] font-semibold">{qty}</span>
             <button onClick={() => setQty(q => Math.min(stock || 1, q + 1))} aria-label="Increase"
-              className="pressable h-full w-11 text-lg text-muted hover:text-ink">+</button>
+              className="pressable h-full w-10 text-lg text-muted hover:text-ink">+</button>
           </div>
-          <AddButton className="flex-1" />
+          <AddButton className="min-w-0 flex-1 px-3" />
           <a href={waLink(waText)} target="_blank" rel="noopener noreferrer"
             aria-label={dict.product.askProduct}
             className="pressable btn-diamond grid h-12 w-12 shrink-0 place-items-center bg-card transition-colors hover:bg-[#EAF7EF]">
@@ -177,13 +177,13 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
       {/* ---------- sticky mobile CTA ---------- */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-card/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md md:hidden">
         <div className="flex items-center gap-3">
-          <div className="min-w-0 pl-1">
+          <div className="shrink-0 pl-1">
             <PriceTag price={price} compareAt={compareAt} />
           </div>
-          <AddButton className="flex-1" />
+          <AddButton className="min-w-0 flex-1" />
         </div>
       </div>
-      <div className="h-16 md:hidden" aria-hidden />
+      <div className="h-24 md:hidden" aria-hidden />
     </div>
   );
 }

@@ -405,6 +405,56 @@ body {
   opacity: 0.4;
 }
 
+/* ===================================================================
+   ADMIN PANEL — refined surfaces + nav
+   =================================================================== */
+.admin-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(11, 21, 38, .04), 0 1px 16px -10px rgba(11, 21, 38, .18);
+}
+/* sidebar item */
+.admin-nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  border-radius: 12px;
+  padding: 0.6rem 0.75rem;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, .62);
+  transition: background-color .18s ease, color .18s ease;
+}
+.admin-nav-link:hover { background: rgba(255, 255, 255, .08); color: #fff; }
+.admin-nav-link[data-active='true'] { background: rgba(255, 255, 255, .12); color: #fff; }
+.admin-nav-link[data-active='true']::before {
+  content: '';
+  position: absolute;
+  left: -4px; top: 50%;
+  height: 18px; width: 3px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--accent);
+}
+.admin-nav-link svg { height: 17px; width: 17px; flex: none; opacity: .9; }
+/* mobile pill nav */
+.admin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, .7);
+  transition: background-color .18s ease, color .18s ease;
+}
+.admin-pill[data-active='true'] { background: var(--volt); color: #fff; }
+.admin-pill svg { height: 14px; width: 14px; }
+
 /* tap feedback on touch */
 .pressable { transition: transform .12s ease, background-color .15s ease, color .15s ease; }
 .pressable:active { transform: scale(.97); }

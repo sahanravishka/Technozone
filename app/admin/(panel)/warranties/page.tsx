@@ -1,6 +1,7 @@
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { registerWarranty } from '@/app/admin/actions';
 import WarrantyRow from '@/components/admin/WarrantyRow';
+import PageHeader from '@/components/admin/PageHeader';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,8 +17,8 @@ export default async function AdminWarranties({ searchParams }: { searchParams: 
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-bold">Warranties</h1>
-      <form action={registerWarranty} className="mb-5 grid gap-3 rounded-2xl bg-card p-4 sm:grid-cols-3">
+      <PageHeader title="Warranties" subtitle="Register and look up product warranties" />
+      <form action={registerWarranty} className="admin-card mb-5 grid gap-3 p-4 sm:grid-cols-3">
         <input name="product_name" placeholder="Product" required className={inp} />
         <input name="serial_no" placeholder="Serial / IMEI" required className={inp} />
         <input name="customer_phone" placeholder="Customer phone" required className={inp} />
@@ -27,9 +28,9 @@ export default async function AdminWarranties({ searchParams }: { searchParams: 
       </form>
 
       <form className="mb-3"><input name="q" defaultValue={q ?? ''} placeholder="Search serial / phone…"
-        className="h-11 w-full max-w-sm rounded-btn bg-card px-4 text-[14px] outline-none focus:ring-2 focus:ring-volt" /></form>
+        className="admin-card h-11 w-full max-w-sm px-4 text-[14px] outline-none focus:ring-2 focus:ring-volt" /></form>
 
-      <div className="overflow-x-auto rounded-2xl bg-card">
+      <div className="admin-card overflow-x-auto">
         <table className="w-full min-w-[640px] text-[13px]">
           <thead><tr className="border-b border-[#EEF1F6] text-left text-[11px] font-bold uppercase tracking-wide text-muted">
             <th className="px-4 py-3">Product</th><th className="px-4 py-3">Serial</th><th className="px-4 py-3">Customer</th>

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { imageUrl } from '@/lib/supabase';
 import { formatLKR } from '@/lib/site';
+import PageHeader from '@/components/admin/PageHeader';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,21 +15,20 @@ export default async function AdminProducts() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Products</h1>
+      <PageHeader title="Products" subtitle="Catalog, stock and pricing">
         <Link href="/admin/products/new"
           className="pressable rounded-btn bg-volt px-4 py-2.5 text-[12.5px] font-semibold text-white hover:bg-volt-deep">
           + New product
         </Link>
-      </div>
-      <div className="overflow-hidden rounded-2xl bg-card">
+      </PageHeader>
+      <div className="admin-card overflow-hidden">
         {(products ?? []).map((p, i) => {
           const stock = p.product_variants.reduce((n, v) => n + v.stock_qty, 0);
           const prices = p.product_variants.map(v => Number(v.price));
           const img = p.product_images[0];
           return (
             <Link key={p.id} href={`/admin/products/${p.id}`}
-              className={`flex items-center gap-3.5 px-4 py-3 hover:bg-paper ${i ? 'border-t border-[#EEF1F6]' : ''}`}>
+              className={`flex items-center gap-3.5 px-4 py-3 transition-colors hover:bg-paper ${i ? 'border-t border-line/70' : ''}`}>
               <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-[#F0F3F8]">
                 {img && <Image src={imageUrl(img.storage_path)} alt="" fill sizes="44px" className="object-cover" />}
               </span>

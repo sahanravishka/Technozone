@@ -1,6 +1,7 @@
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { getCouriers } from '@/lib/data';
 import ShipmentRow from '@/components/admin/ShipmentRow';
+import PageHeader from '@/components/admin/PageHeader';
 import type { Courier } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -16,13 +17,12 @@ export default async function AdminShipments() {
 
   return (
     <div>
-      <h1 className="mb-1 text-xl font-bold">Shipments</h1>
-      <p className="mb-4 text-[13px] text-muted">Assign a courier and tracking number, then update status. Customers can be notified on WhatsApp.</p>
+      <PageHeader title="Shipments" subtitle="Assign a courier & tracking number, then update status — customers can be notified on WhatsApp" />
       <div className="space-y-2.5">
         {(orders ?? []).map(o => (
           <ShipmentRow key={o.id} order={o as never} couriers={couriers as Courier[]} />
         ))}
-        {!orders?.length && <p className="rounded-2xl bg-card p-8 text-center text-[13px] text-muted">No orders awaiting dispatch.</p>}
+        {!orders?.length && <p className="admin-card p-8 text-center text-[13px] text-muted">No orders awaiting dispatch.</p>}
       </div>
     </div>
   );

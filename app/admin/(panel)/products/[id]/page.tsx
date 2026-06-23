@@ -2,7 +2,9 @@ import { notFound } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { upsertProduct, saveVariant } from '@/app/admin/actions';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import SquareImageInput from '@/components/admin/SquareImageInput';
+import PageHeader from '@/components/admin/PageHeader';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,9 +45,11 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
 
   return (
     <div className="max-w-3xl">
-      <h1 className="mb-5 text-xl font-bold">{isNew ? 'New product' : String(product?.name)}</h1>
+      <PageHeader title={isNew ? 'New product' : String(product?.name)} subtitle={isNew ? 'Add a product to the catalog' : 'Edit product details'}>
+        <Link href="/admin/products" className="pressable admin-card px-3.5 py-2 text-[12.5px] font-semibold text-muted hover:bg-paper">← Back</Link>
+      </PageHeader>
 
-      <form action={save} className="space-y-4 rounded-2xl bg-card p-5">
+      <form action={save} className="admin-card space-y-4 p-5">
         <input type="hidden" name="id" value={isNew ? '' : id} />
         <div className="grid gap-4 sm:grid-cols-2">
           <div><span className={label}>Name</span>
@@ -88,7 +92,7 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
       </form>
 
       {!isNew && (
-        <div className="mt-6 rounded-2xl bg-card p-5">
+        <div className="admin-card mt-6 p-5">
           <h2 className="mb-3 text-[15px] font-bold">Variants</h2>
           <div className="space-y-3">
             {variants.map(v => (

@@ -1,5 +1,6 @@
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import ReturnCard from '@/components/admin/ReturnCard';
+import PageHeader from '@/components/admin/PageHeader';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ export default async function AdminReturns() {
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-bold">Returns (RMA)</h1>
+      <PageHeader title="Returns (RMA)" subtitle="Track return requests through to refund" />
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
         {COLS.map(col => {
           const list = (rows ?? []).filter(r => r.status === col.key);

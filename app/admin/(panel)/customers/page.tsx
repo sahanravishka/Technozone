@@ -2,6 +2,7 @@ import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { formatLKR } from '@/lib/site';
 import { loyaltyTier, TIER_META, suggestedDiscount } from '@/lib/loyalty';
 import CustomerActions from '@/components/admin/CustomerActions';
+import PageHeader from '@/components/admin/PageHeader';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,13 +27,14 @@ export default async function AdminCustomers({ searchParams }:
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-bold">Customers</h1>
-      <form className="mb-4">
-        <input name="q" defaultValue={q ?? ''} placeholder="Search phone / email / name / city…"
-          className="h-12 w-full max-w-md rounded-btn bg-card px-4 text-[14px] outline-none focus:ring-2 focus:ring-volt" />
-      </form>
+      <PageHeader title="Customers" subtitle="Loyalty tiers ranked by lifetime value">
+        <form>
+          <input name="q" defaultValue={q ?? ''} placeholder="Search phone / email / name / city…"
+            className="admin-card h-11 w-full px-4 text-[13.5px] outline-none focus:ring-2 focus:ring-volt sm:w-80" />
+        </form>
+      </PageHeader>
 
-      <div className="overflow-x-auto rounded-2xl bg-card">
+      <div className="admin-card overflow-x-auto">
         <table className="w-full min-w-[680px] text-[13px]">
           <thead>
             <tr className="border-b border-[#EEF1F6] text-left text-[11px] font-bold uppercase tracking-wide text-muted">

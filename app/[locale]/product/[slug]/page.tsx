@@ -103,7 +103,7 @@ export default async function ProductPage({ params }: Props) {
             <span className="sep" aria-hidden>/</span>
           </>
         )}
-        <span className="text-ink font-semibold line-clamp-1">{product.name}</span>
+        <span className="min-w-0 truncate text-ink font-semibold">{product.name}</span>
       </nav>
 
       <ProductBuyPanel product={product} discounts={discounts} dict={dict} productUrl={productUrl} />

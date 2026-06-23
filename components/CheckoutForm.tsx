@@ -171,7 +171,7 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
             <Field text={dict.form.address}>
               <input className={inputCls} value={f.address} onChange={e => setF({ ...f, address: e.target.value })} autoComplete="street-address" />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Field text={dict.form.city}>
                 <input className={inputCls} value={f.city} onChange={e => setF({ ...f, city: e.target.value })} />
               </Field>

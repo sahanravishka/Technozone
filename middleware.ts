@@ -15,11 +15,17 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Refresh the Supabase session cookie on every request (if configured)
+  // Keep the Supabase session cookie fresh — but only when there's actually a
+  // logged-in session to refresh. Anonymous storefront traffic (the vast
+  // majority) skips the auth call entirely, and we use getSession() (refreshes
+  // tokens only when expired) instead of getUser() (a network round-trip on
+  // every request). Real authorization is still validated downstream with
+  // getUser() in the admin layout / server actions, so this stays secure.
   let res = NextResponse.next({ request: req });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (url && key) {
+  const hasAuthCookie = req.cookies.getAll().some(c => /^sb-.*-auth-token/.test(c.name));
+  if (url && key && hasAuthCookie) {
     const supabase = createServerClient(url, key, {
       cookies: {
         getAll: () => req.cookies.getAll(),
@@ -30,7 +36,7 @@ export async function middleware(req: NextRequest) {
         }
       }
     });
-    await supabase.auth.getUser();
+    await supabase.auth.getSession();
   }
   return res;
 }

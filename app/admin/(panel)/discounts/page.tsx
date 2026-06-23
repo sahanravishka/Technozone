@@ -1,5 +1,6 @@
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { createDiscount, toggleDiscount, createCoupon, toggleCoupon } from '@/app/admin/actions';
+import PageHeader from '@/components/admin/PageHeader';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,8 +20,8 @@ export default async function AdminDiscounts() {
   return (
     <div className="max-w-4xl space-y-8">
       <section>
-        <h1 className="mb-4 text-xl font-bold">Discounts</h1>
-        <form action={createDiscount} className="mb-4 grid items-end gap-2.5 rounded-2xl bg-card p-4 sm:grid-cols-[1fr_120px_110px_90px_1fr_auto]">
+        <PageHeader title="Discounts" subtitle="Automatic sales applied at the storefront" />
+        <form action={createDiscount} className="admin-card mb-4 grid items-end gap-2.5 p-4 sm:grid-cols-[1fr_120px_110px_90px_1fr_auto]">
           <div><span className={label}>Name</span><input name="name" className={`${input} w-full`} placeholder="Avurudu sale" required /></div>
           <div><span className={label}>Scope</span>
             <select name="scope" className={`${input} w-full`}>
@@ -45,9 +46,9 @@ export default async function AdminDiscounts() {
             </div></div>
           <button className="pressable h-11 rounded-btn bg-volt px-5 text-[13px] font-semibold text-white hover:bg-volt-deep">Add</button>
         </form>
-        <div className="overflow-hidden rounded-2xl bg-card">
+        <div className="admin-card overflow-hidden">
           {(discounts ?? []).map((d, i) => (
-            <div key={d.id} className={`flex items-center gap-3 px-4 py-3 text-[13px] ${i ? 'border-t border-[#EEF1F6]' : ''}`}>
+            <div key={d.id} className={`flex items-center gap-3 px-4 py-3.5 text-[13px] ${i ? 'border-t border-line/70' : ''}`}>
               <b>{d.name}</b>
               <span className="text-muted">{d.scope} · {d.type === 'percentage' ? `${d.value}%` : `Rs ${d.value}`} off</span>
               {d.ends_at && <span className="text-muted">until {new Date(d.ends_at).toLocaleDateString('en-GB')}</span>}
@@ -63,8 +64,8 @@ export default async function AdminDiscounts() {
       </section>
 
       <section>
-        <h2 className="mb-4 text-xl font-bold">Coupon codes</h2>
-        <form action={createCoupon} className="mb-4 grid items-end gap-2.5 rounded-2xl bg-card p-4 sm:grid-cols-[140px_110px_90px_110px_90px_130px_auto]">
+        <h2 className="mb-4 text-[17px] font-bold tracking-tight">Coupon codes</h2>
+        <form action={createCoupon} className="admin-card mb-4 grid items-end gap-2.5 p-4 sm:grid-cols-[140px_110px_90px_110px_90px_130px_auto]">
           <div><span className={label}>Code</span><input name="code" className={`${input} w-full uppercase`} placeholder="WELCOME10" required /></div>
           <div><span className={label}>Type</span>
             <select name="type" className={`${input} w-full`}>
@@ -76,9 +77,9 @@ export default async function AdminDiscounts() {
           <div><span className={label}>Ends</span><input name="ends_at" type="date" className={`${input} w-full`} /></div>
           <button className="pressable h-11 rounded-btn bg-volt px-5 text-[13px] font-semibold text-white hover:bg-volt-deep">Add</button>
         </form>
-        <div className="overflow-hidden rounded-2xl bg-card">
+        <div className="admin-card overflow-hidden">
           {(coupons ?? []).map((c, i) => (
-            <div key={c.id} className={`flex items-center gap-3 px-4 py-3 text-[13px] ${i ? 'border-t border-[#EEF1F6]' : ''}`}>
+            <div key={c.id} className={`flex items-center gap-3 px-4 py-3.5 text-[13px] ${i ? 'border-t border-line/70' : ''}`}>
               <b className="font-mono">{c.code}</b>
               <span className="text-muted">{c.type === 'percentage' ? `${c.value}%` : `Rs ${c.value}`} off · used {c.used_count}{c.max_uses ? `/${c.max_uses}` : ''}</span>
               <form action={toggleCoupon.bind(null, c.id, !c.is_active)} className="ml-auto">

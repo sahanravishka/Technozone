@@ -1,6 +1,7 @@
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import RepairBoard from '@/components/admin/RepairBoard';
 import NewJobForm from '@/components/admin/NewJobForm';
+import PageHeader from '@/components/admin/PageHeader';
 import type { ServiceJob } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
@@ -17,10 +18,9 @@ export default async function AdminRepairs() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold">Repairs</h1>
+      <PageHeader title="Repairs" subtitle="Active service jobs on the bench">
         <NewJobForm types={(types ?? []).map(t => t.name)} />
-      </div>
+      </PageHeader>
       <RepairBoard jobs={(jobs ?? []) as ServiceJob[]} />
     </div>
   );

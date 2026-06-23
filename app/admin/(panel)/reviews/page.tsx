@@ -1,6 +1,7 @@
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { moderateReview, deleteReview, addStaffReview } from '@/app/admin/actions';
 import ReviewModActions from '@/components/admin/ReviewModActions';
+import PageHeader from '@/components/admin/PageHeader';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,17 +19,14 @@ export default async function AdminReviews() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="mb-1 text-xl font-bold">Reviews</h1>
-        <p className="text-[13px] text-muted">Approve customer submissions, or post a review on a customer&apos;s behalf.</p>
-      </div>
+      <PageHeader title="Reviews" subtitle="Approve customer submissions, or post a review on a customer's behalf" />
 
       {/* pending queue */}
       <section>
         <h2 className="mb-3 text-[14px] font-bold">Pending approval {pending?.length ? <span className="ml-1 rounded-full bg-warn-soft px-2 py-0.5 text-[11px] text-warn">{pending.length}</span> : null}</h2>
         <div className="space-y-2">
           {(pending ?? []).map(r => (
-            <div key={r.id} className="flex flex-wrap items-start justify-between gap-3 rounded-2xl bg-card p-4">
+            <div key={r.id} className="flex flex-wrap items-start justify-between gap-3 admin-card p-4">
               <div className="min-w-0">
                 <p className="text-[13px]"><b>{r.author_name}</b> · <span className="text-muted">{(r.products as { name?: string })?.name}</span></p>
                 <Stars n={r.rating} />
@@ -38,14 +36,14 @@ export default async function AdminReviews() {
               <ReviewModActions id={r.id} />
             </div>
           ))}
-          {!pending?.length && <p className="rounded-2xl bg-card p-6 text-center text-[13px] text-muted">Nothing waiting for approval.</p>}
+          {!pending?.length && <p className="admin-card p-6 text-center text-[13px] text-muted">Nothing waiting for approval.</p>}
         </div>
       </section>
 
       {/* post on behalf */}
       <section>
         <h2 className="mb-3 text-[14px] font-bold">Add a review on behalf of a customer</h2>
-        <form action={addStaffReview} className="grid gap-3 rounded-2xl bg-card p-4 sm:grid-cols-2">
+        <form action={addStaffReview} className="grid gap-3 admin-card p-4 sm:grid-cols-2">
           <select name="product_id" required className="h-11 rounded-btn bg-paper px-3 text-[13.5px] outline-none sm:col-span-2">
             {(products ?? []).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
@@ -65,7 +63,7 @@ export default async function AdminReviews() {
         <h2 className="mb-3 text-[14px] font-bold">Published</h2>
         <div className="space-y-2">
           {(published ?? []).map(r => (
-            <div key={r.id} className="flex flex-wrap items-start justify-between gap-3 rounded-2xl bg-card p-4">
+            <div key={r.id} className="flex flex-wrap items-start justify-between gap-3 admin-card p-4">
               <div className="min-w-0">
                 <p className="text-[13px]"><b>{r.author_name}</b> · <span className="text-muted">{(r.products as { name?: string })?.name}</span>
                   {r.is_verified && <span className="ml-1.5 rounded bg-[#E8F7EE] px-1.5 py-0.5 text-[10px] font-semibold text-ok">Verified</span>}
