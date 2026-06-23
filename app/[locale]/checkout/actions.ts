@@ -44,13 +44,20 @@ export async function createOrder(input: {
 
   // ---- 1. Re-price server-side ----
   const variantIds = input.lines.map(l => l.variantId);
-  const { data: variants } = await admin.from('product_variants')
+  const { data: variants, error: vErr } = await admin.from('product_variants')
     .select('id, sku, name, price, product_id, is_active').in('id', variantIds);
-  if (!variants || variants.length !== variantIds.length) return { ok: false, error: 'invalid' };
+  if (vErr || !variants || variants.length !== variantIds.length) {
+    console.error('[checkout] variant lookup failed', { error: vErr?.message, want: variantIds.length, got: variants?.length });
+    return { ok: false, error: 'invalid' };
+  }
 
   const productIds = [...new Set(variants.map(v => v.product_id))];
-  const { data: products } = await admin.from('products')
+  const { data: products, error: pErr } = await admin.from('products')
     .select('id, name, category_id, base_price, slug').in('id', productIds);
+  if (pErr || !products) {
+    console.error('[checkout] product lookup failed', pErr?.message);
+    return { ok: false, error: 'invalid' };
+  }
   const { data: discounts } = await admin.from('discounts')
     .select('id, scope, product_id, category_id, type, value')
     .eq('is_active', true).lte('starts_at', new Date().toISOString())
@@ -114,9 +121,13 @@ export async function createOrder(input: {
     shipping_address: { name: input.name, phone: input.phone, line1: input.address ?? '', city: input.city ?? '' },
     customer_phone: input.phone
   }).select('id, order_number').single();
-  if (oErr || !order) return { ok: false, error: 'invalid' };
+  if (oErr || !order) {
+    console.error('[checkout] order insert failed', oErr?.message);
+    return { ok: false, error: 'invalid' };
+  }
 
-  await admin.from('order_items').insert(items.map(i => ({ ...i, order_id: order.id })));
+  const { error: oiErr } = await admin.from('order_items').insert(items.map(i => ({ ...i, order_id: order.id })));
+  if (oiErr) console.error('[checkout] order_items insert failed', oiErr.message);
 
   for (const i of items) {
     const { error } = await admin.rpc('reserve_stock', {
