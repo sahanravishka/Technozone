@@ -1,0 +1,534 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ------------------------------------------------------------------
+   TECHNO ZONE LANKA design tokens — clean light "showroom" UI
+   navy ink · royal blue primary · logo cyan accent
+------------------------------------------------------------------ */
+:root, html[data-theme='light'] {
+  --ink:       #0B1526;   /* primary foreground text */
+  --paper:     #F5F7FA;   /* page background */
+  --card:      #FFFFFF;   /* card / surface */
+  --line:      #E8ECF2;
+  --muted:     #7B879B;
+  --volt:      #1B6FD8;   /* primary action blue (brand) */
+  --volt-deep: #155CB8;
+  --volt-soft: #E7F2FB;
+  --accent:    #53B7E8;   /* logo cyan (brand) */
+  --ok:        #0F8A55;
+  --warn:      #B06A0A;
+  --warn-soft: #FDF1E3;
+  --sale:      #E5484D;
+
+  /* "deep" = editorial dark surfaces (footer, feature, newsletter). Stays dark in BOTH themes. */
+  --deep:      #0B1526;
+  --deep-rgb:  11 21 38;
+
+  /* pastel category tints */
+  --tint-sky:   #E6F1FB;
+  --tint-mint:  #E4F5EC;
+  --tint-lav:   #ECEBFB;
+  --tint-peach: #FDEEDE;
+  --tint-tone:  #F1F4F8;
+
+  /* RGB channels so Tailwind opacity modifiers (bg-ink/40 etc.) work */
+  --ink-rgb:   11 21 38;
+  --paper-rgb: 245 247 250;
+  --card-rgb:  255 255 255;
+  --volt-rgb:  27 111 216;
+  --sale-rgb:  229 72 77;
+
+  --font-body: 'Manrope', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+  /* glow color for cards */
+  --glow-color: rgba(27, 111, 216, 0.15);
+  --glow-hover: rgba(27, 111, 216, 0.35);
+}
+
+/* ---------- dark theme: flip neutral surfaces, keep brand blue/cyan ---------- */
+html[data-theme='dark'] {
+  --ink:       #F5F6F8;   /* text goes light */
+  --paper:     #0B0C0F;   /* page goes charcoal */
+  --card:      #16181F;   /* elevated surface */
+  --line:      #262932;
+  --muted:     #AEB4C2;
+  --volt:      #4F86E8;   /* slightly brighter for dark bg */
+  --volt-deep: #6B9BEF;
+  --volt-soft: #16243B;
+  --accent:    #6FC3F0;
+
+  --deep:      #12151D;   /* editorial sections: a touch above page */
+  --deep-rgb:  18 21 29;
+
+  --tint-sky:   #13202E;
+  --tint-mint:  #16241D;
+  --tint-lav:   #1D1B2E;
+  --tint-peach: #271C16;
+  --tint-tone:  #14161B;
+
+  --ink-rgb:   245 246 248;
+  --paper-rgb: 11 12 15;
+  --card-rgb:  22 24 31;
+  --volt-rgb:  79 134 232;
+
+  --glow-color: rgba(79, 134, 232, 0.1);
+  --glow-hover: rgba(79, 134, 232, 0.3);
+}
+
+/* Sinhala / Tamil get proper script coverage before the Latin face */
+html[lang='si'] { --font-body: 'Noto Sans Sinhala', 'Manrope', system-ui, sans-serif; }
+html[lang='ta'] { --font-body: 'Noto Sans Tamil', 'Manrope', system-ui, sans-serif; }
+
+/* smooth the theme flip */
+html.theme-ready body, html.theme-ready body * { transition: background-color .3s ease, border-color .3s ease, color .25s ease; }
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: var(--volt); color: #fff; }
+
+/* ---------- route transition (template.tsx wraps every page) ---------- */
+.page-enter { animation: pageIn .35s cubic-bezier(.22,.8,.3,1) both; }
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---------- scroll reveal ---------- */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity .55s cubic-bezier(.22,.8,.3,1), transform .55s cubic-bezier(.22,.8,.3,1); }
+.reveal.is-in { opacity: 1; transform: none; }
+
+/* ---------- hero load sequence (subtle) ---------- */
+.power-on > * { opacity: 0; animation: fadeUpKey .55s cubic-bezier(.22,.8,.3,1) forwards; }
+.power-on > *:nth-child(1) { animation-delay: .04s; }
+.power-on > *:nth-child(2) { animation-delay: .12s; }
+.power-on > *:nth-child(3) { animation-delay: .2s; }
+.power-on > *:nth-child(4) { animation-delay: .3s; }
+@keyframes fadeUpKey { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* ===================================================================
+   NEXT-LEVEL CARD SHAPES — non-box, organic, premium
+   =================================================================== */
+
+/* ---------- soft card (signature surface: borderless, breathes) with GLOW ---------- */
+.card-soft {
+  background: var(--card);
+  border-radius: 16px;
+  position: relative;
+  transition: transform .3s cubic-bezier(.22,.8,.3,1), box-shadow .3s cubic-bezier(.22,.8,.3,1);
+}
+@media (hover: hover) {
+  .card-soft:hover {
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 12px 28px -12px rgba(11,21,38,.16), 0 0 0 1px var(--glow-color), 0 0 20px var(--glow-hover);
+  }
+  .card-soft:hover .plate-img img { transform: scale(1.06); }
+}
+.plate-img img { transition: transform .5s cubic-bezier(.22,.8,.3,1); }
+
+/* ---------- Glassmorphism card ---------- */
+.card-glass {
+  background: rgba(var(--card-rgb), 0.65);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(var(--ink-rgb), 0.06);
+  border-radius: 24px;
+}
+
+/* ---------- Wave-cut card (bottom edge) ---------- */
+.card-wave {
+  position: relative;
+  border-radius: 24px 24px 0 0;
+  overflow: visible;
+}
+.card-wave::after {
+  content: '';
+  position: absolute;
+  bottom: -18px;
+  left: 0;
+  right: 0;
+  height: 24px;
+  background: inherit;
+  clip-path: ellipse(52% 100% at 50% 0%);
+}
+
+/* ---------- Diagonal-cut card ---------- */
+.card-diagonal {
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%);
+  border-radius: 24px;
+}
+
+/* ---------- Blob/organic shape card ---------- */
+.card-blob {
+  border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+  transition: border-radius .6s cubic-bezier(.22,.8,.3,1), transform .3s ease;
+}
+@media (hover: hover) {
+  .card-blob:hover {
+    border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%;
+    transform: scale(1.03);
+  }
+}
+
+/* ===================================================================
+   NEXT-LEVEL BUTTON SHAPES — pills, skewed, hexagonal, organic
+   =================================================================== */
+
+/* ---------- Pill button (primary CTA) — already pill-shaped, add gradient glow ---------- */
+.btn-pill {
+  border-radius: 999px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+.btn-pill::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--volt), var(--accent));
+  z-index: -1;
+  opacity: 0;
+  transition: opacity .3s ease;
+}
+.btn-pill:hover::before { opacity: 1; }
+
+/* ---------- Skewed / slanted button ---------- */
+.btn-skew {
+  border-radius: 4px;
+  transform: skewX(-6deg);
+  transition: transform .25s ease, background-color .2s ease;
+}
+.btn-skew > * { transform: skewX(6deg); display: inline-flex; align-items: center; gap: 0.5rem; }
+.btn-skew:hover { transform: skewX(-6deg) translateY(-2px); }
+
+/* ---------- Hexagonal badge ---------- */
+.badge-hex {
+  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* ---------- Diamond-shaped quick action icon ---------- */
+.btn-diamond {
+  transform: rotate(45deg);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform .3s cubic-bezier(.22,.8,.3,1), box-shadow .3s ease;
+}
+.btn-diamond > * { transform: rotate(-45deg); }
+.btn-diamond:hover { transform: rotate(45deg) scale(1.1); box-shadow: 0 8px 24px -8px var(--glow-hover); }
+
+/* ---------- Rounded tab button ---------- */
+.btn-tab {
+  border-radius: 16px 16px 4px 4px;
+  transition: background-color .2s ease, transform .2s ease;
+}
+.btn-tab:hover { transform: translateY(-2px); }
+
+/* ---------- Organic/blob button ---------- */
+.btn-organic {
+  border-radius: 30% 70% 70% 30% / 50% 50% 50% 50%;
+  padding: 0.65rem 1.6rem;
+  transition: border-radius .4s cubic-bezier(.22,.8,.3,1), transform .25s ease, background-color .2s ease;
+}
+.btn-organic:hover {
+  border-radius: 70% 30% 30% 70% / 50% 50% 50% 50%;
+  transform: scale(1.04);
+}
+
+/* ===================================================================
+   PRODUCT ANIMATIONS — 3D tilt, stagger, floating badges
+   =================================================================== */
+
+/* ---------- 3D perspective tilt on product cards ---------- */
+.card-tilt {
+  perspective: 800px;
+  transform-style: preserve-3d;
+}
+.card-tilt-inner {
+  transition: transform .35s cubic-bezier(.22,.8,.3,1);
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* ---------- Staggered grid entrance animation ---------- */
+.grid-stagger > * {
+  opacity: 0;
+  animation: staggerIn .5s cubic-bezier(.22,.8,.3,1) forwards;
+}
+.grid-stagger > *:nth-child(1) { animation-delay: 0s; }
+.grid-stagger > *:nth-child(2) { animation-delay: .06s; }
+.grid-stagger > *:nth-child(3) { animation-delay: .12s; }
+.grid-stagger > *:nth-child(4) { animation-delay: .18s; }
+.grid-stagger > *:nth-child(5) { animation-delay: .24s; }
+.grid-stagger > *:nth-child(6) { animation-delay: .30s; }
+.grid-stagger > *:nth-child(7) { animation-delay: .36s; }
+.grid-stagger > *:nth-child(8) { animation-delay: .42s; }
+@keyframes staggerIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.95); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---------- Floating / bouncing sale badge ---------- */
+.badge-float {
+  animation: badgeFloat 2.5s ease-in-out infinite;
+}
+@keyframes badgeFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* ---------- Pulse glow on "Add to cart" success ---------- */
+.pulse-ok {
+  animation: pulseOk .6s ease;
+}
+@keyframes pulseOk {
+  0% { box-shadow: 0 0 0 0 rgba(15, 138, 85, 0.5); }
+  70% { box-shadow: 0 0 0 14px rgba(15, 138, 85, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(15, 138, 85, 0); }
+}
+
+/* ---------- Product image parallax zoom on scroll ---------- */
+.img-zoom-scroll {
+  overflow: hidden;
+}
+.img-zoom-scroll img {
+  transition: transform .8s cubic-bezier(.22,.8,.3,1);
+}
+.img-zoom-scroll:hover img {
+  transform: scale(1.08);
+}
+
+/* ---------- Shimmer sweep on card hover ---------- */
+.shimmer-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-sweep::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  transition: left .7s ease;
+  pointer-events: none;
+  z-index: 3;
+}
+.shimmer-sweep:hover::after {
+  left: 130%;
+}
+
+/* ---------- Out-of-stock overlay ---------- */
+.oos-overlay {
+  position: relative;
+}
+.oos-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(var(--paper-rgb), 0.55);
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.oos-overlay img {
+  filter: grayscale(0.5) opacity(0.65);
+}
+
+/* ===================================================================
+   CATEGORY TILES — organic shapes, animated icons
+   =================================================================== */
+
+/* ---------- Category tile with organic clip-path ---------- */
+.cat-tile {
+  position: relative;
+  overflow: hidden;
+  transition: transform .35s cubic-bezier(.22,.8,.3,1), box-shadow .35s ease;
+}
+.cat-tile::before {
+  content: '';
+  position: absolute;
+  right: -20%;
+  bottom: -30%;
+  width: 70%;
+  height: 80%;
+  border-radius: 50%;
+  background: rgba(var(--volt-rgb), 0.08);
+  transition: transform .5s cubic-bezier(.22,.8,.3,1);
+}
+@media (hover: hover) {
+  .cat-tile:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 14px 32px -12px rgba(11,21,38,.12);
+  }
+  .cat-tile:hover::before {
+    transform: scale(1.4) translateY(-10%);
+  }
+  .cat-tile:hover .cat-icon {
+    transform: scale(1.15) rotate(6deg);
+  }
+}
+.cat-icon {
+  transition: transform .35s cubic-bezier(.22,.8,.3,1);
+}
+
+/* ===================================================================
+   BREADCRUMB COMPONENT
+   =================================================================== */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+.breadcrumb a {
+  transition: color .2s ease;
+}
+.breadcrumb a:hover {
+  color: var(--volt);
+}
+.breadcrumb .sep {
+  opacity: 0.4;
+}
+
+/* tap feedback on touch */
+.pressable { transition: transform .12s ease, background-color .15s ease, color .15s ease; }
+.pressable:active { transform: scale(.97); }
+
+/* keyboard focus, always visible */
+:focus-visible { outline: 2px solid var(--volt); outline-offset: 2px; border-radius: 6px; }
+
+/* hide scrollbar on chip rails but keep them scrollable */
+.rail { scrollbar-width: none; -ms-overflow-style: none; }
+.rail::-webkit-scrollbar { display: none; }
+
+/* skeleton shimmer */
+.skeleton { background: linear-gradient(100deg, #EBEEF3 40%, #F5F7FA 50%, #EBEEF3 60%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* ---------- accessibility: motion off when requested ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+  .reveal, .power-on > *, .collage-item, .grid-stagger > * { opacity: 1 !important; transform: none !important; clip-path: none !important; }
+  .card-blob { border-radius: 24px !important; }
+  .btn-organic { border-radius: 999px !important; }
+  /* marquee can't auto-move: fall back to a normal scrollable rail */
+  .marquee { overflow-x: auto; -webkit-mask-image: none; mask-image: none; scrollbar-width: none; }
+  .marquee::-webkit-scrollbar { display: none; }
+  .marquee-track { transform: none !important; }
+}
+
+/* ---------- Google-Store-style collage (staggered, reveals on scroll) ---------- */
+.collage { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (min-width: 768px) { .collage { grid-template-columns: repeat(4, 1fr); gap: 18px; } }
+.collage-item { opacity: 0; transform: translateY(30px) scale(.95); clip-path: inset(14% 0 0 0 round 18px); animation: collageIn .85s cubic-bezier(.16,.84,.32,1) forwards; will-change: transform, opacity, clip-path; }
+.collage-item:nth-child(1){animation-delay:.05s}.collage-item:nth-child(2){animation-delay:.15s}
+.collage-item:nth-child(3){animation-delay:.25s}.collage-item:nth-child(4){animation-delay:.35s}
+.collage-item:nth-child(5){animation-delay:.45s}.collage-item:nth-child(6){animation-delay:.55s}
+.collage-item:nth-child(7){animation-delay:.65s}.collage-item:nth-child(8){animation-delay:.75s}
+@keyframes collageIn { to { opacity: 1; transform: none; clip-path: inset(0 0 0 0 round 18px); } }
+
+/* light sheen that sweeps across product images on hover (premium feel) */
+.plate-img::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,.5) 50%, transparent 62%);
+  transform: translateX(-130%); transition: transform .85s cubic-bezier(.22,.8,.3,1);
+}
+@media (hover: hover) { .card-soft:hover .plate-img::after { transform: translateX(130%); } }
+/* vertical offset gives the staggered Google-Store rhythm */
+.offset-down { margin-top: 38px; }
+@media (min-width: 768px) { .offset-down { margin-top: 56px; } }
+.offset-up { margin-top: -10px; }
+
+.typo-tile { position: relative; display: flex; align-items: flex-end; overflow: hidden; font-weight: 800; line-height: 1; letter-spacing: -.01em; transition: transform .35s cubic-bezier(.22,.8,.3,1), box-shadow .35s; }
+/* slow diagonal light drift so the promo tiles feel alive */
+.typo-tile::before {
+  content: ''; position: absolute; inset: -40%; pointer-events: none;
+  background: radial-gradient(60% 50% at 30% 20%, rgba(255,255,255,.35), transparent 70%);
+  animation: tileDrift 9s ease-in-out infinite;
+}
+.typo-tile:nth-child(even)::before { animation-delay: -4.5s; }
+.typo-tile > span { position: relative; z-index: 1; }
+@keyframes tileDrift { 0%,100% { transform: translate(0,0); } 50% { transform: translate(22%, 16%); } }
+@media (hover: hover) {
+  .typo-tile:hover { transform: translateY(-4px) scale(1.015); box-shadow: 0 18px 38px -16px rgba(11,21,38,.32); }
+}
+
+/* ---------- product gallery cross-fade ---------- */
+.gallery-img { animation: galleryFade .45s cubic-bezier(.22,.8,.3,1) both; }
+@keyframes galleryFade { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: none; } }
+
+/* hide scrollbars on rails but keep scroll */
+.rail::-webkit-scrollbar { display: none; }
+.rail { scrollbar-width: none; }
+
+/* ---------- auto-scrolling product marquee ("Popular right now") ---------- */
+.marquee { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.marquee-track { display: flex; width: max-content; gap: 14px; animation: marqueeX 38s linear infinite; }
+@media (min-width: 768px) { .marquee-track { gap: 16px; } }
+.marquee:hover .marquee-track, .marquee:focus-within .marquee-track { animation-play-state: paused; }
+@keyframes marqueeX { from { transform: translateX(0); } to { transform: translateX(calc(-50% - 7px)); } }
+@media (min-width: 768px) { @keyframes marqueeX { from { transform: translateX(0); } to { transform: translateX(calc(-50% - 8px)); } } }
+
+/* star rating */
+.stars { color: var(--warn); letter-spacing: 1px; }
+
+/* ---------- new homepage hero (theme-aware gradients) ---------- */
+.hero-card {
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(120% 130% at 82% 8%, var(--tint-sky), transparent 56%),
+    radial-gradient(110% 120% at 8% 94%, var(--tint-mint), transparent 56%),
+    var(--card);
+}
+.hero-stage {
+  background: radial-gradient(circle at 50% 40%, var(--card) 0%, var(--tint-tone) 68%, var(--line) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 30px 60px -34px rgba(11,21,38,.4);
+}
+
+/* ===================================================================
+   NOTIFY-ME BUTTON (back-in-stock)
+   =================================================================== */
+.btn-notify {
+  border-radius: 999px;
+  border: 2px dashed var(--volt);
+  color: var(--volt);
+  background: var(--volt-soft);
+  font-weight: 600;
+  transition: background-color .2s ease, border-style .3s ease, transform .2s ease;
+}
+.btn-notify:hover {
+  background: var(--volt);
+  color: white;
+  border-style: solid;
+  transform: scale(1.03);
+}
+
+/* ===================================================================
+   BRAND CAROUSEL SECTION
+   =================================================================== */
+.brand-scroll {
+  display: flex;
+  gap: 2rem;
+  animation: brandScroll 20s linear infinite;
+}
+@keyframes brandScroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.brand-scroll:hover { animation-play-state: paused; }

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Technozone — Sample Directions</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Manrope", system-ui, sans-serif; background: #f6f7f9; color: #14161a; -webkit-font-smoothing: antialiased; padding: 56px 24px; }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; background: #2b62ff; display: inline-block; vertical-align: middle; margin-right: 8px; }
+  .kicker { font-size: 13px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #2b62ff; margin-bottom: 14px; }
+  h1 { font-size: clamp(30px, 5vw, 46px); letter-spacing: -.03em; font-weight: 800; margin-bottom: 12px; }
+  .lede { color: #5b616e; font-size: 17px; max-width: 560px; margin-bottom: 40px; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .card { display: block; background: #fff; border: 1px solid #ececef; border-radius: 24px; overflow: hidden; transition: transform .18s, box-shadow .18s; }
+  .card:hover { transform: translateY(-5px); box-shadow: 0 24px 60px -28px rgba(20,22,26,.3); }
+  .prev { height: 200px; display: grid; place-items: center; position: relative; }
+  .prev.light { background: radial-gradient(120% 130% at 80% 10%, #dfe8ff, #f6f7f9 60%); }
+  .prev.dark { background: radial-gradient(120% 130% at 80% 10%, #1e2540, #0b0c0f 60%); }
+  .chip { position: absolute; top: 16px; left: 16px; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 100px; }
+  .prev.light .chip { background: #fff; color: #14161a; border: 1px solid #ececef; }
+  .prev.dark .chip { background: rgba(255,255,255,.1); color: #fff; }
+  .glyph { width: 64px; height: 110px; border-radius: 16px; }
+  .prev.light .glyph { background: linear-gradient(160deg, #2a2e36, #454b57); box-shadow: 0 20px 40px -16px rgba(0,0,0,.4); }
+  .prev.dark .glyph { background: radial-gradient(120% 90% at 30% 10%, #5b6cff, #6a3aff 60%, #1a1f3a); box-shadow: 0 24px 50px -16px rgba(91,108,255,.6); }
+  .meta { padding: 22px 24px 26px; }
+  .meta h2 { font-size: 20px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 6px; }
+  .meta p { color: #5b616e; font-size: 14px; margin-bottom: 14px; }
+  .go { font-weight: 700; font-size: 14px; color: #2b62ff; display: inline-flex; align-items: center; gap: 6px; }
+  .note { margin-top: 36px; padding: 18px 20px; background: #fff; border: 1px solid #ececef; border-radius: 16px; font-size: 14px; color: #5b616e; }
+  .note b { color: #14161a; }
+  @media (max-width: 680px) { .cards { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="kicker"><span class="dot"></span>Technozone · UI Refresh</div>
+    <h1>Two directions to react to.</h1>
+    <p class="lede">A modern, store-grade homepage for Technozone — big imagery, generous whitespace, rounded cards. Both are fully mobile-responsive. Tap in, then tell me which way to take it.</p>
+    <div class="cards">
+      <a class="card" href="Technozone Home.html">
+        <div class="prev light"><span class="chip">Direction A · Light</span><div class="glyph"></div></div>
+        <div class="meta">
+          <h2>Clean &amp; bright</h2>
+          <p>Airy white canvas, blue accent, pastel category tiles. Friendly and retail-forward.</p>
+          <span class="go">Open sample →</span>
+        </div>
+      </a>
+      <a class="card" href="Technozone Home — Dark.html">
+        <div class="prev dark"><span class="chip">Direction B · Dark</span><div class="glyph"></div></div>
+        <div class="meta">
+          <h2>Premium &amp; editorial</h2>
+          <p>Deep charcoal canvas, electric indigo glow. Flagship, high-end product feel.</p>
+          <span class="go">Open sample →</span>
+        </div>
+      </a>
+    </div>
+    <div class="note">
+      <b>Note:</b> these use placeholder product art and sample copy (Aura Phone, Halo Buds…). Your <b>technozone-store</b> folder hasn't synced into the project yet — once it's accessible I'll map this look onto your real pages, products, and images.
+    </div>
+  </div>
+</body>
+</html>
