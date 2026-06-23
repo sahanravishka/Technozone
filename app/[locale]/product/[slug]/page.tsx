@@ -14,7 +14,7 @@ import Reviews from '@/components/Reviews';
 import Reveal from '@/components/Reveal';
 import { safeJsonLd } from '@/lib/jsonld';
 
-export const revalidate = 300;
+export const revalidate = 0;
 
 type Props = { params: Promise<{ locale: Locale; slug: string }> };
 
