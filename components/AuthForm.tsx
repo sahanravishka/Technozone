@@ -15,7 +15,7 @@ export default function AuthForm({ dict, locale }: { dict: Dict; locale: Locale 
   // Only allow same-origin relative paths — blocks open-redirect/phishing via
   // ?next=https://evil.com or ?next=//evil.com (CWE-601).
   const rawNext = sp.get('next') || '';
-  const next = /^\/(?![/\\])/.test(rawNext) ? rawNext : `/${locale}/account`;
+  const next = /^\/(?![/\\])/.test(rawNext) ? rawNext : `/${locale}`;
   const [mode, setMode] = useState<'in' | 'up'>('in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
