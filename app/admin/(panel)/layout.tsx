@@ -11,7 +11,6 @@ const NAV: NavItem[] = [
   { label: 'Dashboard', href: '/admin' },
   { label: 'Orders', href: '/admin/orders' },
   { label: 'Repairs', href: '/admin/repairs' },
-  { label: 'Shipments', href: '/admin/shipments' },
   { label: 'Returns', href: '/admin/returns' },
   { label: 'Warranties', href: '/admin/warranties' },
   { label: 'Customers', href: '/admin/customers' },

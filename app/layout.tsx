@@ -17,7 +17,7 @@ const THEME_INIT =
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html data-theme="light" suppressHydrationWarning>
+    <html lang="en" data-theme="light" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         {/* Preconnect for faster font loading */}

@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import Link from 'next/link';
 import { BrandMark } from './Header';
 import { SITE, waLink } from '@/lib/site';
@@ -35,6 +36,26 @@ export default function Footer({ dict, categories, locale }:
               </svg>
               +{SITE.whatsapp}
             </a>
+            {(() => {
+              const socials: [string, string, ReactElement][] = [
+                ['Facebook', SITE.social.facebook, <path key="f" d="M13.5 9H16V6h-2.5C11.6 6 10 7.6 10 9.5V11H8v3h2v6h3v-6h2.2l.4-3H13V9.6c0-.3.2-.6.5-.6Z" fill="currentColor" stroke="none" />],
+                ['Instagram', SITE.social.instagram, <g key="i"><rect x="3.5" y="3.5" width="17" height="17" rx="5" /><circle cx="12" cy="12" r="3.6" /><circle cx="17" cy="7" r="1.1" fill="currentColor" stroke="none" /></g>],
+                ['YouTube', SITE.social.youtube, <g key="y"><rect x="2.5" y="5.5" width="19" height="13" rx="4" /><path d="M10 9.4l5 2.6-5 2.6z" fill="currentColor" stroke="none" /></g>],
+                ['X', SITE.social.x, <path key="x" d="M4 4l16 16M20 4L4 20" />],
+                ['LinkedIn', SITE.social.linkedin, <g key="l"><rect x="3.5" y="3.5" width="17" height="17" rx="3" /><path d="M8 10.5V16M8 7.2v.01M12 16v-3.4a1.6 1.6 0 0 1 3.2 0V16" /></g>]
+              ];
+              const active = socials.filter(([, url]) => url);
+              return active.length ? (
+                <div className="mt-5 flex gap-2">
+                  {active.map(([name, url, icon]) => (
+                    <a key={name} href={url} target="_blank" rel="noopener noreferrer" aria-label={name}
+                      className="grid h-9 w-9 place-items-center rounded-full bg-white/10 transition-colors hover:bg-white/15">
+                      <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{icon}</svg>
+                    </a>
+                  ))}
+                </div>
+              ) : null;
+            })()}
           </div>
 
           {/* link columns — side by side on mobile too */}

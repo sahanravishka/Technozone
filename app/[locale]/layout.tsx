@@ -17,12 +17,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   return {
     metadataBase: new URL(SITE.url),
-    title: { default: `${SITE.name} — ${SITE.tagline}`, template: `%s · ${SITE.name}` },
-    description: SITE.tagline,
+    title: { default: SITE.seoTitle, template: `%s · ${SITE.name}` },
+    description: SITE.description,
     alternates: {
       languages: Object.fromEntries(locales.map(l => [l, `/${l}`]))
     },
-    openGraph: { siteName: SITE.name, locale }
+    openGraph: {
+      type: 'website', siteName: SITE.name, locale,
+      url: `${SITE.url}/${locale}`, title: SITE.seoTitle, description: SITE.description
+    },
+    twitter: { card: 'summary_large_image', title: SITE.seoTitle, description: SITE.description }
   };
 }
 

@@ -9,13 +9,20 @@ const EDGE: Record<string, string> = {
   pending: '#9AA2AE', paid: '#1B6FD8', packed: '#B06A0A', shipped: '#155CB8', delivered: '#0F8A55'
 };
 
+export type AdminOrderItem = {
+  qty: number; variant_id?: string | null; product_id?: string | null;
+  product_name?: string; warranty_months?: number;
+};
+
 export type AdminOrder = {
   id: string; order_number: string; status: string; total: number;
   payment_status?: string; payment_method?: string;
   fulfillment?: string;
   customer_phone: string; created_at: string;
   shipping_address: { name?: string; city?: string };
-  order_items: { qty: number }[];
+  order_items: AdminOrderItem[];
+  requiredSerials?: number;   // warranty-eligible units needing a scanned serial
+  scannedSerials?: number;    // serials already scanned for this order
 };
 
 const PAY_BADGE: Record<string, { label: string; cls: string }> = {
@@ -24,10 +31,12 @@ const PAY_BADGE: Record<string, { label: string; cls: string }> = {
   payhere: { label: '💳 Online', cls: 'bg-volt-soft text-volt' }
 };
 
-export default function OrderCard({ order, waHref, selected, onSelect }:
-  { order: AdminOrder; waHref: string; selected: boolean; onSelect: (id: string, on: boolean) => void }) {
+export default function OrderCard({ order, waHref, selected, onSelect, onPack }:
+  { order: AdminOrder; waHref: string; selected: boolean;
+    onSelect: (id: string, on: boolean) => void; onPack: (order: AdminOrder) => void }) {
   const [pending, start] = useTransition();
   const next = NEXT[order.status];
+  const needScan = (order.requiredSerials ?? 0) > 0;
 
   return (
     <div className="rounded-2xl bg-card p-3.5"
@@ -52,13 +61,18 @@ export default function OrderCard({ order, waHref, selected, onSelect }:
         {new Date(order.created_at).toLocaleDateString('en-GB')}
       </p>
       <div className="mt-2.5 flex flex-wrap gap-1.5">
-        {next && (
-          <button disabled={pending}
-            onClick={() => start(() => advanceOrder(order.id, next))}
-            className="pressable rounded-lg bg-ink px-2.5 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50">
-            → {next.charAt(0).toUpperCase() + next.slice(1)}
-          </button>
-        )}
+        {next && (order.status === 'paid'
+          ? (
+            <button disabled={pending} onClick={() => onPack(order)}
+              className="pressable rounded-lg bg-ink px-2.5 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50">
+              {needScan ? '📷 Pack & scan' : '→ Pack'}
+            </button>
+          ) : (
+            <button disabled={pending} onClick={() => start(() => advanceOrder(order.id, next))}
+              className="pressable rounded-lg bg-ink px-2.5 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50">
+              → {next.charAt(0).toUpperCase() + next.slice(1)}
+            </button>
+          ))}
         <a href={waHref} target="_blank" rel="noopener noreferrer"
           className="pressable rounded-lg bg-[#E8F7EE] px-2.5 py-1.5 text-[11px] font-semibold text-[#0F8A55]">
           WhatsApp

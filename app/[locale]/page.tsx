@@ -1,6 +1,7 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { Locale } from '@/lib/i18n/config';
+import { locales, type Locale } from '@/lib/i18n/config';
 import { getDict } from '@/lib/i18n/dictionaries';
 import { getActiveDiscounts, getCategories, getProducts, localized } from '@/lib/data';
 import { priceProduct } from '@/lib/pricing';
@@ -29,6 +30,16 @@ const ArrowIcon = () => (
   </svg>
 );
 
+export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    alternates: {
+      canonical: `/${locale}`,
+      languages: Object.fromEntries(locales.map(l => [l, `/${l}`]))
+    }
+  };
+}
+
 export default async function HomePage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
   const dict = getDict(locale);
@@ -50,6 +61,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
     name: SITE.name,
     url: SITE.url,
     logo: `${SITE.url}/icon.png`,
+    sameAs: Object.values(SITE.social).filter(Boolean),
     contactPoint: { '@type': 'ContactPoint', telephone: `+${SITE.whatsapp}`, contactType: 'customer service' }
   };
   const siteJsonLd = {
