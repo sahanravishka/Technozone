@@ -82,56 +82,45 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(orgJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(siteJsonLd) }} />
 
-      {/* ===================== HERO — with organic shapes ===================== */}
+      {/* ===================== HERO — with video background ===================== */}
       <section className="pt-6 md:pt-7" aria-label="Featured product">
-        <div className="hero-card power-on relative grid items-center gap-8 overflow-hidden p-8 md:grid-cols-[1.05fr_.95fr] md:p-14"
+        <div className="hero-card power-on relative flex min-h-[480px] items-center overflow-hidden p-8 md:p-16"
           style={{ borderRadius: '36px' }}>
-          {/* Decorative blob shapes */}
-          <div className="absolute -left-16 -top-16 h-64 w-64 rounded-full bg-gradient-to-br from-volt/10 to-accent/10 blur-3xl" aria-hidden />
-          <div className="absolute -bottom-20 -right-20 h-72 w-72 rounded-full bg-gradient-to-tl from-accent/10 to-volt/5 blur-3xl" aria-hidden />
+          
+          <video 
+            src="/hero-video.mp4" 
+            autoPlay 
+            loop 
+            muted 
+            playsInline 
+            className="absolute inset-0 z-0 h-full w-full object-cover opacity-40 mix-blend-multiply" 
+          />
 
-          <div className="relative z-10">
-            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-line bg-card px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.04em] text-volt">
+          {/* Decorative blob shapes */}
+          <div className="absolute -left-16 -top-16 z-0 h-64 w-64 rounded-full bg-gradient-to-br from-volt/20 to-accent/20 blur-3xl" aria-hidden />
+          <div className="absolute -bottom-20 -right-20 z-0 h-72 w-72 rounded-full bg-gradient-to-tl from-accent/20 to-volt/10 blur-3xl" aria-hidden />
+
+          <div className="relative z-10 max-w-2xl">
+            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/60 px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.04em] text-volt shadow-sm backdrop-blur-md">
               <span className="h-1.5 w-1.5 rounded-full bg-volt animate-pulse" />{dict.hero.eyebrow}
             </span>
-            <h1 className="text-[2.1rem] font-extrabold leading-[1.04] tracking-[-0.03em] md:text-[3.6rem]">
+            <h1 className="text-[2.1rem] font-extrabold leading-[1.04] tracking-[-0.03em] md:text-[3.8rem]">
               {dict.hero.title1}<br />{dict.hero.title2}
             </h1>
-            <p className="mt-4 max-w-md text-[15px] leading-relaxed text-muted md:text-[17px]">{dict.hero.sub}</p>
-            <div className="mt-7 flex flex-wrap gap-3">
+            <p className="mt-4 max-w-md text-[15.5px] font-medium leading-relaxed text-ink/80 drop-shadow-sm md:text-[18px]">{dict.hero.sub}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
               {/* Primary CTA — Pill shape with gradient glow */}
               <Link href={shopHref}
-                className="btn-pill pressable inline-flex h-12 items-center gap-2 bg-gradient-to-r from-volt to-volt-deep px-7 text-[14.5px] font-bold text-white shadow-[0_12px_28px_-10px_rgba(27,111,216,.6)] transition-all hover:shadow-[0_16px_36px_-8px_rgba(27,111,216,.7)] hover:-translate-y-0.5">
+                className="btn-pill pressable inline-flex h-12 items-center gap-2 bg-gradient-to-r from-volt to-volt-deep px-7 text-[14.5px] font-bold text-white shadow-[0_12px_28px_-10px_rgba(27,111,216,.6)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_36px_-8px_rgba(27,111,216,.7)]">
                 {dict.hero.shopNow} <ArrowIcon />
               </Link>
               {/* Secondary CTA — Organic/blob shape */}
               <a href={waLink('Hi! I have a question about a product.')} target="_blank" rel="noopener noreferrer"
-                className="btn-organic pressable inline-flex h-12 items-center border border-line bg-card px-7 text-[14.5px] font-bold transition-colors hover:bg-tint-tone">
+                className="btn-organic pressable inline-flex h-12 items-center border border-white/40 bg-white/70 px-7 text-[14.5px] font-bold shadow-sm backdrop-blur-md transition-colors hover:bg-white">
                 {dict.hero.askWhatsApp}
               </a>
             </div>
           </div>
-
-          {hero && (
-            <Link href={`/${locale}/product/${hero.slug}`}
-              className="hero-stage group relative mx-auto grid aspect-square w-full max-w-[260px] place-items-center overflow-hidden sm:max-w-[340px] md:max-w-[420px]"
-              style={{ borderRadius: '28px' }}>
-              <div className="absolute inset-[16%] rounded-full bg-volt/15 blur-2xl" />
-              {heroImg && (
-                <Image src={imageUrl(heroImg.storage_path)} alt={hero.name} width={520} height={620}
-                  priority fetchPriority="high"
-                  className="relative z-10 object-contain transition-transform duration-500 group-hover:scale-105"
-                  style={{ width: '90%', height: '90%', mixBlendMode: 'multiply' }} />
-              )}
-              {heroPrice && (
-                <div className="card-glass absolute bottom-4 right-4 z-20 px-4 py-2.5 text-right shadow-soft"
-                  style={{ borderRadius: '20px' }}>
-                  <div className="text-[11px] font-semibold text-muted">{dict.home.from}</div>
-                  <div className="text-[19px] font-extrabold tracking-[-0.02em]">{formatLKR(heroPrice.price)}</div>
-                </div>
-              )}
-            </Link>
-          )}
         </div>
       </section>
 
