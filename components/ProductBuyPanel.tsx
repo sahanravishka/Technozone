@@ -160,10 +160,41 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
         {/* specs — glassmorphism card */}
         {Object.keys(product.specs ?? {}).length > 0 && (
           <div className="card-glass px-4 py-1" style={{ borderRadius: '20px' }}>
-            {Object.entries(product.specs).map(([k, v], i) => (
-              <div key={k} className={`flex items-baseline justify-between gap-4 py-3 text-[13px] ${i ? 'border-t border-line/50' : ''}`}>
+            {Object.entries(product.specs).flatMap(([k, v]) => {
+              const valStr = String(v);
+              // Recover squished text pasted from single-line inputs (e.g. "mmWeight:" -> "mm\nWeight:")
+              let recovered = valStr.replace(/([a-zA-Z0-9\)])([A-Z0-9][A-Za-z0-9\s]+:)/g, '$1\n$2');
+              // Break lines on comma separated key-value patterns
+              recovered = recovered.replace(/, (?=[A-Z0-9][A-Za-z0-9\s]+:)/g, '\n');
+              
+              const lines = recovered.split('\n').map(l => l.trim()).filter(Boolean);
+              
+              if (lines.length === 1 && !lines[0].includes(':')) {
+                return [[k, lines[0]]];
+              }
+              
+              const pairs: [string, string][] = [];
+              let currentKey = k;
+              let currentVal = '';
+              
+              for (const line of lines) {
+                const colonIdx = line.indexOf(':');
+                // Assume it's a new spec property if there's a colon near the start
+                if (colonIdx > 0 && colonIdx < 35) {
+                  if (currentVal) pairs.push([currentKey, currentVal]);
+                  currentKey = line.substring(0, colonIdx).trim();
+                  currentVal = line.substring(colonIdx + 1).trim();
+                } else {
+                  currentVal += (currentVal ? ', ' : '') + line;
+                }
+              }
+              if (currentVal) pairs.push([currentKey, currentVal]);
+              
+              return pairs.length > 0 ? pairs : [[k, valStr]];
+            }).map(([k, v], i) => (
+              <div key={k + i} className={`flex flex-col gap-1 py-3 text-[13px] sm:flex-row sm:items-baseline sm:justify-between sm:gap-4 ${i ? 'border-t border-line/50' : ''}`}>
                 <dt className="shrink-0 text-muted">{k}</dt>
-                <dd className="text-right font-medium">{String(v)}</dd>
+                <dd className="font-medium sm:text-right text-ink/90 whitespace-pre-wrap">{v}</dd>
               </div>
             ))}
           </div>
