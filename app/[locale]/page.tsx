@@ -93,8 +93,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
             loop 
             muted 
             playsInline 
-            className="absolute inset-0 z-0 h-full w-full object-cover opacity-40 mix-blend-multiply" 
+            className="absolute inset-0 z-0 h-full w-full object-cover" 
           />
+          
+          {/* Gradient fade to make text perfectly readable */}
+          <div className="absolute inset-0 z-0 bg-gradient-to-r from-white via-white/80 to-transparent md:w-[80%]" />
 
           {/* Decorative blob shapes */}
           <div className="absolute -left-16 -top-16 z-0 h-64 w-64 rounded-full bg-gradient-to-br from-volt/20 to-accent/20 blur-3xl" aria-hidden />
