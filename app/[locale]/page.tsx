@@ -95,22 +95,23 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
             playsInline 
             className="absolute inset-0 z-0 h-full w-full object-cover" 
           />
-          
-          {/* Theme-aware Gradient fade to make text perfectly readable */}
-          <div className="absolute inset-0 z-0 bg-gradient-to-r from-paper via-paper/90 to-transparent md:w-[75%]" />
 
           {/* Decorative blob shapes */}
-          <div className="absolute -left-16 -top-16 z-0 h-64 w-64 rounded-full bg-gradient-to-br from-volt/20 to-accent/20 blur-3xl" aria-hidden />
-          <div className="absolute -bottom-20 -right-20 z-0 h-72 w-72 rounded-full bg-gradient-to-tl from-accent/20 to-volt/10 blur-3xl" aria-hidden />
+          <div className="absolute -left-16 -top-16 z-0 h-64 w-64 rounded-full bg-gradient-to-br from-volt/30 to-accent/30 blur-3xl" aria-hidden />
+          <div className="absolute -bottom-20 -right-20 z-0 h-72 w-72 rounded-full bg-gradient-to-tl from-accent/30 to-volt/20 blur-3xl" aria-hidden />
 
           <div className="relative z-10 max-w-2xl">
-            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-line bg-paper/60 px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.04em] text-volt shadow-sm backdrop-blur-md">
+            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/40 bg-black/40 px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.04em] text-white shadow-sm backdrop-blur-md">
               <span className="h-1.5 w-1.5 rounded-full bg-volt animate-pulse" />{dict.hero.eyebrow}
             </span>
-            <h1 className="text-[2.1rem] font-extrabold leading-[1.04] tracking-[-0.03em] md:text-[3.8rem]">
+            <h1 className="text-[2.1rem] font-extrabold leading-[1.04] tracking-[-0.03em] text-white md:text-[3.8rem]"
+                style={{ textShadow: '0 2px 10px rgba(0,0,0,0.6), 0 4px 30px rgba(0,0,0,0.4)' }}>
               {dict.hero.title1}<br />{dict.hero.title2}
             </h1>
-            <p className="mt-4 max-w-md text-[15.5px] font-medium leading-relaxed text-muted drop-shadow-sm md:text-[18px]">{dict.hero.sub}</p>
+            <p className="mt-4 max-w-md text-[15.5px] font-medium leading-relaxed text-white/90 md:text-[18px]"
+               style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
+              {dict.hero.sub}
+            </p>
             <div className="mt-8 flex flex-wrap gap-3">
               {/* Primary CTA — Pill shape with gradient glow */}
               <Link href={shopHref}
