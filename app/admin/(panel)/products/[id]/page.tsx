@@ -65,6 +65,9 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
             </select></div>
           <div><span className={label}>Base price (LKR)</span>
             <input name="base_price" type="number" step="0.01" defaultValue={String(product?.base_price ?? '')} className={input} required /></div>
+          <div><span className={label}>Warranty (months)</span>
+            <input name="warranty_months" type="number" min={0} defaultValue={String(product?.warranty_months ?? 12)} className={input} />
+            <span className="mt-1 block text-[11px] text-muted">Auto-applied when a serial is scanned at dispatch.</span></div>
           <div className="flex items-end pb-2">
             <label className="flex items-center gap-2 text-[13px] font-semibold">
               <input type="checkbox" name="is_active" defaultChecked={(product?.is_active as boolean) ?? true} className="h-4 w-4 accent-[#1B6FD8]" />

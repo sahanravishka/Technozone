@@ -47,6 +47,7 @@ export async function upsertProduct(form: FormData) {
     description: String(form.get('description') || '').trim() || null,
     base_price: Number(form.get('base_price') || 0),
     is_active: form.get('is_active') === 'on',
+    warranty_months: Math.max(0, Number(form.get('warranty_months') || 12)),
     specs
   };
   if (!row.name || !row.slug) throw new Error('name and slug required');
@@ -343,6 +344,26 @@ export async function advanceShipment(shipmentId: string, status: string) {
   const supabase = (await getServerSupabase())!;
   await supabase.from('shipments').update({ status, updated_at: new Date().toISOString() }).eq('id', shipmentId);
   revalidatePath('/admin/shipments');
+}
+
+export type DispatchScanResult = {
+  product_name: string; serial_no: string; warranty_expires_at: string;
+  period_months: number; tier: string | null; discount_pct: number | null; coupon_code: string | null;
+};
+
+// Dispatch desk: scan a unit's serial/IMEI -> register warranty (period auto from
+// the product) AND activate a loyalty discount on the customer's mobile. One RPC,
+// one transaction (see migration 0009).
+export async function dispatchScanSerial(orderId: string, serial: string, variantId: string | null) {
+  await requireStaff();
+  const supabase = (await getServerSupabase())!;
+  const { data, error } = await supabase.rpc('dispatch_scan_serial', {
+    p_order_id: orderId, p_serial: serial.trim(), p_variant_id: variantId || null
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/shipments');
+  revalidatePath('/admin/warranties');
+  return data as DispatchScanResult;
 }
 
 // ---- Returns / RMA ----

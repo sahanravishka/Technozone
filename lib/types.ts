@@ -11,6 +11,7 @@ export type Product = {
   id: string; slug: string; name: string; brand: string | null;
   description: string | null; specs: Record<string, string>;
   base_price: number; category_id: string | null;
+  warranty_months?: number;
   product_variants: Variant[];
   product_images: ProductImage[];
   product_translations?: { locale: string; name: string; description: string | null }[];

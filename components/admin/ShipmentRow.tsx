@@ -3,11 +3,13 @@ import { useState, useTransition } from 'react';
 import { assignShipment, advanceShipment } from '@/app/admin/actions';
 import { SHIPMENT_FLOW, SHIPMENT_LABEL, trackUrl } from '@/lib/courier';
 import { shipmentMessage, shipmentNotifyLink } from '@/lib/whatsapp';
+import DispatchScan from './DispatchScan';
 import type { Courier, ShipmentStatus } from '@/lib/types';
 
 type Ship = { id: string; courier_code: string | null; tracking_number: string | null; status: ShipmentStatus };
+type Item = { variant_id: string | null; product_name: string; variant_name: string | null };
 type Order = { id: string; order_number: string; customer_phone: string;
-  shipping_address: { name?: string; city?: string }; shipments: Ship[] };
+  shipping_address: { name?: string; city?: string }; shipments: Ship[]; order_items?: Item[] };
 
 export default function ShipmentRow({ order, couriers }: { order: Order; couriers: Courier[] }) {
   const ship = order.shipments?.[0];
@@ -48,6 +50,7 @@ export default function ShipmentRow({ order, couriers }: { order: Order; courier
           className="pressable rounded-lg bg-[#E8F7EE] px-3 py-1.5 text-[12px] font-semibold text-ok">WhatsApp</a>
         {url && <a href={url} target="_blank" rel="noopener" className="text-[12px] font-semibold text-volt hover:underline">Track ↗</a>}
       </div>
+      {!!order.order_items?.length && <DispatchScan orderId={order.id} items={order.order_items} />}
     </div>
   );
 }
