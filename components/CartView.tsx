@@ -33,9 +33,9 @@ export default function CartView({ dict, zones, locale }:
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
       {/* items */}
-      <ul className="space-y-3">
+      <ul className="min-w-0 space-y-3">
         {items.map(item => (
           <li key={item.variantId} className="card-soft flex gap-3.5 p-3.5" style={{ borderRadius: '22px' }}>
             <Link href={`/${locale}/product/${item.slug}`}

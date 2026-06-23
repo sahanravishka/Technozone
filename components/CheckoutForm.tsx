@@ -124,8 +124,8 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
   const canPay = !!(f.name && f.phone && addrOk && emailOk);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      <div className="space-y-4">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="min-w-0 space-y-4">
         {/* guest / sign-in toggle */}
         {!signedIn && (
           <div className="flex rounded-full bg-card p-1">
@@ -222,7 +222,7 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
         <ul className="space-y-2 text-[13.5px]">
           {items.map(i => (
             <li key={i.variantId} className="flex justify-between gap-3 text-muted">
-              <span className="truncate">{i.name} ×{i.qty}</span>
+              <span className="min-w-0 truncate">{i.name} ×{i.qty}</span>
               <span className="shrink-0">{formatLKR(i.price * i.qty)}</span>
             </li>
           ))}
