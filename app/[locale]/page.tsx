@@ -93,7 +93,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
             loop 
             muted 
             playsInline 
-            className="absolute inset-0 z-0 h-full w-full object-cover" 
+            className="absolute inset-0 z-0 h-full w-full object-cover object-[80%_center] md:object-center" 
           />
 
           {/* Decorative blob shapes */}
