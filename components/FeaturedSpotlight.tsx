@@ -109,7 +109,7 @@ export default function FeaturedSpotlight({ products, discounts, locale, dict }:
 
       {/* ── Product image ── */}
       <div
-        className="relative grid aspect-[4/3] place-items-center md:aspect-auto md:self-stretch"
+        className="relative grid place-items-center md:self-stretch"
         style={{
           background: 'radial-gradient(circle at 60% 40%, rgba(83,183,232,.22), transparent 65%)',
           opacity: visible ? 1 : 0,
@@ -117,18 +117,23 @@ export default function FeaturedSpotlight({ products, discounts, locale, dict }:
         }}
       >
         {spotImg && (
-          <Image
-            src={imageUrl(spotImg.storage_path)}
-            alt={spot.name}
-            width={520}
-            height={620}
-            quality={85}
-            className="h-[82%] w-[82%] object-contain transition-transform duration-500 hover:scale-105 sm:h-[88%] sm:w-[88%]"
-            style={{
-              mixBlendMode: 'screen',
-              filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.5))',
-            }}
-          />
+          // Fixed square frame: every featured image fills the SAME box and is
+          // contained — never cropped, never distorted, never resizes the layout,
+          // whatever dimensions are uploaded.
+          <div className="relative aspect-square w-full max-w-[280px] p-6 sm:max-w-[360px] sm:p-8">
+            <Image
+              src={imageUrl(spotImg.storage_path)}
+              alt={spot.name}
+              fill
+              sizes="(max-width: 768px) 75vw, 360px"
+              quality={85}
+              className="object-contain transition-transform duration-500 hover:scale-105"
+              style={{
+                mixBlendMode: 'screen',
+                filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.5))',
+              }}
+            />
+          </div>
         )}
       </div>
     </div>

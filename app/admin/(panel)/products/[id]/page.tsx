@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { upsertProduct, saveVariant } from '@/app/admin/actions';
 import { redirect } from 'next/navigation';
+import SquareImageInput from '@/components/admin/SquareImageInput';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,8 +74,8 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
           <textarea name="specs" rows={4} defaultValue={specsText} placeholder={'Display: 6.7" AMOLED\nWarranty: 1 year'}
             className="w-full rounded-xl bg-paper p-3.5 font-mono text-[12.5px] outline-none focus:ring-2 focus:ring-volt" /></div>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div><span className={label}>Add image</span>
-            <input name="image" type="file" accept="image/*" className="text-[12.5px]" /></div>
+          <div><span className={label}>Add image (square 1:1)</span>
+            <SquareImageInput name="image" className="text-[12.5px]" /></div>
           <div><span className={label}>Related products (suggestions)</span>
             <select name="suggested" multiple size={4} defaultValue={suggested}
               className="w-full rounded-xl bg-paper p-2 text-[12.5px] outline-none focus:ring-2 focus:ring-volt">

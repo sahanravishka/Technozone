@@ -18,7 +18,7 @@ export default function Footer({ dict, categories, locale }:
       </div>
 
       <div className="mx-auto max-w-7xl px-4 py-16 md:px-6">
-        <div className="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
+        <div className="grid gap-10 md:grid-cols-[1.6fr_3fr]">
           {/* brand */}
           <div>
             <div className="flex items-center gap-3">
@@ -37,6 +37,8 @@ export default function Footer({ dict, categories, locale }:
             </a>
           </div>
 
+          {/* link columns — side by side on mobile too */}
+          <div className="grid grid-cols-3 gap-x-4 gap-y-8 sm:gap-x-8">
           {/* shop */}
           <nav aria-label="Shop categories">
             <h5 className="mb-4 text-[12px] font-bold uppercase tracking-[0.06em] text-white/40">{dict.nav.categories}</h5>
@@ -68,6 +70,7 @@ export default function Footer({ dict, categories, locale }:
               <li><Link href={`/${locale}/cart`} className={linkCls}>{dict.cart.title}</Link></li>
             </ul>
           </nav>
+          </div>
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-[12.5px] font-semibold text-white/45 sm:flex-row">
