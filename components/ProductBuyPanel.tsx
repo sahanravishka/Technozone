@@ -194,7 +194,7 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
             }).map(([k, v], i) => (
               <div key={k + i} className={`flex flex-col gap-1 py-3 text-[13px] sm:flex-row sm:items-baseline sm:justify-between sm:gap-4 ${i ? 'border-t border-line/50' : ''}`}>
                 <dt className="shrink-0 text-muted">{k}</dt>
-                <dd className="font-medium sm:text-right text-ink/90 whitespace-pre-wrap">{v}</dd>
+                <dd className="min-w-0 break-words font-medium text-ink/90 whitespace-pre-wrap sm:text-right">{v}</dd>
               </div>
             ))}
           </div>
