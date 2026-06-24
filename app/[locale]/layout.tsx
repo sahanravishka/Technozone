@@ -29,9 +29,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       'chargers', 'earbuds', 'phone repair Sri Lanka', SITE.name
     ],
     robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
-    alternates: {
-      languages: Object.fromEntries(locales.map(l => [l, `/${l}`]))
-    },
     openGraph: {
       type: 'website', siteName: SITE.name, locale,
       url: `${SITE.url}/${locale}`, title: SITE.seoTitle, description: SITE.description

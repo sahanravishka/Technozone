@@ -6,30 +6,43 @@ import { SITE } from '@/lib/site';
 // Refresh hourly so newly added products appear in the sitemap without a redeploy.
 export const revalidate = 3600;
 
+const langAlts = (path: string) =>
+  Object.fromEntries([
+    ...locales.map(l => [l, `${SITE.url}/${l}${path}`]),
+    ['x-default', `${SITE.url}/en${path}`]
+  ]);
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [cats, products] = await Promise.all([getCategories(), getProducts()]);
   const now = new Date().toISOString();
   const out: MetadataRoute.Sitemap = [];
 
-  for (const l of locales) {
-    // Homepage — highest priority
-    out.push({ url: `${SITE.url}/${l}`, lastModified: now, changeFrequency: 'daily', priority: 1 });
+  // Only emit one entry per canonical path (English), with hreflang alternates covering all locales
+  out.push({
+    url: `${SITE.url}/en`,
+    lastModified: now, changeFrequency: 'daily', priority: 1,
+    alternates: { languages: langAlts('') }
+  });
 
-    // Category pages
-    for (const c of cats)
-      out.push({ url: `${SITE.url}/${l}/category/${c.slug}`, lastModified: now, changeFrequency: 'daily', priority: 0.8 });
+  for (const c of cats)
+    out.push({
+      url: `${SITE.url}/en/category/${c.slug}`,
+      lastModified: now, changeFrequency: 'daily', priority: 0.8,
+      alternates: { languages: langAlts(`/category/${c.slug}`) }
+    });
 
-    // Product pages
-    for (const p of products)
-      out.push({ url: `${SITE.url}/${l}/product/${p.slug}`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 });
+  for (const p of products)
+    out.push({
+      url: `${SITE.url}/en/product/${p.slug}`,
+      lastModified: now, changeFrequency: 'weekly', priority: 0.9,
+      alternates: { languages: langAlts(`/product/${p.slug}`) }
+    });
 
-    // Service pages
-    out.push({ url: `${SITE.url}/${l}/services`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 });
-    out.push({ url: `${SITE.url}/${l}/warranty`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 });
-    out.push({ url: `${SITE.url}/${l}/track`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 });
-    out.push({ url: `${SITE.url}/${l}/returns`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 });
-    out.push({ url: `${SITE.url}/${l}/search`, lastModified: now, changeFrequency: 'daily', priority: 0.6 });
-  }
+  out.push({ url: `${SITE.url}/en/services`, lastModified: now, changeFrequency: 'monthly', priority: 0.7, alternates: { languages: langAlts('/services') } });
+  out.push({ url: `${SITE.url}/en/warranty`, lastModified: now, changeFrequency: 'monthly', priority: 0.5, alternates: { languages: langAlts('/warranty') } });
+  out.push({ url: `${SITE.url}/en/track`, lastModified: now, changeFrequency: 'monthly', priority: 0.5, alternates: { languages: langAlts('/track') } });
+  out.push({ url: `${SITE.url}/en/returns`, lastModified: now, changeFrequency: 'monthly', priority: 0.5, alternates: { languages: langAlts('/returns') } });
+  out.push({ url: `${SITE.url}/en/search`, lastModified: now, changeFrequency: 'daily', priority: 0.6, alternates: { languages: langAlts('/search') } });
 
   return out;
 }

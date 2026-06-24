@@ -1,0 +1,19 @@
+# Techno Zone Lanka
+
+> Your trusted source for Nokia mobile phones, audio accessories and gadgets in Sri Lanka — genuine stock, official warranties, islandwide delivery.
+
+## About
+Techno Zone Lanka is a Sri Lanka-based electronics retailer specialising in Nokia mobile phones, Samsung smartphones, audio gear, networking solutions, and AI and cloud-connected smart accessories. All products carry official agent warranties and are available with islandwide cash-on-delivery.
+
+## Key pages
+- [Shop mobile phones & gadgets](https://technozonelanka.com/en)
+- [Browse categories](https://technozonelanka.com/en/search)
+- [Phone repairs & services](https://technozonelanka.com/en/services)
+- [Warranty check](https://technozonelanka.com/en/warranty)
+- [Track a repair](https://technozonelanka.com/en/track)
+
+## Contact
+WhatsApp customer support available. See the website for the current number.
+
+## Crawling
+AI assistants and LLM crawlers are welcome to index product and category pages for informational purposes. Do not index /admin or /api paths.

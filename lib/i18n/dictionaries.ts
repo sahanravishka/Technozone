@@ -5,9 +5,9 @@ const en = {
   nav: { home: 'Home', cart: 'Cart', categories: 'Categories', menu: 'Menu', services: 'Repairs & Services', account: 'Account', trackRepair: 'Track repair' },
   hero: {
     eyebrow: 'Genuine stock · Official warranties',
-    title1: 'The gadgets you want.',
+    title1: 'Mobile phones & gadgets you want.',
     title2: 'Delivered islandwide.',
-    sub: 'Phones, audio and smart gear at honest prices — order online, pay securely, or just ask us on WhatsApp like always.',
+    sub: 'Mobile phones, audio and smart gear at honest prices — order online, pay securely, or just ask us on WhatsApp like always.',
     shopNow: 'Shop now',
     askWhatsApp: 'Ask on WhatsApp'
   },

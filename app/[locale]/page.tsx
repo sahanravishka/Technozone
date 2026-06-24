@@ -35,7 +35,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
   return {
     alternates: {
       canonical: `/${locale}`,
-      languages: Object.fromEntries(locales.map(l => [l, `/${l}`]))
+      languages: {
+        ...Object.fromEntries(locales.map(l => [l, `/${l}`])),
+        'x-default': '/en'
+      }
     }
   };
 }
@@ -237,6 +240,25 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
               </div>
             </div>
           ))}
+        </section>
+      </Reveal>
+
+      {/* ===================== SEO CONTENT — mobile phones, Nokia, networking, readability ===================== */}
+      <Reveal>
+        <section className="pb-12 md:pb-16" aria-label="About Techno Zone Lanka">
+          <div className="rounded-[28px] border border-line bg-card px-8 py-8 md:px-12 md:py-10">
+            <h2 className="mb-5 text-[1.35rem] font-extrabold tracking-[-0.025em]">
+              Mobile phones &amp; gadgets in Sri Lanka
+            </h2>
+            <div className="grid gap-5 text-[14.5px] leading-[1.75] text-muted sm:grid-cols-2">
+              <p>
+                Techno Zone Lanka stocks genuine mobile phones — from Nokia handsets and Samsung flagships to budget smartphones — all backed by official agent warranties. Browse online, pick your device, and get it delivered anywhere in Sri Lanka.
+              </p>
+              <p>
+                Our range goes beyond mobile phones. We carry AI and cloud-ready smart accessories, audio gear, networking solutions, tablets and device repair services. Every item is sourced through authorised channels so you get real warranty cover and honest after-sales support.
+              </p>
+            </div>
+          </div>
         </section>
       </Reveal>
 

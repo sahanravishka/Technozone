@@ -1,10 +1,24 @@
 import type { Metadata } from 'next';
 import type { Locale } from '@/lib/i18n/config';
+import { locales } from '@/lib/i18n/config';
 import { getDict } from '@/lib/i18n/dictionaries';
 import { getServiceTypes } from '@/lib/data';
 import RepairForm from '@/components/RepairForm';
 
-export const metadata: Metadata = { title: 'Repairs & Services' };
+export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
+  const { locale } = await params;
+  return {
+    title: 'Phone Repairs & Services in Sri Lanka',
+    description: 'Book a mobile phone or device repair at Techno Zone Lanka. Screen replacements, battery swaps, charging port fixes and software help. WhatsApp updates at every step.',
+    alternates: {
+      canonical: `/${locale}/services`,
+      languages: {
+        ...Object.fromEntries(locales.map(l => [l, `/${l}/services`])),
+        'x-default': '/en/services'
+      }
+    }
+  };
+}
 
 export default async function ServicesPage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
