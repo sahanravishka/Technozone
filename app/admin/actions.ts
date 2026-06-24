@@ -220,6 +220,55 @@ export async function toggleStaff(userId: string, active: boolean) {
   revalidatePath('/admin/staff');
 }
 
+export async function createStaffAccount(form: FormData) {
+  await requireStaff(['owner']);
+  const admin = getAdminSupabase()!;
+  const email    = String(form.get('email')     || '').trim().toLowerCase();
+  const password = String(form.get('password')  || '');
+  const fullName = String(form.get('full_name') || email);
+  const roleName = String(form.get('role')      || 'packer');
+
+  if (!email || !password) throw new Error('Email and password are required.');
+  if (password.length < 6) throw new Error('Password must be at least 6 characters.');
+
+  const { data: auth, error: authErr } = await admin.auth.admin.createUser({
+    email, password, email_confirm: true,
+    user_metadata: { full_name: fullName },
+  });
+  if (authErr) throw new Error(authErr.message);
+
+  const { data: role } = await admin.from('roles').select('id').eq('name', roleName).single();
+  const { error: staffErr } = await admin.from('staff').insert({
+    user_id: auth.user.id, role_id: role?.id, full_name: fullName, is_active: true,
+  });
+  if (staffErr) {
+    await admin.auth.admin.deleteUser(auth.user.id).catch(() => {});
+    throw new Error(staffErr.message);
+  }
+  revalidatePath('/admin/staff');
+}
+
+export async function deleteStaff(userId: string) {
+  const me = await requireStaff(['owner']);
+  if (me.user_id === userId) throw new Error('Cannot delete your own account.');
+  const admin = getAdminSupabase()!;
+  await admin.from('staff').delete().eq('user_id', userId);
+  const { error } = await admin.auth.admin.deleteUser(userId);
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/staff');
+}
+
+export async function resetStaffPassword(form: FormData) {
+  await requireStaff(['owner']);
+  const userId      = String(form.get('user_id')      || '');
+  const newPassword = String(form.get('new_password') || '');
+  if (!userId)               throw new Error('User ID required.');
+  if (newPassword.length < 6) throw new Error('Password must be at least 6 characters.');
+  const admin = getAdminSupabase()!;
+  const { error } = await admin.auth.admin.updateUserById(userId, { password: newPassword });
+  if (error) throw new Error(error.message);
+}
+
 // ============================================================================
 // CRM · Reviews · Repairs (added in CRM/services build)
 // ============================================================================
