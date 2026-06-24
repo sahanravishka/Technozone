@@ -62,8 +62,8 @@ export async function recallOrder(orderId: string) {
   const { data: items } = await admin.from('order_items')
     .select('variant_id, qty').eq('order_id', orderId);
   for (const i of items ?? []) {
-    await admin.rpc('reserve_stock', { p_order_id: orderId, p_variant_id: i.variant_id, p_qty: i.qty })
-      .catch(() => {});
+    try { await admin.rpc('reserve_stock', { p_order_id: orderId, p_variant_id: i.variant_id, p_qty: i.qty }); }
+    catch { /* ignore — stock may be exhausted */ }
   }
   revalidatePath('/admin/orders');
 }
