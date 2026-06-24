@@ -12,6 +12,7 @@ const STATUS_TABS = [
   { key: 'packed',    label: 'Packed',    dot: '#0284C7' },
   { key: 'shipped',   label: 'Shipped',   dot: '#7C3AED' },
   { key: 'delivered', label: 'Delivered', dot: '#059669' },
+  { key: 'cancelled', label: 'Cancelled', dot: '#9CA3AF' },
 ] as const;
 
 export default function OrderBoard({
@@ -26,14 +27,14 @@ export default function OrderBoard({
 
   const shown = filter === 'all' ? orders : orders.filter(o => o.status === filter);
 
-  // Count pending + paid for urgent attention badge
   const urgent = orders.filter(o => o.status === 'pending' || o.status === 'paid').length;
+  const activeOrders = orders.filter(o => o.status !== 'cancelled');
 
   return (
     <div>
       <PageHeader
         title="Orders"
-        subtitle={urgent > 0 ? `${urgent} order${urgent !== 1 ? 's' : ''} need attention` : `${orders.length} active orders`}
+        subtitle={urgent > 0 ? `${urgent} order${urgent !== 1 ? 's' : ''} need attention` : `${activeOrders.length} active orders`}
       >
         {sel.size > 0 && (
           <a href={`/admin/print?ids=${[...sel].join(',')}`} target="_blank"

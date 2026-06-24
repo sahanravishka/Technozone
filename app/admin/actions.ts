@@ -49,6 +49,25 @@ export async function advanceOrder(orderId: string, to: string) {
   revalidatePath('/admin/orders');
 }
 
+export async function recallOrder(orderId: string) {
+  await requireStaff(['owner']);
+  const supabase = (await getServerSupabase())!;
+  const { error } = await supabase.from('orders')
+    .update({ status: 'pending' })
+    .eq('id', orderId)
+    .eq('status', 'cancelled');
+  if (error) throw new Error(error.message);
+  // Best-effort stock re-reservation; may fail if stock is now sold out.
+  const admin = getAdminSupabase()!;
+  const { data: items } = await admin.from('order_items')
+    .select('variant_id, qty').eq('order_id', orderId);
+  for (const i of items ?? []) {
+    await admin.rpc('reserve_stock', { p_order_id: orderId, p_variant_id: i.variant_id, p_qty: i.qty })
+      .catch(() => {});
+  }
+  revalidatePath('/admin/orders');
+}
+
 // ---------------- Products ----------------
 export async function upsertProduct(form: FormData) {
   await requireStaff(['owner', 'manager']);

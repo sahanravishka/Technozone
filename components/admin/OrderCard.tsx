@@ -1,7 +1,7 @@
 'use client';
 
-import { useTransition } from 'react';
-import { advanceOrder, markOrderCollected } from '@/app/admin/actions';
+import { useState, useTransition } from 'react';
+import { advanceOrder, markOrderCollected, recallOrder } from '@/app/admin/actions';
 import { formatLKR } from '@/lib/site';
 
 /* ── Types ── */
@@ -25,6 +25,7 @@ const STATUS_PILL: Record<string, { label: string; bg: string; color: string }> 
   packed:    { label: 'Packed',      bg: '#E0F2FE', color: '#075985' },
   shipped:   { label: 'Shipped',     bg: '#EDE9FE', color: '#5B21B6' },
   delivered: { label: 'Delivered ✓', bg: '#D1FAE5', color: '#065F46' },
+  cancelled: { label: 'Cancelled',   bg: '#F3F4F6', color: '#6B7280' },
 };
 const PAY_LABEL: Record<string, string> = {
   cod: 'Cash on delivery', whatsapp: 'WhatsApp pay', payhere: 'Online payment',
@@ -41,14 +42,18 @@ export default function OrderCard({
   onSelect: (id: string, on: boolean) => void;
   onPack:   (o: AdminOrder) => void;
 }) {
-  const [pending, start] = useTransition();
-  const next      = NEXT[order.status];
-  const pill      = STATUS_PILL[order.status];
-  const needScan  = (order.requiredSerials ?? 0) > 0;
-  const paid      = order.payment_status === 'paid';
-  // COD customers pay at the door — no payment warning needed.
-  // Only WhatsApp orders need payment confirmed before packing/shipping.
+  const [pending, start]       = useTransition();
+  const [cancelStep, setCancelStep] = useState(0); // 0=idle 1=warn 2=confirm
+  const [recallStep, setRecallStep] = useState(0); // 0=idle 1=confirm
+  const [recallErr, setRecallErr]   = useState('');
+
+  const next     = NEXT[order.status];
+  const pill     = STATUS_PILL[order.status];
+  const needScan = (order.requiredSerials ?? 0) > 0;
+  const paid     = order.payment_status === 'paid';
   const needsPayConfirm = order.payment_method === 'whatsapp' && !paid;
+  const isCancelled     = order.status === 'cancelled';
+
   const totalQty  = order.order_items.reduce((n, i) => n + i.qty, 0);
   const itemsText = order.order_items
     .slice(0, 3).map(i => `${i.qty}× ${i.product_name ?? 'item'}`).join(', ')
@@ -56,14 +61,28 @@ export default function OrderCard({
   const date = new Date(order.created_at)
     .toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 
+  const doCancel = () => {
+    setCancelStep(0);
+    start(() => advanceOrder(order.id, 'cancelled'));
+  };
+  const doRecall = () => {
+    setRecallErr('');
+    start(async () => {
+      try { await recallOrder(order.id); setRecallStep(0); }
+      catch (e) { setRecallErr(e instanceof Error ? e.message : 'Failed'); setRecallStep(0); }
+    });
+  };
+
   return (
-    <div className="admin-card overflow-hidden">
+    <div className={`admin-card overflow-hidden ${isCancelled ? 'opacity-70' : ''}`}>
 
       {/* ── Header: order #, status, total ── */}
       <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
-        <input type="checkbox" checked={selected}
-          onChange={e => onSelect(order.id, e.target.checked)}
-          className="h-4 w-4 shrink-0 accent-volt" aria-label={`Select ${order.order_number}`} />
+        {!isCancelled && (
+          <input type="checkbox" checked={selected}
+            onChange={e => onSelect(order.id, e.target.checked)}
+            className="h-4 w-4 shrink-0 accent-volt" aria-label={`Select ${order.order_number}`} />
+        )}
         <span className="text-[15px] font-extrabold tracking-tight">{order.order_number}</span>
         {pill && (
           <span className="rounded-lg px-2.5 py-1 text-[11.5px] font-bold"
@@ -95,41 +114,90 @@ export default function OrderCard({
 
       {/* ── Action bar ── */}
       <div className="flex flex-wrap items-center gap-2 border-t border-line bg-paper/60 px-4 py-3">
-        {/* Primary: advance status */}
-        {next && (order.status === 'paid'
-          ? (
-            <button onClick={() => onPack(order)} disabled={pending}
-              className="pressable rounded-xl bg-volt px-5 py-2.5 text-[13px] font-bold text-white hover:bg-volt-deep disabled:opacity-50">
-              {needScan ? '📷 Pack & scan IMEI' : '✓ Pack order'}
-            </button>
-          ) : (
-            <button onClick={() => start(() => advanceOrder(order.id, next))} disabled={pending}
-              className="pressable rounded-xl bg-volt px-5 py-2.5 text-[13px] font-bold text-white hover:bg-volt-deep disabled:opacity-50">
-              {NEXT_BTN[order.status]}
-            </button>
-          )
+
+        {/* ── Active order actions ── */}
+        {!isCancelled && (
+          <>
+            {/* Primary: advance status */}
+            {next && (order.status === 'paid'
+              ? (
+                <button onClick={() => onPack(order)} disabled={pending}
+                  className="pressable rounded-xl bg-volt px-5 py-2.5 text-[13px] font-bold text-white hover:bg-volt-deep disabled:opacity-50">
+                  {needScan ? '📷 Pack & scan IMEI' : '✓ Pack order'}
+                </button>
+              ) : (
+                <button onClick={() => start(() => advanceOrder(order.id, next))} disabled={pending}
+                  className="pressable rounded-xl bg-volt px-5 py-2.5 text-[13px] font-bold text-white hover:bg-volt-deep disabled:opacity-50">
+                  {NEXT_BTN[order.status]}
+                </button>
+              )
+            )}
+
+            {/* Confirm WhatsApp payment (COD pays at delivery — no confirm needed) */}
+            {needsPayConfirm && (
+              <button onClick={() => start(() => markOrderCollected(order.id))} disabled={pending}
+                className="pressable rounded-xl bg-[#E8F7EE] px-5 py-2.5 text-[13px] font-bold text-ok hover:bg-[#d5f0e2] disabled:opacity-50">
+                💵 Confirm payment
+              </button>
+            )}
+
+            {/* WhatsApp */}
+            <a href={waHref} target="_blank" rel="noopener noreferrer"
+              className="pressable rounded-xl border border-line bg-card px-5 py-2.5 text-[13px] font-bold text-muted hover:bg-paper">
+              💬 WhatsApp
+            </a>
+
+            {/* Cancel — pending only, two-step with warning */}
+            {order.status === 'pending' && (
+              <div className="ml-auto flex items-center gap-2">
+                {cancelStep === 0 && (
+                  <button onClick={() => setCancelStep(1)} disabled={pending}
+                    className="pressable rounded-xl px-4 py-2.5 text-[13px] font-semibold text-muted hover:bg-paper disabled:opacity-50">
+                    Cancel order
+                  </button>
+                )}
+                {cancelStep === 1 && (
+                  <div className="flex items-center gap-2 rounded-xl bg-[#FEF2F2] px-3 py-2">
+                    <span className="text-[12.5px] font-semibold text-sale">Cancel this order?</span>
+                    <button onClick={doCancel} disabled={pending}
+                      className="pressable rounded-lg bg-sale px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-50">
+                      Yes, cancel
+                    </button>
+                    <button onClick={() => setCancelStep(0)}
+                      className="pressable rounded-lg bg-white px-3 py-1.5 text-[12px] font-semibold text-muted">
+                      Keep it
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
 
-        {/* Confirm WhatsApp payment (not needed for COD — paid at delivery) */}
-        {needsPayConfirm && (
-          <button onClick={() => start(() => markOrderCollected(order.id))} disabled={pending}
-            className="pressable rounded-xl bg-[#E8F7EE] px-5 py-2.5 text-[13px] font-bold text-ok hover:bg-[#d5f0e2] disabled:opacity-50">
-            💵 Confirm payment
-          </button>
-        )}
-
-        {/* WhatsApp */}
-        <a href={waHref} target="_blank" rel="noopener noreferrer"
-          className="pressable rounded-xl border border-line bg-card px-5 py-2.5 text-[13px] font-bold text-muted hover:bg-paper">
-          💬 WhatsApp
-        </a>
-
-        {/* Cancel — only visible on pending */}
-        {order.status === 'pending' && (
-          <button onClick={() => start(() => advanceOrder(order.id, 'cancelled'))} disabled={pending}
-            className="pressable ml-auto rounded-xl px-4 py-2.5 text-[13px] font-semibold text-sale hover:bg-[#FEF2F2] disabled:opacity-50">
-            Cancel order
-          </button>
+        {/* ── Cancelled order: recall option (owner only on server) ── */}
+        {isCancelled && (
+          <div className="flex w-full flex-wrap items-center gap-2">
+            {recallStep === 0 && (
+              <button onClick={() => setRecallStep(1)} disabled={pending}
+                className="pressable rounded-xl bg-paper px-5 py-2.5 text-[13px] font-semibold text-muted hover:bg-line disabled:opacity-50">
+                ↩ Recall order
+              </button>
+            )}
+            {recallStep === 1 && (
+              <div className="flex flex-wrap items-center gap-2 rounded-xl bg-volt-soft px-3 py-2">
+                <span className="text-[12.5px] font-semibold text-volt">Recall and reopen as Pending?</span>
+                <button onClick={doRecall} disabled={pending}
+                  className="pressable rounded-lg bg-volt px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-50">
+                  Yes, recall
+                </button>
+                <button onClick={() => setRecallStep(0)}
+                  className="pressable rounded-lg bg-white px-3 py-1.5 text-[12px] font-semibold text-muted">
+                  No
+                </button>
+              </div>
+            )}
+            {recallErr && <p className="text-[11.5px] font-semibold text-sale">{recallErr}</p>}
+          </div>
         )}
       </div>
     </div>
