@@ -18,7 +18,7 @@ type Result =
 
 export async function createOrder(input: {
   lines: CartLine[]; locale: string;
-  name: string; phone: string; address: string; city: string;
+  name: string; phone: string; address: string; city: string; postalCode?: string;
   email?: string;
   zoneId: string; couponCode?: string;
   paymentMethod?: PaymentMethod;       // defaults to payhere
@@ -118,7 +118,7 @@ export async function createOrder(input: {
     fulfillment: isPickup ? 'pickup' : 'delivery',
     coupon_id: coupon?.id ?? null, coupon_code: coupon?.code ?? null,
     delivery_zone_id: zoneId, delivery_zone_name: zoneName,
-    shipping_address: { name: input.name, phone: input.phone, line1: input.address ?? '', city: input.city ?? '' },
+    shipping_address: { name: input.name, phone: input.phone, line1: input.address ?? '', city: input.city ?? '', postal_code: input.postalCode ?? '' },
     customer_phone: input.phone
   }).select('id, order_number').single();
   if (oErr || !order) {

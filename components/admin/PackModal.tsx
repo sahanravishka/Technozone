@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from 'react';
 import { advanceOrder, dispatchScanSerial, type DispatchScanResult } from '@/app/admin/actions';
 import type { AdminOrder } from './OrderCard';
+import BarcodeScanner from './BarcodeScanner';
 
 // Pack step: register each warranty device's IMEI/serial (auto-creates the
 // warranty + loyalty), then mark the order packed. Packing is blocked until
@@ -15,15 +16,15 @@ export default function PackModal({ order, onClose }: { order: AdminOrder; onClo
   const [serial, setSerial] = useState('');
   const [log, setLog] = useState<string[]>([]);
   const [err, setErr] = useState('');
+  const [scanning, setScanning] = useState(false);
   const [pending, start] = useTransition();
   const ref = useRef<HTMLInputElement>(null);
   const remaining = Math.max(required - done, 0);
 
-  const scan = (e: React.FormEvent) => {
-    e.preventDefault();
-    const s = serial.trim();
+  const submitSerial = (s: string) => {
+    s = s.trim();
     if (!s) return;
-    setErr('');
+    setErr(''); setScanning(false);
     start(async () => {
       try {
         const r: DispatchScanResult = await dispatchScanSerial(order.id, s, variantId || null);
@@ -35,6 +36,11 @@ export default function PackModal({ order, onClose }: { order: AdminOrder; onClo
         setErr(e instanceof Error ? e.message : 'scan failed');
       }
     });
+  };
+
+  const scan = (e: React.FormEvent) => {
+    e.preventDefault();
+    submitSerial(serial);
   };
 
   const pack = () => {
@@ -68,6 +74,16 @@ export default function PackModal({ order, onClose }: { order: AdminOrder; onClo
                 </li>
               ))}
             </ul>
+            {/* Camera scanner overlay */}
+            {scanning && (
+              <div className="mt-3">
+                <BarcodeScanner
+                  onScan={submitSerial}
+                  onClose={() => setScanning(false)}
+                />
+              </div>
+            )}
+
             <form onSubmit={scan} className="mt-3 flex flex-wrap items-center gap-2">
               {warrantyItems.length > 1 && (
                 <select value={variantId} onChange={e => setVariantId(e.target.value)}
@@ -76,9 +92,16 @@ export default function PackModal({ order, onClose }: { order: AdminOrder; onClo
                 </select>
               )}
               <input ref={ref} value={serial} onChange={e => setSerial(e.target.value)} autoFocus autoComplete="off"
-                placeholder="Scan IMEI / serial" className="h-9 w-44 rounded-lg bg-paper px-2.5 text-[12.5px] outline-none focus:ring-2 focus:ring-volt" />
+                placeholder="Type IMEI / serial" className="h-9 w-44 rounded-lg bg-paper px-2.5 text-[12.5px] outline-none focus:ring-2 focus:ring-volt" />
               <button disabled={pending || !serial.trim()}
-                className="pressable rounded-lg bg-volt px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-50">Scan</button>
+                className="pressable rounded-lg bg-volt px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-50">
+                Confirm
+              </button>
+              {/* Camera scan button */}
+              <button type="button" onClick={() => setScanning(s => !s)}
+                className={`pressable rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors ${scanning ? 'bg-volt text-white' : 'bg-paper text-muted hover:bg-line'}`}>
+                📷 Camera
+              </button>
             </form>
             {log.map((l, n) => <p key={n} className="mt-2 rounded-lg bg-[#E8F7EE] px-3 py-1.5 text-[11.5px] text-ok">{l}</p>)}
           </>

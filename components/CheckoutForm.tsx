@@ -26,7 +26,7 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
   const { items, subtotal, clear, add } = useCart();
   const router = useRouter();
   const [mode, setMode] = useState<'guest' | 'signin'>(signedIn ? 'signin' : 'guest');
-  const [f, setF] = useState({ name: '', phone: '', email: '', address: '', city: '', zoneId: zones[0]?.id ?? '', coupon: '' });
+  const [f, setF] = useState({ name: '', phone: '', email: '', address: '', city: '', postalCode: '', zoneId: zones[0]?.id ?? '', coupon: '' });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [pay, setPay] = useState<'payhere' | 'cod' | 'whatsapp'>(payhereOn ? 'payhere' : 'cod');
@@ -77,7 +77,7 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
     setBusy(true); setErr('');
     const res = await createOrder({
       lines: items.map(i => ({ variantId: i.variantId, qty: i.qty })),
-      locale, name: f.name, phone: f.phone, address: f.address, city: f.city,
+      locale, name: f.name, phone: f.phone, address: f.address, city: f.city, postalCode: f.postalCode,
       email: mode === 'guest' ? f.email : undefined,
       zoneId: f.zoneId, couponCode: f.coupon || undefined,
       paymentMethod: pay, fulfillment
@@ -171,9 +171,12 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
             <Field text={dict.form.address}>
               <input className={inputCls} value={f.address} onChange={e => setF({ ...f, address: e.target.value })} autoComplete="street-address" />
             </Field>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <Field text={dict.form.city}>
                 <input className={inputCls} value={f.city} onChange={e => setF({ ...f, city: e.target.value })} />
+              </Field>
+              <Field text="Postal code">
+                <input className={inputCls} value={f.postalCode} onChange={e => setF({ ...f, postalCode: e.target.value })} inputMode="numeric" placeholder="e.g. 10250" maxLength={10} autoComplete="postal-code" />
               </Field>
               <Field text={dict.cart.deliveryZone}>
                 <select className={inputCls} value={f.zoneId} onChange={e => setF({ ...f, zoneId: e.target.value })}>

@@ -45,8 +45,10 @@ export default function OrderCard({
   const next      = NEXT[order.status];
   const pill      = STATUS_PILL[order.status];
   const needScan  = (order.requiredSerials ?? 0) > 0;
-  const isOffline = order.payment_method === 'cod' || order.payment_method === 'whatsapp';
   const paid      = order.payment_status === 'paid';
+  // COD customers pay at the door — no payment warning needed.
+  // Only WhatsApp orders need payment confirmed before packing/shipping.
+  const needsPayConfirm = order.payment_method === 'whatsapp' && !paid;
   const totalQty  = order.order_items.reduce((n, i) => n + i.qty, 0);
   const itemsText = order.order_items
     .slice(0, 3).map(i => `${i.qty}× ${i.product_name ?? 'item'}`).join(', ')
@@ -70,9 +72,9 @@ export default function OrderCard({
         <span className="rounded-lg bg-paper px-2.5 py-1 text-[11.5px] font-semibold text-muted">
           {PAY_LABEL[order.payment_method ?? ''] ?? 'Unknown payment'}
         </span>
-        {isOffline && !paid && (
+        {needsPayConfirm && (
           <span className="rounded-lg bg-[#FEE2E2] px-2.5 py-1 text-[11.5px] font-bold text-sale">
-            ⚠ Cash not collected
+            ⚠ Payment not received
           </span>
         )}
         {order.fulfillment === 'pickup' && (
@@ -108,8 +110,8 @@ export default function OrderCard({
           )
         )}
 
-        {/* Confirm cash payment */}
-        {isOffline && !paid && (
+        {/* Confirm WhatsApp payment (not needed for COD — paid at delivery) */}
+        {needsPayConfirm && (
           <button onClick={() => start(() => markOrderCollected(order.id))} disabled={pending}
             className="pressable rounded-xl bg-[#E8F7EE] px-5 py-2.5 text-[13px] font-bold text-ok hover:bg-[#d5f0e2] disabled:opacity-50">
             💵 Confirm payment
