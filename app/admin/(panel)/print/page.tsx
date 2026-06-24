@@ -19,10 +19,25 @@ export default async function PrintSlips({ searchParams }:
     .select('id, order_number, total, customer_phone, shipping_address, payment_method, order_items(product_name, variant_name, qty)')
     .in('id', idList);
 
-  const labels = await Promise.all((orders ?? []).map(async o => ({
-    ...o,
-    qr: await QRCode.toDataURL(`${SITE.url}/admin/orders?focus=${o.id}`, { margin: 0, width: 160 })
-  })));
+  // QR encodes the order details as plain text — scanning with any phone
+  // camera shows the order summary directly (no website link to open).
+  const labels = await Promise.all((orders ?? []).map(async o => {
+    const a = o.shipping_address as {
+      name?: string; phone?: string; line1?: string; city?: string; postal_code?: string;
+    };
+    const itemLines = o.order_items
+      .map(i => `- ${i.product_name}${i.variant_name && i.variant_name !== 'Default' ? ` (${i.variant_name})` : ''} x${i.qty}`)
+      .join('\n');
+    const text =
+      `Techno Zone Lanka\n` +
+      `Order ${o.order_number}\n` +
+      `${PAY_LABEL[o.payment_method ?? ''] ?? o.payment_method ?? ''}\n` +
+      `\nShip to:\n${a?.name ?? '-'}\n${a?.phone ?? o.customer_phone}\n` +
+      `${[a?.line1, a?.city, a?.postal_code].filter(Boolean).join(', ')}\n` +
+      `\nItems:\n${itemLines}\n` +
+      `\nTotal: ${formatLKR(o.total)}`;
+    return { ...o, qr: await QRCode.toDataURL(text, { margin: 0, width: 200 }) };
+  }));
 
   const phone = SITE.whatsapp.replace(/^94/, '0').replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3');
 
