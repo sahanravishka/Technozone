@@ -18,7 +18,7 @@ async function buildDetector(): Promise<DetectorLike> {
   // Polyfill for iOS / Safari — loaded lazily so Android users pay nothing
   const { BarcodeDetector: Poly } = await import('barcode-detector/pure');
   const formats = await Poly.getSupportedFormats();
-  return new Poly({ formats }) as unknown as DetectorLike;
+  return new Poly({ formats: [...formats] }) as unknown as DetectorLike;
 }
 
 type Phase = 'permission' | 'loading' | 'scanning' | 'error';
