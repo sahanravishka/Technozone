@@ -16,8 +16,9 @@ type Props = { params: Promise<{ locale: Locale; slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const cat = (await getCategories()).find(c => c.slug === slug);
-  const title = cat?.name ?? 'Category';
-  const desc = `Shop ${cat?.name ?? 'gadgets'} online at ${SITE.name} — genuine stock, islandwide delivery across Sri Lanka.`;
+  const name = cat?.name ?? 'Gadgets';
+  const title = `${name} Price List in Sri Lanka`;
+  const desc = `Buy ${name} online in Sri Lanka at ${SITE.name}. Latest prices, genuine stock, official warranty and islandwide cash on delivery.`.slice(0, 160);
   return {
     title,
     description: desc,

@@ -25,16 +25,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!raw) return {};
   const p = localized(raw, locale);
   const img = p.product_images?.[0];
-  const desc = (p.description ?? `${p.name} — genuine stock with islandwide delivery from ${SITE.name}.`).slice(0, 160);
+  // Keyword pattern that ranks for local intent: "<Product> Price in Sri Lanka"
+  const pricing = priceProduct(p, await getActiveDiscounts());
+  const priceStr = pricing.price > 0 ? ` is Rs ${pricing.price.toLocaleString('en-LK')}` : '';
+  const title = `${p.name} Price in Sri Lanka`;
+  const desc = (p.description
+    ? `${p.name}${priceStr} at ${SITE.name}. ${p.description}`
+    : `${p.name}${priceStr} at ${SITE.name}. Genuine stock, official warranty and islandwide cash on delivery.`
+  ).slice(0, 160);
   return {
-    title: p.name,
+    title,
     description: desc,
     alternates: {
       canonical: `/${locale}/product/${slug}`,
       languages: Object.fromEntries(locales.map(l => [l, `/${l}/product/${slug}`]))
     },
     openGraph: {
-      title: p.name, description: desc, type: 'website',
+      title: `${title} — ${SITE.name}`, description: desc, type: 'website',
       images: img ? [{ url: imageUrl(img.storage_path), width: 1200, height: 1200, alt: p.name }] : []
     }
   };

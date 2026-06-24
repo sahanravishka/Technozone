@@ -19,6 +19,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     metadataBase: new URL(SITE.url),
     title: { default: SITE.seoTitle, template: `%s · ${SITE.name}` },
     description: SITE.description,
+    applicationName: SITE.name,
+    authors: [{ name: SITE.name, url: SITE.url }],
+    publisher: SITE.name,
+    creator: SITE.name,
+    keywords: [
+      'mobile phones Sri Lanka', 'phone prices Sri Lanka', 'buy phones online Sri Lanka',
+      'Nokia price Sri Lanka', 'Samsung price Sri Lanka', 'phone shop Sri Lanka',
+      'chargers', 'earbuds', 'phone repair Sri Lanka', SITE.name
+    ],
+    robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
     alternates: {
       languages: Object.fromEntries(locales.map(l => [l, `/${l}`]))
     },

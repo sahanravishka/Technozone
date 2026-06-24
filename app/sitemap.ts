@@ -3,6 +3,9 @@ import { getCategories, getProducts } from '@/lib/data';
 import { locales } from '@/lib/i18n/config';
 import { SITE } from '@/lib/site';
 
+// Refresh hourly so newly added products appear in the sitemap without a redeploy.
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [cats, products] = await Promise.all([getCategories(), getProducts()]);
   const now = new Date().toISOString();
