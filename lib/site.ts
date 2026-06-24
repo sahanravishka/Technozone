@@ -16,7 +16,7 @@ export const SITE = {
   // Public social profiles — fill these in to satisfy SEO (sameAs) and link them
   // in the footer. Empty values are skipped.
   social: {
-    facebook: '',
+    facebook: 'https://www.facebook.com/share/14YzfzBqHrP/',
     instagram: '',
     youtube: '',
     x: '',
