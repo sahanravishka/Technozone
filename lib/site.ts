@@ -11,7 +11,7 @@ export const SITE = {
   whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '94770000000',
   // Production URL — falls back to the live domain so canonical/OG/sitemap are
   // never localhost even if NEXT_PUBLIC_SITE_URL isn't set in the host.
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://technozonelanka.netlify.app',
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://technozonelanka.vercel.app',
   currency: 'LKR',
   // Public social profiles — fill these in to satisfy SEO (sameAs) and link them
   // in the footer. Empty values are skipped.
