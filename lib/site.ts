@@ -1,7 +1,7 @@
 // One place to rebrand the whole shop.
 export const SITE = {
   name: 'Techno Zone Lanka',
-  wordmark: ['TECHNO ZONE', 'LANKA'] as const,   // second part renders in logo cyan
+  wordmark: ['TECHNO ZONE', 'LANKA'] as const,   // second part renders in logo cya
   tagline: 'Genuine gadgets, islandwide.',
   // SEO <title> for the homepage / default (aim 50–60 chars)
   seoTitle: 'Techno Zone Lanka — Phones, Audio & Gadgets in Sri Lanka',
