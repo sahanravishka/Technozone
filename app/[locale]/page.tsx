@@ -247,16 +247,26 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
       <Reveal>
         <section className="pb-12 md:pb-16" aria-label="About Techno Zone Lanka">
           <div className="rounded-[28px] border border-line bg-card px-8 py-8 md:px-12 md:py-10">
-            <h2 className="mb-5 text-[1.35rem] font-extrabold tracking-[-0.025em]">
+            <h2 className="mb-6 text-[1.35rem] font-extrabold tracking-[-0.025em]">
               Mobile phones &amp; gadgets in Sri Lanka
             </h2>
-            <div className="grid gap-5 text-[14.5px] leading-[1.75] text-muted sm:grid-cols-2">
-              <p>
-                Techno Zone Lanka stocks genuine mobile phones — from Nokia handsets and Samsung flagships to budget smartphones — all backed by official agent warranties. Browse online, pick your device, and get it delivered anywhere in Sri Lanka.
-              </p>
-              <p>
-                Our range goes beyond mobile phones. We carry AI and cloud-ready smart accessories, audio gear, networking solutions, tablets and device repair services. Every item is sourced through authorised channels so you get real warranty cover and honest after-sales support.
-              </p>
+            <div className="grid gap-6 text-[14.5px] leading-[1.8] text-muted sm:grid-cols-2">
+              <div className="space-y-4">
+                <p>
+                  Techno Zone Lanka is your trusted mobile phone shop in Sri Lanka. We stock genuine Nokia mobile phones, Samsung smartphones, and budget handsets. Every phone comes with an official agent warranty. Order online and get delivery islandwide.
+                </p>
+                <p>
+                  Our Nokia range covers feature phones for everyday calls and budget smartphones for students and families. Nokia phones are built to last. They offer long battery life and reliable performance. We carry the latest Nokia models at honest prices.
+                </p>
+              </div>
+              <div className="space-y-4">
+                <p>
+                  We carry more than just mobile phones. Our store has audio gear, networking solutions, tablets, chargers, and AI and cloud-ready smart accessories. Every product is sourced through authorised channels. You get genuine warranty cover and real after-sales support.
+                </p>
+                <p>
+                  We also repair mobile phones. Our technicians handle screen replacements, battery swaps, charging port fixes, and software issues. Drop your device off or book a repair online. We send WhatsApp updates at every step so you always know the status.
+                </p>
+              </div>
             </div>
           </div>
         </section>
