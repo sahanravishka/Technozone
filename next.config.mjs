@@ -39,7 +39,9 @@ const nextConfig = {
       { key: 'X-Frame-Options', value: 'DENY' },
       { key: 'X-Content-Type-Options', value: 'nosniff' },
       { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-      { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+      // camera=(self) lets the admin IMEI/barcode scanner use the camera
+      // (browser still prompts the user); mic + geolocation stay blocked.
+      { key: 'Permissions-Policy', value: 'camera=(self), microphone=(), geolocation=()' },
       { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
       ...(process.env.NODE_ENV === 'production'
         ? [{ key: 'Content-Security-Policy', value: csp }]
