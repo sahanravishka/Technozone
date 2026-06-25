@@ -72,16 +72,9 @@ export function ProductForm({
                 placeholder="e.g. Nokia C300 Smartphone"
                 className={inp} />
             </div>
-            <div>
-              <label className={lbl}>URL slug *</label>
-              <input name="slug" required value={slugVal}
-                onChange={e => { setSlugEdited(true); setSlugVal(e.target.value); }}
-                className={inp} />
-              <p className="mt-1 text-[11px] text-muted">
-                /en/product/<span className="font-semibold text-ink">{slugVal || '…'}</span>
-                {!slugEdited && <span className="ml-2 text-volt">auto</span>}
-              </p>
-            </div>
+            {/* URL slug is auto-generated from the name — hidden from staff,
+                still submitted + editable-by-system. */}
+            <input type="hidden" name="slug" value={slugVal} />
             <div>
               <label className={lbl}>Brand</label>
               <input name="brand" defaultValue={String(product?.brand ?? '')} placeholder="Nokia" className={inp} />
