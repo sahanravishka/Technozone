@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { upsertProduct } from '@/app/admin/actions';
 import VariantBuilder, { type Preset } from './VariantBuilder';
+import WarrantySelect from './WarrantySelect';
 
 export interface ProductFormProps {
   id: string;
@@ -99,10 +100,8 @@ export function ProductForm({
                 className={inp} />
             </div>
             <div>
-              <label className={lbl}>Warranty (months)</label>
-              <input name="warranty_months" type="number" min={0}
-                defaultValue={String(product?.warranty_months ?? 12)} className={inp} />
-              <p className="mt-1 text-[11px] text-muted">Set 0 for accessories · auto-registered at dispatch</p>
+              <label className={lbl}>Warranty</label>
+              <WarrantySelect initial={Number(product?.warranty_months ?? 0)} />
             </div>
           </div>
           <label className="inline-flex cursor-pointer items-center gap-2 text-[13px] font-semibold">

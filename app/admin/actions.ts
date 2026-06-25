@@ -86,7 +86,7 @@ export async function upsertProduct(form: FormData) {
     description: String(form.get('description') || '').trim() || null,
     base_price: Number(form.get('base_price') || 0),
     is_active: form.get('is_active') === 'on',
-    warranty_months: Math.max(0, Number(form.get('warranty_months') || 12)),
+    warranty_months: Math.max(0, Number(form.get('warranty_months') || 0)),
     has_storage_variants: form.get('has_storage_variants') === 'true',
     specs
   };
