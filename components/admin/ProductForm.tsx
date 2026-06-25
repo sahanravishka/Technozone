@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { upsertProduct } from '@/app/admin/actions';
 import SquareImageInput from './SquareImageInput';
+import VariantBuilder, { type Preset } from './VariantBuilder';
 
 export interface ProductFormProps {
   id: string;
@@ -14,6 +15,7 @@ export interface ProductFormProps {
   suggested: string[];
   specsText: string;
   existingImageUrl?: string;
+  presets?: Preset[];
 }
 
 const inp = 'h-11 w-full rounded-xl bg-paper px-3.5 text-[13.5px] font-medium outline-none focus:ring-2 focus:ring-volt';
@@ -24,7 +26,7 @@ function slugify(t: string) {
 }
 
 export function ProductForm({
-  id, isNew, product, categories, allProducts, suggested, specsText, existingImageUrl,
+  id, isNew, product, categories, allProducts, suggested, specsText, existingImageUrl, presets = [],
 }: ProductFormProps) {
   const [slugVal, setSlugVal] = useState(String(product?.slug ?? ''));
   const [slugEdited, setSlugEdited] = useState(!isNew);
@@ -183,6 +185,18 @@ export function ProductForm({
           </div>
         </div>
       )}
+
+      {/* ── Section: Variants (colours × RAM/ROM) ── */}
+      <div className="admin-card overflow-hidden">
+        <div className="border-b border-line px-4 py-3 sm:px-5">
+          <h3 className="text-[13px] font-bold uppercase tracking-[0.05em] text-muted">
+            Variants — colours & RAM/ROM
+          </h3>
+        </div>
+        <div className="p-4 sm:p-5">
+          <VariantBuilder presets={presets} basePrice={Number(product?.base_price ?? 0)} />
+        </div>
+      </div>
 
       {/* Error banner */}
       {error && (

@@ -87,6 +87,7 @@ export async function upsertProduct(form: FormData) {
     base_price: Number(form.get('base_price') || 0),
     is_active: form.get('is_active') === 'on',
     warranty_months: Math.max(0, Number(form.get('warranty_months') || 12)),
+    has_storage_variants: form.get('has_storage_variants') === 'true',
     specs
   };
   if (!row.name || !row.slug) throw new Error('name and slug required');
@@ -134,8 +135,144 @@ export async function upsertProduct(form: FormData) {
     );
   }
 
+  // ── Variant builder payload (colours × RAM/ROM) ──
+  await processVariantPayload(form, productId, row.name, row.base_price);
+
   revalidatePath('/admin/products');
   return productId;
+}
+
+/**
+ * Processes the VariantBuilder payload: uploads one optimized photo per colour,
+ * then creates a product_variants row per enabled (colour × ram/rom) cell,
+ * storing the colour hex on the image and attributes on the variant.
+ * No-op if the form carries no variants_payload.
+ */
+async function processVariantPayload(
+  form: FormData,
+  productId: string,
+  productName: string,
+  basePrice: number
+) {
+  const raw = String(form.get('variants_payload') || '');
+  if (!raw) return;
+
+  let parsed: {
+    hasStorage: boolean;
+    variants: {
+      colorKey: string; colorIndex: number; hex: string | null;
+      existingPath: string | null; ram: string | null; rom: string | null;
+      stock: number; price?: number;
+    }[];
+  };
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return;
+  }
+  if (!parsed.variants?.length) return;
+
+  const supabase = (await getServerSupabase())!;
+  const admin = getAdminSupabase()!;
+  const photos = form.getAll('variant_photos').filter((f): f is File => f instanceof File);
+
+  // sharp is bundled with Next; optimize colour photos to <=1600px WebP q90.
+  let sharp: typeof import('sharp') | null = null;
+  try { sharp = (await import('sharp')).default as unknown as typeof import('sharp'); } catch { sharp = null; }
+
+  // Upload each distinct colour photo once → map colorKey → { path, hex }.
+  const colorMap = new Map<string, { path: string | null; hex: string | null }>();
+  // colorIndex aligns with the order photos were added in the builder.
+  const distinctColors = [...new Map(parsed.variants.map(v => [v.colorKey, v])).values()]
+    .sort((a, b) => a.colorIndex - b.colorIndex);
+
+  let photoCursor = 0;
+  for (const c of distinctColors) {
+    if (c.existingPath) {
+      colorMap.set(c.colorKey, { path: c.existingPath, hex: c.hex });
+      continue;
+    }
+    const file = photos[photoCursor++];
+    if (!file || file.size === 0) {
+      colorMap.set(c.colorKey, { path: null, hex: c.hex });
+      continue;
+    }
+    let buf: Uint8Array = new Uint8Array(await file.arrayBuffer());
+    let contentType = file.type || 'image/webp';
+    let ext = 'webp';
+    if (sharp) {
+      try {
+        buf = new Uint8Array(await sharp(Buffer.from(buf))
+          .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+          .webp({ quality: 90 })
+          .toBuffer());
+        contentType = 'image/webp';
+      } catch { /* keep original buffer */ ext = (file.name.split('.').pop() || 'webp').toLowerCase(); }
+    }
+    const path = `${productId}/colors/${Date.now()}-${c.colorIndex}.${ext}`;
+    const { error: upErr } = await admin.storage.from('product-images')
+      .upload(path, buf, { contentType, upsert: true });
+    colorMap.set(c.colorKey, { path: upErr ? null : path, hex: c.hex });
+  }
+
+  // Insert colour image rows (carrying hex) and capture their ids for variant links.
+  const imageIdByColor = new Map<string, string>();
+  let sort = 0;
+  for (const c of distinctColors) {
+    const info = colorMap.get(c.colorKey);
+    if (!info?.path) continue;
+    const { data, error } = await supabase.from('product_images').insert({
+      product_id: productId,
+      storage_path: info.path,
+      alt: productName,
+      color_hex: info.hex,
+      sort_order: sort++,
+    }).select('id').single();
+    if (!error && data) imageIdByColor.set(c.colorKey, data.id);
+  }
+
+  // Build variant rows. SKU = product slug-ish + attrs; unique-safe with index.
+  const skuBase = productName.toUpperCase().replace(/[^A-Z0-9]+/g, '-').slice(0, 18);
+  const rows = parsed.variants.map((v, i) => {
+    const attributes: Record<string, string> = {};
+    if (v.ram) attributes.ram = v.ram;
+    if (v.rom) attributes.rom = v.rom;
+    const info = colorMap.get(v.colorKey);
+    if (info?.hex) attributes.color = info.hex;
+    const skuParts = [skuBase, v.ram, v.rom, info?.hex?.replace('#', '')].filter(Boolean);
+    return {
+      product_id: productId,
+      sku: `${skuParts.join('-')}-${i}`.slice(0, 60),
+      name: [v.ram && v.rom ? `${v.ram}/${v.rom}` : null].filter(Boolean).join(' ') || 'Colour',
+      attributes,
+      price: v.price ?? basePrice,
+      stock_qty: Math.max(0, v.stock ?? 0),
+      is_default: i === 0,
+      is_active: true,
+    };
+  });
+
+  if (rows.length) {
+    // Replace any prior builder-made variants for a clean re-save, but keep the
+    // mandatory default if no rows (shouldn't happen here).
+    await supabase.from('product_variants')
+      .delete().eq('product_id', productId).neq('is_default', true);
+    const { data: inserted } = await supabase.from('product_variants')
+      .insert(rows).select('id, attributes');
+
+    // Link each colour's image to one of its variants (variant_id on image).
+    if (inserted) {
+      for (const [colorKey, imageId] of imageIdByColor) {
+        const info = colorMap.get(colorKey);
+        const match = inserted.find(r =>
+          (r.attributes as Record<string, string>)?.color === info?.hex);
+        if (match) {
+          await supabase.from('product_images')
+            .update({ variant_id: match.id }).eq('id', imageId);
+        }
+      }
+    }
+  }
 }
 
 export async function saveVariant(form: FormData) {

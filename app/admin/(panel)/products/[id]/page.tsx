@@ -16,9 +16,10 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
   const isNew = id === 'new';
   const supabase = (await getServerSupabase())!;
 
-  const [{ data: categories }, { data: allProducts }] = await Promise.all([
+  const [{ data: categories }, { data: allProducts }, { data: presetRows }] = await Promise.all([
     supabase.from('categories').select('id, name').order('sort_order'),
     supabase.from('products').select('id, name').order('name').limit(500),
+    supabase.from('ram_rom_presets').select('id, ram, rom').eq('is_active', true).order('sort_order'),
   ]);
 
   let product: Record<string, unknown> | null = null;
@@ -66,6 +67,7 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
         suggested={suggested}
         specsText={specsText}
         existingImageUrl={existingImageUrl}
+        presets={presetRows ?? []}
       />
 
       {/* Variants section — only shown for existing products */}
