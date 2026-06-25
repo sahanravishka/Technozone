@@ -3,7 +3,6 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { upsertProduct } from '@/app/admin/actions';
-import SquareImageInput from './SquareImageInput';
 import VariantBuilder, { type Preset } from './VariantBuilder';
 
 export interface ProductFormProps {
@@ -14,7 +13,6 @@ export interface ProductFormProps {
   allProducts: { id: string; name: string }[];
   suggested: string[];
   specsText: string;
-  existingImageUrl?: string;
   presets?: Preset[];
 }
 
@@ -26,7 +24,7 @@ function slugify(t: string) {
 }
 
 export function ProductForm({
-  id, isNew, product, categories, allProducts, suggested, specsText, existingImageUrl, presets = [],
+  id, isNew, product, categories, allProducts, suggested, specsText, presets = [],
 }: ProductFormProps) {
   const [slugVal, setSlugVal] = useState(String(product?.slug ?? ''));
   const [slugEdited, setSlugEdited] = useState(!isNew);
@@ -140,34 +138,8 @@ export function ProductForm({
         </div>
       </div>
 
-      {/* ── Section: Image ── */}
-      <div className="admin-card overflow-hidden">
-        <div className="flex items-center gap-2 border-b border-line bg-paper/60 px-5 py-3.5">
-          <span className="grid h-6 w-6 place-items-center rounded-lg bg-volt text-[11px] font-black text-white">3</span>
-          <h3 className="text-[13.5px] font-bold">Product image <span className="ml-1 text-[11px] font-normal text-muted">optional</span></h3>
-        </div>
-        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start">
-          {existingImageUrl ? (
-            <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-2xl border border-line bg-[#F0F3F8]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={existingImageUrl} alt="Current" className="h-full w-full object-cover" />
-              <span className="absolute inset-x-0 bottom-0 bg-black/50 py-1 text-center text-[9px] font-semibold text-white">Current</span>
-            </div>
-          ) : (
-            <div className="grid h-28 w-28 shrink-0 place-items-center rounded-2xl border-2 border-dashed border-line bg-paper text-[11px] font-semibold text-muted">
-              No image
-            </div>
-          )}
-          <div className="flex-1">
-            <label className={lbl}>{existingImageUrl ? 'Replace image' : 'Upload image'}</label>
-            <SquareImageInput name="image" className="text-[12.5px]" />
-            <p className="mt-2.5 rounded-xl bg-paper px-3.5 py-3 text-[11.5px] leading-[1.8] text-muted">
-              <b className="text-ink">Must be square</b> (1:1 ratio) to keep the store grid consistent.<br />
-              Recommended: <b className="text-ink">1200 × 1200 px</b> · JPEG, PNG, WebP or AVIF · Max 5 MB
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Product images now come from the colour photos in the Variants section below.
+          (Standalone single-image upload removed — each colour carries its own photo.) */}
 
       {/* ── Section: Related products ── */}
       {allProducts.length > 0 && (

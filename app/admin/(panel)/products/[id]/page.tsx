@@ -5,7 +5,6 @@ import Link from 'next/link';
 import PageHeader from '@/components/admin/PageHeader';
 import { ProductForm } from '@/components/admin/ProductForm';
 import ProductVisibilityControls from '@/components/admin/ProductVisibilityControls';
-import { imageUrl } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +25,6 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
   let product: Record<string, unknown> | null = null;
   let variants: { id: string; sku: string; name: string; price: number; stock_qty: number; is_active: boolean }[] = [];
   let suggested: string[] = [];
-  let existingImageUrl: string | undefined;
 
   if (!isNew) {
     const { data } = await supabase
@@ -38,8 +36,6 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
     product  = data;
     variants = data.product_variants;
     suggested = data.product_suggestions.map((s: { suggested_product_id: string }) => s.suggested_product_id);
-    const img = (data.product_images as { storage_path: string }[])[0];
-    if (img) existingImageUrl = imageUrl(img.storage_path);
   }
 
   const specsText = product?.specs
@@ -67,7 +63,6 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
         allProducts={allProducts ?? []}
         suggested={suggested}
         specsText={specsText}
-        existingImageUrl={existingImageUrl}
         presets={presetRows ?? []}
       />
 
