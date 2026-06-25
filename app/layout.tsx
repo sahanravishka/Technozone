@@ -27,6 +27,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="preload" as="style" href={FONTS} />
         <link rel="stylesheet" href={FONTS} />
         <meta name="theme-color" content="#0B1526" />
+        {/* Favicons — explicit declarations for browser + Google search result icon */}
+        <link rel="icon" href="/favicon.ico" sizes="48x48" />
+        <link rel="icon" href="/icon.png" type="image/png" sizes="512x512" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
         {/* DNS prefetch for external resources */}
         <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
         <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
