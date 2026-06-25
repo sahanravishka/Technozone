@@ -9,6 +9,57 @@ import Footer from '@/components/Footer';
 import PwaRegister from '@/components/PwaRegister';
 import { SITE } from '@/lib/site';
 
+const LOCAL_BUSINESS_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'ElectronicsStore',
+  name: 'Techno Zone Lanka',
+  url: 'https://technozonelanka.com',
+  telephone: '+94707501024',
+  image: 'https://technozonelanka.com/logo.jpg',
+  logo: 'https://technozonelanka.com/logo.jpg',
+  description:
+    'Shop Nokia mobile phones, tablets, audio accessories and smart gadgets in Sri Lanka. Official warranties, islandwide delivery, device repair and networking solutions.',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'Sri Soratha Mawatha, Gangodawila',
+    addressLocality: 'Nugegoda',
+    postalCode: '10250',
+    addressRegion: 'Western Province',
+    addressCountry: 'LK',
+  },
+  geo: {
+    '@type': 'GeoCoordinates',
+    latitude: 6.8535,
+    longitude: 79.8997,
+  },
+  openingHoursSpecification: [
+    {
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+      opens: '09:00',
+      closes: '21:00',
+    },
+  ],
+  sameAs: ['https://www.facebook.com/share/14YzfzBqHrP/'],
+  hasOfferCatalog: {
+    '@type': 'OfferCatalog',
+    name: 'Mobile Phones & Gadgets',
+    itemListElement: [
+      { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Nokia Mobile Phones' } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Samsung Mobile Phones' } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Audio Accessories' } },
+      { '@type': 'Offer', itemOffered: { '@type': 'Product', name: 'Phone Repair Services' } },
+    ],
+  },
+  priceRange: '$$',
+  currenciesAccepted: 'LKR',
+  paymentAccepted: 'Cash, Credit Card, Bank Transfer',
+  areaServed: {
+    '@type': 'Country',
+    name: 'Sri Lanka',
+  },
+};
+
 export function generateStaticParams() {
   return locales.map(locale => ({ locale }));
 }
@@ -48,6 +99,10 @@ export default async function LocaleLayout({ children, params }:
   return (
     // html lang must reflect locale for screen readers + SEO; set via effectless trick:
     <CartProvider>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(LOCAL_BUSINESS_JSON_LD) }}
+      />
       <SetLang locale={l} />
       <PwaRegister />
       <Header locale={l} dict={dict} categories={categories} />
