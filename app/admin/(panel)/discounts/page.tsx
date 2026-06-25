@@ -13,7 +13,7 @@ export default async function AdminDiscounts() {
     await Promise.all([
       supabase.from('discounts').select('*').order('created_at', { ascending: false }).limit(100),
       supabase.from('coupons').select('*').order('created_at', { ascending: false }).limit(100),
-      supabase.from('products').select('id, name').order('name').limit(500),
+      supabase.from('products').select('id, name').is('deleted_at', null).order('name').limit(500),
       supabase.from('categories').select('id, name').order('sort_order'),
     ]);
 

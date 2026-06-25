@@ -11,11 +11,16 @@ export default async function AdminProducts() {
   const supabase = (await getServerSupabase())!;
   const { data: products } = await supabase.from('products')
     .select('id, name, slug, is_active, product_variants(price, stock_qty), product_images(storage_path)')
+    .is('deleted_at', null)
     .order('created_at', { ascending: false }).limit(200);
 
   return (
     <div>
       <PageHeader title="Products" subtitle="Catalog, stock and pricing">
+        <Link href="/admin/products/trash"
+          className="pressable admin-card px-3.5 py-2.5 text-[12.5px] font-semibold text-muted hover:bg-paper">
+          Trash
+        </Link>
         <Link href="/admin/products/new"
           className="pressable rounded-btn bg-volt px-4 py-2.5 text-[12.5px] font-semibold text-white hover:bg-volt-deep">
           + New product

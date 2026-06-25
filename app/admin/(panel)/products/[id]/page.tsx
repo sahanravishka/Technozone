@@ -4,6 +4,7 @@ import { saveVariant } from '@/app/admin/actions';
 import Link from 'next/link';
 import PageHeader from '@/components/admin/PageHeader';
 import { ProductForm } from '@/components/admin/ProductForm';
+import ProductVisibilityControls from '@/components/admin/ProductVisibilityControls';
 import { imageUrl } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,7 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
 
   const [{ data: categories }, { data: allProducts }, { data: presetRows }] = await Promise.all([
     supabase.from('categories').select('id, name').order('sort_order'),
-    supabase.from('products').select('id, name').order('name').limit(500),
+    supabase.from('products').select('id, name').is('deleted_at', null).order('name').limit(500),
     supabase.from('ram_rom_presets').select('id, ram, rom').eq('is_active', true).order('sort_order'),
   ]);
 
@@ -69,6 +70,14 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
         existingImageUrl={existingImageUrl}
         presets={presetRows ?? []}
       />
+
+      {/* Visibility: publish/hide + delete to trash (existing products only) */}
+      {!isNew && (
+        <ProductVisibilityControls
+          productId={id}
+          isActive={Boolean(product?.is_active)}
+        />
+      )}
 
       {/* Variants section — only shown for existing products */}
       {!isNew && (

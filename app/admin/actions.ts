@@ -624,3 +624,65 @@ export async function removeCodBlock(phoneNorm: string) {
   await supabase.from('cod_blocklist').delete().eq('phone_norm', phoneNorm);
   revalidatePath('/admin/settings');
 }
+
+// ---------------- Product visibility & soft delete ----------------
+
+/** Publish ⇄ Hide: toggles whether a product appears on the website. */
+export async function setProductActive(productId: string, active: boolean) {
+  await requireStaff(['owner', 'manager']);
+  const supabase = (await getServerSupabase())!;
+  const { error } = await supabase.from('products')
+    .update({ is_active: active }).eq('id', productId);
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/products');
+  revalidatePath('/admin/products/' + productId);
+}
+
+/** Soft delete: moves a product to Trash (kept for order/warranty history). */
+export async function softDeleteProduct(productId: string) {
+  const staff = await requireStaff(['owner', 'manager']);
+  const supabase = (await getServerSupabase())!;
+  const { error } = await supabase.from('products')
+    .update({ deleted_at: new Date().toISOString(), deleted_by: staff.user_id, is_active: false })
+    .eq('id', productId);
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/products');
+  revalidatePath('/admin/products/trash');
+}
+
+/** Restore a trashed product (stays hidden until re-published). */
+export async function restoreProduct(productId: string) {
+  await requireStaff(['owner', 'manager']);
+  const supabase = (await getServerSupabase())!;
+  const { error } = await supabase.from('products')
+    .update({ deleted_at: null, deleted_by: null }).eq('id', productId);
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/products');
+  revalidatePath('/admin/products/trash');
+}
+
+/**
+ * Permanently purge a trashed product. Blocked if it has order history, to
+ * protect reports/invoices — those products should stay soft-deleted forever.
+ */
+export async function purgeProduct(productId: string) {
+  await requireStaff(['owner']);
+  const supabase = (await getServerSupabase())!;
+
+  // Guard: refuse purge if any order references this product's variants.
+  const { data: variantIds } = await supabase.from('product_variants')
+    .select('id').eq('product_id', productId);
+  const ids = (variantIds ?? []).map(v => v.id);
+  if (ids.length) {
+    const { count } = await supabase.from('order_items')
+      .select('id', { count: 'exact', head: true }).in('variant_id', ids);
+    if ((count ?? 0) > 0) {
+      throw new Error('Cannot permanently delete — this product has order history. It stays in Trash to keep your reports intact.');
+    }
+  }
+
+  // Safe to hard-delete: cascades remove variants/images/suggestions.
+  const { error } = await supabase.from('products').delete().eq('id', productId);
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/products/trash');
+}
