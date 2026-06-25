@@ -137,6 +137,8 @@ export default function VariantBuilder({
     setCells((prev) => ({ ...prev, [k]: { ...prev[k], enabled: !prev[k]?.enabled } }));
   const setCellStock = (k: string, stock: number) =>
     setCells((prev) => ({ ...prev, [k]: { ...prev[k], stock: Math.max(0, stock) } }));
+  const bumpCellStock = (k: string, delta: number) =>
+    setCells((prev) => ({ ...prev, [k]: { ...prev[k], stock: Math.max(0, (prev[k]?.stock ?? 0) + delta) } }));
 
   // "Fill all stock" convenience
   const [bulkStock, setBulkStock] = useState('');
@@ -331,13 +333,31 @@ export default function VariantBuilder({
               Availability & stock — {totalVariants} variant{totalVariants === 1 ? '' : 's'}
             </span>
             <div className="flex items-center gap-2">
-              <input
-                value={bulkStock}
-                onChange={(e) => setBulkStock(e.target.value)}
-                placeholder="Stock"
-                inputMode="numeric"
-                className="h-9 w-20 rounded-lg bg-paper px-2 text-sm"
-              />
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setBulkStock((s) => String(Math.max(0, (Number(s) || 0) - 1)))}
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-paper text-lg font-bold text-muted active:scale-90"
+                  aria-label="Decrease"
+                >
+                  −
+                </button>
+                <input
+                  value={bulkStock}
+                  onChange={(e) => setBulkStock(e.target.value)}
+                  placeholder="Stock"
+                  inputMode="numeric"
+                  className="h-9 w-14 rounded-lg bg-paper px-2 text-center text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setBulkStock((s) => String((Number(s) || 0) + 1))}
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-paper text-lg font-bold text-muted active:scale-90"
+                  aria-label="Increase"
+                >
+                  +
+                </button>
+              </div>
               <button type="button" onClick={applyBulkStock} className={`${btn} bg-paper py-1.5 text-xs`}>
                 Fill all
               </button>
@@ -381,12 +401,30 @@ export default function VariantBuilder({
                               className="h-4 w-4 accent-volt"
                             />
                             {cell.enabled && (
-                              <input
-                                value={cell.stock}
-                                onChange={(e) => setCellStock(k, Number(e.target.value) || 0)}
-                                inputMode="numeric"
-                                className="h-8 w-14 rounded-lg bg-paper px-1 text-center text-xs"
-                              />
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => bumpCellStock(k, -1)}
+                                  className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-paper text-base font-bold text-muted active:scale-90"
+                                  aria-label="Decrease stock"
+                                >
+                                  −
+                                </button>
+                                <input
+                                  value={cell.stock}
+                                  onChange={(e) => setCellStock(k, Number(e.target.value) || 0)}
+                                  inputMode="numeric"
+                                  className="h-8 w-11 rounded-lg bg-paper px-1 text-center text-xs"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => bumpCellStock(k, 1)}
+                                  className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-paper text-base font-bold text-muted active:scale-90"
+                                  aria-label="Increase stock"
+                                >
+                                  +
+                                </button>
+                              </div>
                             )}
                           </div>
                         </td>
