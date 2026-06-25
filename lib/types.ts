@@ -5,7 +5,7 @@ export type Variant = {
   is_default: boolean; is_active: boolean;
 };
 
-export type ProductImage = { id: string; storage_path: string; alt: string | null; sort_order: number };
+export type ProductImage = { id: string; storage_path: string; alt: string | null; sort_order: number; color_hex?: string | null; variant_id?: string | null };
 
 export type Product = {
   id: string; slug: string; name: string; brand: string | null;

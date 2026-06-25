@@ -11,7 +11,7 @@ import type { Category, DeliveryZone, Discount, Product, Review, ServiceType } f
 const PRODUCT_SELECT = `
   id, slug, name, brand, description, specs, base_price, category_id, rating_avg, rating_count,
   product_variants ( id, sku, name, attributes, price, stock_qty, reserved_qty, is_default, is_active ),
-  product_images ( id, storage_path, alt, sort_order ),
+  product_images ( id, storage_path, alt, sort_order, color_hex, variant_id ),
   product_translations ( locale, name, description )
 `;
 

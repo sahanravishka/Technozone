@@ -16,21 +16,87 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
   { product: Product; discounts: Discount[]; dict: Dict; productUrl: string }) {
   const { add } = useCart();
   const variants = product.product_variants.filter(v => v.is_active);
-  const [variantId, setVariantId] = useState(
-    (variants.find(v => v.is_default) ?? variants[0])?.id
+
+  // ── Variant attribute model ──
+  // New variants carry attributes {ram, rom, color:'#hex'}. We derive colour
+  // swatches and RAM/ROM options from them. Falls back to name-based picking
+  // for legacy variants that have no attributes.
+  const hasAttrVariants = variants.some(v => v.attributes && (v.attributes.color || v.attributes.ram));
+
+  // Distinct colours (hex) in variant order, each mapped to its photo if any.
+  const colorImages = (product.product_images ?? []).filter(im => im.color_hex);
+  const colors = useMemo(() => {
+    const seen = new Map<string, { hex: string; imageId?: string; storage?: string }>();
+    for (const v of variants) {
+      const hex = v.attributes?.color;
+      if (hex && !seen.has(hex)) {
+        const im = colorImages.find(ci => ci.color_hex?.toLowerCase() === hex.toLowerCase());
+        seen.set(hex, { hex, imageId: im?.id, storage: im?.storage_path });
+      }
+    }
+    return [...seen.values()];
+  }, [variants, colorImages]);
+
+  // Distinct RAM/ROM combos in variant order.
+  const storages = useMemo(() => {
+    const seen = new Map<string, { ram: string; rom: string }>();
+    for (const v of variants) {
+      const { ram, rom } = v.attributes ?? {};
+      if (ram && rom && !seen.has(`${ram}/${rom}`)) seen.set(`${ram}/${rom}`, { ram, rom });
+    }
+    return [...seen.values()];
+  }, [variants]);
+
+  const defaultVariant = variants.find(v => v.is_default) ?? variants[0];
+  const [selColor, setSelColor] = useState<string | null>(defaultVariant?.attributes?.color ?? colors[0]?.hex ?? null);
+  const [selStorage, setSelStorage] = useState<string | null>(
+    defaultVariant?.attributes?.ram && defaultVariant?.attributes?.rom
+      ? `${defaultVariant.attributes.ram}/${defaultVariant.attributes.rom}`
+      : (storages[0] ? `${storages[0].ram}/${storages[0].rom}` : null)
   );
+  const [legacyVariantId, setLegacyVariantId] = useState(defaultVariant?.id);
   const [qty, setQty] = useState(1);
   const [imgIdx, setImgIdx] = useState(0);
   const [justAdded, setJustAdded] = useState(false);
 
-  const variant = variants.find(v => v.id === variantId) ?? variants[0];
+  // Resolve the chosen colour + RAM/ROM to a single variant.
+  const variant = useMemo(() => {
+    if (!hasAttrVariants) return variants.find(v => v.id === legacyVariantId) ?? variants[0];
+    return variants.find(v => {
+      const a = v.attributes ?? {};
+      const colorOk = colors.length === 0 || a.color === selColor;
+      const storageOk = storages.length === 0 || `${a.ram}/${a.rom}` === selStorage;
+      return colorOk && storageOk;
+    }) ?? variants[0];
+  }, [hasAttrVariants, variants, legacyVariantId, colors, storages, selColor, selStorage]);
+
+  // Which RAM/ROM combos exist for the currently-selected colour (for greying out).
+  const availableStorages = useMemo(() => {
+    if (!selColor) return new Set(storages.map(s => `${s.ram}/${s.rom}`));
+    return new Set(
+      variants
+        .filter(v => v.attributes?.color === selColor && v.attributes?.ram)
+        .map(v => `${v.attributes.ram}/${v.attributes.rom}`)
+    );
+  }, [variants, selColor, storages]);
+
   const stock = Math.max(variant.stock_qty - variant.reserved_qty, 0);
   const { price, compareAt } = useMemo(
     () => priceVariant(product, variant.price, discounts), [product, variant, discounts]
   );
 
   const images = [...(product.product_images ?? [])].sort((a, b) => a.sort_order - b.sort_order);
-  const img = images[Math.min(imgIdx, images.length - 1)];
+
+  // When a colour is chosen, jump the gallery to that colour's photo.
+  const selColorImageId = colors.find(c => c.hex === selColor)?.imageId;
+  const effectiveImgIdx = useMemo(() => {
+    if (selColorImageId) {
+      const i = images.findIndex(im => im.id === selColorImageId);
+      if (i >= 0) return i;
+    }
+    return Math.min(imgIdx, images.length - 1);
+  }, [selColorImageId, images, imgIdx]);
+  const img = images[effectiveImgIdx];
   const savePct = compareAt ? Math.round(((compareAt - price) / compareAt) * 100) : 0;
 
   const addToCart = () => {
@@ -80,8 +146,8 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
         {images.length > 1 && (
           <div className="rail mt-3 flex gap-2 overflow-x-auto">
             {images.map((im, i) => (
-              <button key={im.id} onClick={() => setImgIdx(i)} aria-label={`Image ${i + 1}`}
-                className={`relative h-16 w-16 shrink-0 overflow-hidden transition-all ${i === imgIdx ? 'ring-2 ring-volt' : 'opacity-65 hover:opacity-100'}`}
+              <button key={im.id} onClick={() => { setImgIdx(i); if (im.color_hex) setSelColor(im.color_hex); }} aria-label={`Image ${i + 1}`}
+                className={`relative h-16 w-16 shrink-0 overflow-hidden transition-all ${i === effectiveImgIdx ? 'ring-2 ring-volt' : 'opacity-65 hover:opacity-100'}`}
                 style={{ borderRadius: '14px' }}>
                 <Image src={imageUrl(im.storage_path)} alt="" fill sizes="64px" quality={60} className="object-cover" />
               </button>
@@ -113,14 +179,81 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
           </div>
         </div>
 
-        {variants.length > 1 && (
+        {/* ── Colour circles ── */}
+        {colors.length > 0 && (
+          <div>
+            <p className="mb-2 text-[13px] font-semibold text-muted">
+              {dict.product.chooseVariant}
+            </p>
+            <div className="flex flex-wrap gap-2.5">
+              {colors.map(c => {
+                const active = c.hex === selColor;
+                return (
+                  <button
+                    key={c.hex}
+                    onClick={() => {
+                      setSelColor(c.hex);
+                      setQty(1);
+                      // If current storage not available for this colour, pick first available.
+                      const avail = variants.filter(v => v.attributes?.color === c.hex && v.attributes?.ram);
+                      if (storages.length && avail.length) {
+                        const cur = `${avail[0].attributes.ram}/${avail[0].attributes.rom}`;
+                        const stillOk = avail.some(v => `${v.attributes.ram}/${v.attributes.rom}` === selStorage);
+                        if (!stillOk) setSelStorage(cur);
+                      }
+                    }}
+                    aria-label={`Colour ${c.hex}`}
+                    aria-pressed={active}
+                    className={`relative h-10 w-10 rounded-full transition-all ${active ? 'ring-2 ring-volt ring-offset-2 ring-offset-card scale-110' : 'ring-1 ring-line hover:scale-105'}`}
+                    style={{ background: c.hex }}
+                  >
+                    {active && (
+                      <svg viewBox="0 0 24 24" className="absolute inset-0 m-auto h-5 w-5 drop-shadow"
+                        fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 6 9 17l-5-5" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── RAM / ROM buttons ── */}
+        {storages.length > 0 && (
+          <div>
+            <p className="mb-2 text-[13px] font-semibold text-muted">RAM / Storage</p>
+            <div className="flex flex-wrap gap-2">
+              {storages.map(s => {
+                const key = `${s.ram}/${s.rom}`;
+                const active = key === selStorage;
+                const avail = availableStorages.has(key);
+                return (
+                  <button
+                    key={key}
+                    disabled={!avail}
+                    onClick={() => { setSelStorage(key); setQty(1); }}
+                    className={`pressable border px-4 py-2.5 text-[13px] font-medium transition-all ${active ? 'btn-pill border-transparent bg-gradient-to-r from-volt to-volt-deep text-white shadow-md' : avail ? 'border-line bg-card text-muted hover:bg-paper' : 'border-line bg-paper/50 text-line line-through cursor-not-allowed'}`}
+                    style={{ borderRadius: active ? '999px' : '14px' }}
+                  >
+                    {s.ram}/{s.rom}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Legacy variants (no attributes) ── */}
+        {!hasAttrVariants && variants.length > 1 && (
           <div>
             <p className="mb-2 text-[13px] font-semibold text-muted">{dict.product.chooseVariant}</p>
             <div className="flex flex-wrap gap-2">
               {variants.map(v => (
-                <button key={v.id} onClick={() => { setVariantId(v.id); setQty(1); }}
-                  className={`pressable border px-4 py-2.5 text-[13px] font-medium transition-all ${v.id === variantId ? 'btn-pill border-transparent bg-gradient-to-r from-volt to-volt-deep text-white shadow-md' : 'border-line bg-card text-muted hover:bg-paper'}`}
-                  style={{ borderRadius: v.id === variantId ? '999px' : '14px' }}>
+                <button key={v.id} onClick={() => { setLegacyVariantId(v.id); setQty(1); }}
+                  className={`pressable border px-4 py-2.5 text-[13px] font-medium transition-all ${v.id === variant.id ? 'btn-pill border-transparent bg-gradient-to-r from-volt to-volt-deep text-white shadow-md' : 'border-line bg-card text-muted hover:bg-paper'}`}
+                  style={{ borderRadius: v.id === variant.id ? '999px' : '14px' }}>
                   {v.name}
                 </button>
               ))}
