@@ -182,6 +182,7 @@ async function processVariantPayload(
 
   // Upload each distinct colour photo once → map colorKey → { path, hex }.
   const colorMap = new Map<string, { path: string | null; hex: string | null }>();
+  const uploadErrors: string[] = [];
   // colorIndex aligns with the order photos were added in the builder.
   const distinctColors = [...new Map(parsed.variants.map(v => [v.colorKey, v])).values()]
     .sort((a, b) => a.colorIndex - b.colorIndex);
@@ -212,6 +213,7 @@ async function processVariantPayload(
     const path = `${productId}/colors/${Date.now()}-${c.colorIndex}.${ext}`;
     const { error: upErr } = await admin.storage.from('product-images')
       .upload(path, buf, { contentType, upsert: true });
+    if (upErr) uploadErrors.push(`colour #${c.colorIndex + 1}: ${upErr.message}`);
     colorMap.set(c.colorKey, { path: upErr ? null : path, hex: c.hex });
   }
 
@@ -272,6 +274,14 @@ async function processVariantPayload(
         }
       }
     }
+  }
+
+  // Variants saved — but if any photo failed to reach the bucket, tell staff so
+  // they can re-upload (the product itself is saved correctly).
+  if (uploadErrors.length) {
+    throw new Error(
+      `Saved, but ${uploadErrors.length} colour photo(s) failed to upload — please re-open and re-upload: ${uploadErrors.join('; ')}`
+    );
   }
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 
 type Props = { onScan: (value: string) => void; onClose: () => void };
 
@@ -73,6 +73,28 @@ export default function BarcodeScanner({ onScan, onClose }: Props) {
       }
     }
   }, [onScan]);
+
+  // If the camera permission was already granted before, skip the manual
+  // "Allow" tap and jump straight into scanning. The Permissions API isn't on
+  // every browser (notably Safari), so we fall back to the tap there.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const perms = (navigator as Navigator & {
+          permissions?: { query: (d: { name: string }) => Promise<{ state: string }> };
+        }).permissions;
+        if (!perms?.query) return; // no API → keep manual tap (Safari/iOS)
+        const status = await perms.query({ name: 'camera' });
+        if (!cancelled && status.state === 'granted') {
+          startCamera();
+        }
+      } catch {
+        /* query unsupported for 'camera' → keep manual tap */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [startCamera]);
 
   // Clean up stream when modal closes
   const close = () => {
