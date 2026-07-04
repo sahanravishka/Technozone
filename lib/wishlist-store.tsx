@@ -32,7 +32,7 @@ const WishlistCtx = createContext<{
 } | null>(null);
 
 export function WishlistProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, { ids: new Set(), hydrated: false });
+  const [state, dispatch] = useReducer(reducer, { ids: new Set<string>(), hydrated: false });
 
   // Load local ids, then merge in the server-synced list for a signed-in customer.
   useEffect(() => {
