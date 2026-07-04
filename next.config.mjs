@@ -1,9 +1,19 @@
+// Allow POS-served product images (host comes from the POS image URL env).
+const posImageHost = (() => {
+  try {
+    const raw = process.env.NEXT_PUBLIC_POS_IMAGE_URL || process.env.NEXT_PUBLIC_POS_API_URL;
+    return raw ? new URL(raw).hostname : null;
+  } catch { return null; }
+})();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.supabase.co' },     // product images bucket
-      { protocol: 'https', hostname: 'images.unsplash.com' } // demo data only
+      { protocol: 'https', hostname: 'images.unsplash.com' }, // demo data only
+      { protocol: 'https', hostname: 'technozonelankai.lk' }, // POS product images (default host)
+      ...(posImageHost ? [{ protocol: 'https', hostname: posImageHost }, { protocol: 'http', hostname: posImageHost }] : []),
     ],
     formats: ['image/avif', 'image/webp'],
     // Optimize image sizes for common breakpoints

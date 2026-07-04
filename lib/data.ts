@@ -1,6 +1,11 @@
 import { getSupabase } from './supabase';
 import { demoCategories, demoDiscounts, demoProducts, demoSuggestions } from './demo-data';
 import type { Category, DeliveryZone, Discount, Product, Review, ServiceType } from './types';
+import { posEnabled } from './pos/client';
+import {
+  posGetCategories, posGetProducts, posGetProductBySlug,
+  posSearchProducts, posGetRelated, posGetProductsByIds,
+} from './pos/catalog';
 
 // ------------------------------------------------------------------
 // Data layer. Every read goes through here so the future native app /
@@ -16,6 +21,10 @@ const PRODUCT_SELECT = `
 `;
 
 export async function getCategories(): Promise<Category[]> {
+  // POS is the source of truth when configured; fall back on any error.
+  if (posEnabled()) {
+    try { const c = await posGetCategories(); if (c.length) return c; } catch { /* fall through */ }
+  }
   const sb = getSupabase();
   if (!sb) return demoCategories;
   const { data } = await sb.from('categories')
@@ -52,6 +61,9 @@ export async function getActiveDiscounts(): Promise<Discount[]> {
 }
 
 export async function getProducts(opts?: { categorySlug?: string; limit?: number }): Promise<Product[]> {
+  if (posEnabled()) {
+    try { const p = await posGetProducts(opts); if (p.length) return p; } catch { /* fall through */ }
+  }
   const sb = getSupabase();
   if (sb) {
     let q = sb.from('products').select(PRODUCT_SELECT).eq('is_active', true)
@@ -76,6 +88,9 @@ export async function getProducts(opts?: { categorySlug?: string; limit?: number
  *  client-side wishlist page (ids come from localStorage / the wishlists table). */
 export async function getProductsByIds(ids: string[]): Promise<Product[]> {
   if (!ids.length) return [];
+  if (posEnabled()) {
+    try { const p = await posGetProductsByIds(ids); if (p.length) return p; } catch { /* fall through */ }
+  }
   const sb = getSupabase();
   if (sb) {
     const { data } = await sb.from('products').select(PRODUCT_SELECT).in('id', ids).eq('is_active', true);
@@ -85,6 +100,9 @@ export async function getProductsByIds(ids: string[]): Promise<Product[]> {
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
+  if (posEnabled()) {
+    try { const p = await posGetProductBySlug(slug); if (p) return p; } catch { /* fall through */ }
+  }
   const sb = getSupabase();
   if (sb) {
     const { data } = await sb.from('products').select(PRODUCT_SELECT)
@@ -96,6 +114,9 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 
 /** Manual "related / frequently bought together" pins (admin-curated). */
 export async function getSuggestions(productId: string): Promise<Product[]> {
+  if (posEnabled()) {
+    try { const p = await posGetRelated(productId); if (p.length) return p; } catch { /* fall through */ }
+  }
   const sb = getSupabase();
   if (sb) {
     const { data: links } = await sb.from('product_suggestions')
@@ -194,6 +215,9 @@ export async function getCartSuggestions(productIds: string[], limit = 6): Promi
 
 // ---------------- Search ----------------
 export async function searchProducts(query: string, limit = 60): Promise<Product[]> {
+  if (posEnabled()) {
+    try { const p = await posSearchProducts(query, limit); if (p.length) return p; } catch { /* fall through */ }
+  }
   // Whitelist to letters/numbers/space/hyphen. This is what prevents the raw
   // term from injecting PostgREST .or() conditions (commas, parens, dots, :, *).
   const q = query.trim().replace(/[^\p{L}\p{N}\s-]/gu, '').slice(0, 60).trim();
@@ -223,6 +247,13 @@ export async function searchProducts(query: string, limit = 60): Promise<Product
 
 /** Distinct brand list for filter dropdowns. */
 export async function getBrands(): Promise<string[]> {
+  if (posEnabled()) {
+    try {
+      const p = await posGetProducts({ limit: 500 });
+      const brands = [...new Set(p.map(x => x.brand ?? '').filter(Boolean))].sort();
+      if (brands.length) return brands;
+    } catch { /* fall through */ }
+  }
   const sb = getSupabase();
   if (sb) {
     const { data } = await sb.from('products').select('brand').eq('is_active', true).not('brand', 'is', null);
