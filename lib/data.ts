@@ -19,8 +19,28 @@ export async function getCategories(): Promise<Category[]> {
   const sb = getSupabase();
   if (!sb) return demoCategories;
   const { data } = await sb.from('categories')
-    .select('id, slug, name, sort_order').eq('is_active', true).order('sort_order');
+    .select('id, slug, name, sort_order, image_path').eq('is_active', true).order('sort_order');
   return data?.length ? data : demoCategories;
+}
+
+export type HomepageBanner = {
+  id: string; title: string; subtitle: string | null; badge_text: string | null;
+  link_url: string | null; image_path: string | null;
+};
+
+/** Admin-managed homepage promo banners. Empty when none are configured —
+ *  the homepage falls back to its default promo cards in that case. */
+export async function getHomepageBanners(): Promise<HomepageBanner[]> {
+  const sb = getSupabase();
+  if (!sb) return [];
+  const now = new Date().toISOString();
+  const { data } = await sb.from('homepage_banners')
+    .select('id, title, subtitle, badge_text, link_url, image_path')
+    .eq('is_active', true)
+    .or(`starts_at.is.null,starts_at.lte.${now}`)
+    .or(`ends_at.is.null,ends_at.gte.${now}`)
+    .order('sort_order').limit(4);
+  return data ?? [];
 }
 
 export async function getActiveDiscounts(): Promise<Discount[]> {
@@ -50,6 +70,18 @@ export async function getProducts(opts?: { categorySlug?: string; limit?: number
     list = list.filter(p => p.category_id === cat?.id);
   }
   return opts?.limit ? list.slice(0, opts.limit) : list;
+}
+
+/** Fetch specific products by id, preserving no particular order — used by the
+ *  client-side wishlist page (ids come from localStorage / the wishlists table). */
+export async function getProductsByIds(ids: string[]): Promise<Product[]> {
+  if (!ids.length) return [];
+  const sb = getSupabase();
+  if (sb) {
+    const { data } = await sb.from('products').select(PRODUCT_SELECT).in('id', ids).eq('is_active', true);
+    if (data) return data as unknown as Product[];
+  }
+  return demoProducts.filter(p => ids.includes(p.id));
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {

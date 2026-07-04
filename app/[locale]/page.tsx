@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { locales, type Locale } from '@/lib/i18n/config';
 import { getDict } from '@/lib/i18n/dictionaries';
-import { getActiveDiscounts, getCategories, getProducts, localized } from '@/lib/data';
+import { getActiveDiscounts, getCategories, getHomepageBanners, getProducts, localized } from '@/lib/data';
 import { priceProduct } from '@/lib/pricing';
 import { imageUrl } from '@/lib/supabase';
 import { formatLKR, waLink, SITE } from '@/lib/site';
@@ -46,8 +46,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
 export default async function HomePage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
   const dict = getDict(locale);
-  const [categories, discounts, productsRaw] = await Promise.all([
-    getCategories(), getActiveDiscounts(), getProducts({ limit: 12 })
+  const [categories, discounts, productsRaw, banners] = await Promise.all([
+    getCategories(), getActiveDiscounts(), getProducts({ limit: 12 }), getHomepageBanners()
   ]);
   const products = productsRaw.map(p => localized(p, locale));
 
@@ -188,37 +188,76 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
         </Reveal>
       )}
 
-      {/* ===================== PROMOS — Diagonal-cut & blob shapes ===================== */}
+      {/* ===================== PROMOS — admin-managed banners, or defaults ===================== */}
       <Reveal>
-        <section className="grid gap-4 pb-12 md:grid-cols-2 md:pb-16" aria-label="Promotions">
-          <div className="relative flex min-h-[240px] flex-col justify-between overflow-hidden bg-tint-lav p-9"
-            style={{ borderRadius: '26px' }}>
-            <div className="relative z-10">
-              <h3 className="max-w-[70%] text-[1.5rem] font-extrabold tracking-[-0.025em]">{dict.home.promoTitle}</h3>
-              <p className="mt-2 max-w-[80%] text-[14.5px] text-muted">{dict.home.promoSub}</p>
+        {banners.length > 0 ? (
+          <section className={`grid gap-4 pb-12 md:pb-16 ${banners.length === 1 ? '' : 'md:grid-cols-2'}`} aria-label="Promotions">
+            {banners.map((b, i) => {
+              const card = (
+                <div className="relative flex min-h-[240px] flex-col justify-between overflow-hidden p-9" style={{ borderRadius: '26px' }}>
+                  {b.image_path && (
+                    <>
+                      <Image src={imageUrl(b.image_path)} alt="" fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" aria-hidden />
+                    </>
+                  )}
+                  {!b.image_path && (
+                    <div className={`absolute inset-0 ${i % 2 ? 'bg-tint-peach' : 'bg-tint-lav'}`} aria-hidden />
+                  )}
+                  <div className="relative z-10">
+                    {b.badge_text && (
+                      <span className="mb-2 inline-block rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-ink">
+                        {b.badge_text}
+                      </span>
+                    )}
+                    <h3 className={`max-w-[80%] text-[1.5rem] font-extrabold tracking-[-0.025em] ${b.image_path ? 'text-white' : ''}`}>{b.title}</h3>
+                    {b.subtitle && <p className={`mt-2 max-w-[85%] text-[14.5px] ${b.image_path ? 'text-white/85' : 'text-muted'}`}>{b.subtitle}</p>}
+                  </div>
+                  {b.link_url && (
+                    <span className="btn-pill pressable relative z-10 mt-5 inline-flex h-11 w-fit items-center gap-2 bg-gradient-to-r from-volt to-accent px-6 text-[14px] font-bold text-white transition-all hover:-translate-y-0.5">
+                      {dict.home.seeAll} <ArrowIcon />
+                    </span>
+                  )}
+                </div>
+              );
+              return b.link_url ? (
+                <Link key={b.id} href={b.link_url}>{card}</Link>
+              ) : (
+                <div key={b.id}>{card}</div>
+              );
+            })}
+          </section>
+        ) : (
+          <section className="grid gap-4 pb-12 md:grid-cols-2 md:pb-16" aria-label="Promotions">
+            <div className="relative flex min-h-[240px] flex-col justify-between overflow-hidden bg-tint-lav p-9"
+              style={{ borderRadius: '26px' }}>
+              <div className="relative z-10">
+                <h3 className="max-w-[70%] text-[1.5rem] font-extrabold tracking-[-0.025em]">{dict.home.promoTitle}</h3>
+                <p className="mt-2 max-w-[80%] text-[14.5px] text-muted">{dict.home.promoSub}</p>
+              </div>
+              {/* Pill button with gradient */}
+              <Link href={`/${locale}/services`}
+                className="btn-pill pressable relative z-10 mt-5 inline-flex h-11 w-fit items-center gap-2 bg-gradient-to-r from-volt to-accent px-6 text-[14px] font-bold text-white transition-all hover:-translate-y-0.5">
+                {dict.services.bookCta} <ArrowIcon />
+              </Link>
+              {/* Decorative blob */}
+              <div className="absolute -bottom-12 -right-12 h-56 w-56 bg-gradient-to-br from-volt to-accent opacity-25" style={{ borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%' }} />
             </div>
-            {/* Pill button with gradient */}
-            <Link href={`/${locale}/services`}
-              className="btn-pill pressable relative z-10 mt-5 inline-flex h-11 w-fit items-center gap-2 bg-gradient-to-r from-volt to-accent px-6 text-[14px] font-bold text-white transition-all hover:-translate-y-0.5">
-              {dict.services.bookCta} <ArrowIcon />
-            </Link>
-            {/* Decorative blob */}
-            <div className="absolute -bottom-12 -right-12 h-56 w-56 bg-gradient-to-br from-volt to-accent opacity-25" style={{ borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%' }} />
-          </div>
-          <div className="relative flex min-h-[240px] flex-col justify-between overflow-hidden bg-tint-peach p-9"
-            style={{ borderRadius: '26px' }}>
-            <div className="relative z-10">
-              <h3 className="max-w-[70%] text-[1.5rem] font-extrabold tracking-[-0.025em]">{dict.warranty.title}</h3>
-              <p className="mt-2 max-w-[80%] text-[14.5px] text-muted">{dict.warranty.sub}</p>
+            <div className="relative flex min-h-[240px] flex-col justify-between overflow-hidden bg-tint-peach p-9"
+              style={{ borderRadius: '26px' }}>
+              <div className="relative z-10">
+                <h3 className="max-w-[70%] text-[1.5rem] font-extrabold tracking-[-0.025em]">{dict.warranty.title}</h3>
+                <p className="mt-2 max-w-[80%] text-[14.5px] text-muted">{dict.warranty.sub}</p>
+              </div>
+              {/* Organic button shape */}
+              <Link href={`/${locale}/warranty`}
+                className="btn-organic pressable relative z-10 mt-5 inline-flex h-11 w-fit items-center gap-2 border border-line bg-card px-6 text-[14px] font-bold transition-colors hover:bg-tint-tone">
+                {dict.warranty.check} <ArrowIcon />
+              </Link>
+              <div className="absolute -bottom-12 -right-12 h-56 w-56 bg-gradient-to-br from-[#ff8a4b] to-[#ff5b6a] opacity-25" style={{ borderRadius: '60% 40% 30% 70% / 50% 60% 40% 50%' }} />
             </div>
-            {/* Organic button shape */}
-            <Link href={`/${locale}/warranty`}
-              className="btn-organic pressable relative z-10 mt-5 inline-flex h-11 w-fit items-center gap-2 border border-line bg-card px-6 text-[14px] font-bold transition-colors hover:bg-tint-tone">
-              {dict.warranty.check} <ArrowIcon />
-            </Link>
-            <div className="absolute -bottom-12 -right-12 h-56 w-56 bg-gradient-to-br from-[#ff8a4b] to-[#ff5b6a] opacity-25" style={{ borderRadius: '60% 40% 30% 70% / 50% 60% 40% 50%' }} />
-          </div>
-        </section>
+          </section>
+        )}
       </Reveal>
 
       {/* ===================== VALUE STRIP — glassmorphism cards ===================== */}

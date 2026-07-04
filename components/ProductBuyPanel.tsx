@@ -11,6 +11,8 @@ import { SITE, formatLKR, waLink } from '@/lib/site';
 import PriceTag from './PriceTag';
 import StockBadge from './StockBadge';
 import { WhatsAppIcon } from './WhatsAppButton';
+import WishlistButton from './WishlistButton';
+import NotifyMeForm from './NotifyMeForm';
 
 export default function ProductBuyPanel({ product, discounts, dict, productUrl }:
   { product: Product; discounts: Discount[]; dict: Dict; productUrl: string }) {
@@ -271,6 +273,7 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
               className="pressable h-full w-10 text-lg text-muted hover:text-ink">+</button>
           </div>
           <AddButton className="min-w-0 flex-1 px-3" />
+          <WishlistButton productId={product.id} variant="panel" />
           <a href={waLink(waText)} target="_blank" rel="noopener noreferrer"
             aria-label={dict.product.askProduct}
             className="pressable btn-diamond grid h-12 w-12 shrink-0 place-items-center bg-card transition-colors hover:bg-[#EAF7EF]">
@@ -280,14 +283,7 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
 
         {/* Notify me when out of stock */}
         {stock <= 0 && (
-          <a href={waLink(`Hi! Please notify me when "${product.name}" is back in stock.\n${productUrl}`)}
-            target="_blank" rel="noopener noreferrer"
-            className="btn-notify flex h-11 items-center justify-center gap-2 px-6 text-[14px]">
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-            Notify me when available
-          </a>
+          <NotifyMeForm productId={product.id} variantId={variant.id} productName={product.name} />
         )}
 
         {/* specs — glassmorphism card */}

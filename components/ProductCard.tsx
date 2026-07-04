@@ -6,6 +6,7 @@ import type { Locale } from '@/lib/i18n/config';
 import { priceProduct } from '@/lib/pricing';
 import { imageUrl } from '@/lib/supabase';
 import { formatLKR } from '@/lib/site';
+import WishlistButton from './WishlistButton';
 
 export default function ProductCard({ product, discounts, locale, dict, priority = false }:
   { product: Product; discounts: Discount[]; locale: Locale; dict: Dict; priority?: boolean }) {
@@ -42,12 +43,7 @@ export default function ProductCard({ product, discounts, locale, dict, priority
             {pricing.stock} {dict.product.lowStock}
           </span>
         ) : null}
-        {/* Wishlist icon — diamond shaped */}
-        <span className="btn-diamond absolute right-3 top-3 z-10 grid h-8 w-8 place-items-center border border-line bg-card text-ink opacity-0 transition-opacity group-hover:opacity-100" aria-hidden>
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 20s-7-4.5-9-9a4.5 4.5 0 0 1 9-2 4.5 4.5 0 0 1 9 2c-2 4.5-9 9-9 9z" />
-          </svg>
-        </span>
+        <WishlistButton productId={product.id} />
       </div>
 
       {/* --- Info area --- */}

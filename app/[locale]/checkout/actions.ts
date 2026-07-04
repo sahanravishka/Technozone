@@ -84,6 +84,12 @@ export async function createOrder(input: {
       .select('id, name, fee').eq('id', input.zoneId).eq('is_active', true).single();
     if (!zone) return { ok: false, error: 'invalid' };
     zoneId = zone.id; zoneName = zone.name; zoneFee = Number(zone.fee);
+
+    // Free delivery over the admin-configured threshold (Settings -> Shipping).
+    const { data: shippingSetting } = await admin.from('site_settings')
+      .select('value').eq('key', 'shipping').maybeSingle();
+    const freeOver = Number((shippingSetting?.value as { free_over?: number })?.free_over ?? 0);
+    if (freeOver > 0 && subtotal >= freeOver) zoneFee = 0;
   }
 
   let couponDiscount = 0, coupon: { id: string; code: string } | null = null;
@@ -145,6 +151,9 @@ export async function createOrder(input: {
     });
   }
 
+  // Order placed — this phone's in-progress checkout (if any) is no longer abandoned.
+  await clearAbandonedCart(input.phone);
+
   // ---- 4. Branch by payment method ----
   if (method === 'payhere') {
     const [firstName, ...rest] = input.name.trim().split(/\s+/);
@@ -164,4 +173,40 @@ export async function createOrder(input: {
     ok: true, method, orderNumber: order.order_number, total,
     items: items.map(i => ({ name: i.product_name, qty: i.qty, line: i.line_total }))
   };
+}
+
+const normPhone = (phone: string) => phone.replace(/\D/g, '').replace(/^0/, '94');
+
+/**
+ * Snapshots an in-progress checkout so staff can follow up if it never
+ * converts to an order. Called from the checkout form once the phone number
+ * looks real; upserted by normalized phone so repeated calls just refresh it.
+ */
+export async function saveAbandonedCart(input: {
+  name: string; phone: string; email?: string;
+  items: { name: string; qty: number; price: number }[];
+  subtotal: number; locale: string;
+}) {
+  const admin = getAdminSupabase();
+  const phoneNorm = normPhone(input.phone);
+  if (!admin || phoneNorm.length < 9 || !input.items.length) return;
+  await admin.from('abandoned_checkouts').upsert({
+    phone_norm: phoneNorm,
+    name: input.name.trim().slice(0, 120) || null,
+    phone: input.phone.trim().slice(0, 20),
+    email: input.email?.trim().slice(0, 160) || null,
+    items: input.items,
+    subtotal: input.subtotal,
+    locale: input.locale,
+    converted: false,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'phone_norm' });
+}
+
+/** Marks a phone's in-progress checkout as converted once a real order is placed. */
+export async function clearAbandonedCart(phone: string) {
+  const admin = getAdminSupabase();
+  const phoneNorm = normPhone(phone);
+  if (!admin || phoneNorm.length < 9) return;
+  await admin.from('abandoned_checkouts').update({ converted: true }).eq('phone_norm', phoneNorm);
 }

@@ -18,7 +18,7 @@ export default function CodSettings({ maxValue, blocks }: { maxValue: number; bl
         <p className="text-[14px] font-bold">COD order limit</p>
         <p className="mb-3 text-[12.5px] text-muted">Orders above this total can’t use Cash on delivery (current: {formatLKR(maxValue)}).</p>
         <div className="flex items-center gap-2">
-          <input value={max} onChange={e => setMax(Number(e.target.value))} inputMode="numeric" className={`${inp} w-40`} />
+          <input value={max} onChange={e => setMax(Number(e.target.value))} inputMode="numeric" aria-label="COD order limit in Rupees" className={`${inp} w-40`} />
           <button onClick={() => start(() => setCodMaxValue(Number(max)))} disabled={pending}
             className="pressable rounded-btn bg-volt px-5 py-2.5 text-[13px] font-semibold text-white hover:bg-volt-deep disabled:opacity-50">Save</button>
         </div>
@@ -28,8 +28,8 @@ export default function CodSettings({ maxValue, blocks }: { maxValue: number; bl
         <p className="text-[14px] font-bold">COD blocklist</p>
         <p className="mb-3 text-[12.5px] text-muted">Phone numbers blocked from Cash on delivery (e.g. repeat fake/abandoned orders).</p>
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="07X XXX XXXX" className={`${inp} w-44`} inputMode="tel" />
-          <input value={reason} onChange={e => setReason(e.target.value)} placeholder="Reason (optional)" className={`${inp} flex-1`} />
+          <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="07X XXX XXXX" aria-label="Phone number to block" className={`${inp} w-44`} inputMode="tel" />
+          <input value={reason} onChange={e => setReason(e.target.value)} placeholder="Reason (optional)" aria-label="Reason for blocking" className={`${inp} flex-1`} />
           <button onClick={() => start(async () => { await addCodBlock(phone, reason); setPhone(''); setReason(''); })}
             disabled={pending || !phone} className="pressable rounded-btn bg-ink px-4 py-2.5 text-[13px] font-semibold text-white disabled:opacity-50">Block</button>
         </div>

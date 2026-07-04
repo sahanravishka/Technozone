@@ -3,6 +3,21 @@
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { getAdminSupabase } from '@/lib/supabase-clients/admin';
 
+export async function requestStockNotify(input: {
+  productId: string; variantId: string | null; productName: string; phone: string;
+}): Promise<{ ok: boolean }> {
+  const admin = getAdminSupabase();
+  const phone = input.phone.trim();
+  if (!admin || phone.length < 7) return { ok: false };
+  const { error } = await admin.from('stock_notify_requests').insert({
+    product_id: input.productId,
+    variant_id: input.variantId,
+    product_name: input.productName.slice(0, 200),
+    phone: phone.slice(0, 20),
+  });
+  return { ok: !error };
+}
+
 export async function submitReview(input: {
   productId: string; authorName: string; rating: number; title?: string; body?: string;
 }): Promise<{ ok: boolean; verified?: boolean }> {

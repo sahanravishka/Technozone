@@ -68,6 +68,24 @@ export function shipmentNotifyLink(phone: string, msg: string) {
   return `https://wa.me/${phone.replace(/\D/g, '').replace(/^0/, '94')}?text=${encodeURIComponent(msg)}`;
 }
 
+// ---------------- Back-in-stock notification ----------------
+export function stockBackMessage(productName: string) {
+  return `Good news! "${productName}" is back in stock at ${SITE.name}. Reply here or visit the site to order before it sells out again. 🎉`;
+}
+export function stockNotifyLink(phone: string, productName: string) {
+  return `https://wa.me/${phone.replace(/\D/g, '').replace(/^0/, '94')}?text=${encodeURIComponent(stockBackMessage(productName))}`;
+}
+
+// ---------------- Abandoned checkout follow-up ----------------
+export function abandonedCartMessage(name: string | null, items: { name: string; qty: number }[]) {
+  const list = items.slice(0, 5).map(i => `${i.name} ×${i.qty}`).join(', ');
+  const greeting = name ? `Hi ${name.split(' ')[0]}!` : 'Hi!';
+  return `${greeting} You left ${list} in your cart at ${SITE.name}. Want help finishing your order, or is there anything we can answer? 😊`;
+}
+export function abandonedCartLink(phone: string, name: string | null, items: { name: string; qty: number }[]) {
+  return `https://wa.me/${phone.replace(/\D/g, '').replace(/^0/, '94')}?text=${encodeURIComponent(abandonedCartMessage(name, items))}`;
+}
+
 export function returnMessage(rma: string, status: string) {
   const map: Record<string, string> = {
     requested: `${rma}: we've received your return request and will review it shortly.`,

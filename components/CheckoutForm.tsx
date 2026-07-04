@@ -11,7 +11,7 @@ import type { Locale } from '@/lib/i18n/config';
 import { formatLKR, SITE, waLink } from '@/lib/site';
 import { priceProduct } from '@/lib/pricing';
 import { imageUrl } from '@/lib/supabase';
-import { createOrder } from '@/app/[locale]/checkout/actions';
+import { createOrder, saveAbandonedCart } from '@/app/[locale]/checkout/actions';
 
 const inputCls = 'h-12 w-full rounded-btn bg-card px-3.5 text-[14px] font-medium outline-none focus:ring-2 focus:ring-volt';
 const label = 'mb-1.5 block text-[13px] font-semibold text-muted';
@@ -158,7 +158,16 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
         </Field>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field text={dict.form.phone}>
-            <input className={inputCls} value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })} inputMode="tel" placeholder="07X XXX XXXX" />
+            <input className={inputCls} value={f.phone} onChange={e => setF({ ...f, phone: e.target.value })}
+              onBlur={() => {
+                if (f.phone.replace(/\D/g, '').length < 9 || items.length === 0) return;
+                saveAbandonedCart({
+                  name: f.name, phone: f.phone, email: f.email || undefined,
+                  items: items.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
+                  subtotal, locale
+                }).catch(() => {});
+              }}
+              inputMode="tel" placeholder="07X XXX XXXX" />
           </Field>
           {mode === 'guest' && (
             <Field text={dict.account.email}>

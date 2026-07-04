@@ -4,6 +4,7 @@ import { locales, type Locale } from '@/lib/i18n/config';
 import { getDict } from '@/lib/i18n/dictionaries';
 import { getCategories } from '@/lib/data';
 import { CartProvider } from '@/lib/cart-store';
+import { WishlistProvider } from '@/lib/wishlist-store';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PwaRegister from '@/components/PwaRegister';
@@ -99,6 +100,7 @@ export default async function LocaleLayout({ children, params }:
   return (
     // html lang must reflect locale for screen readers + SEO; set via effectless trick:
     <CartProvider>
+    <WishlistProvider>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(LOCAL_BUSINESS_JSON_LD) }}
@@ -108,6 +110,7 @@ export default async function LocaleLayout({ children, params }:
       <Header locale={l} dict={dict} categories={categories} />
       <main className="min-h-[70vh]">{children}</main>
       <Footer dict={dict} categories={categories} locale={l} />
+    </WishlistProvider>
     </CartProvider>
   );
 }

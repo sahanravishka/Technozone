@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useCart } from '@/lib/cart-store';
+import { useWishlist } from '@/lib/wishlist-store';
 import { locales, localeNames, type Locale } from '@/lib/i18n/config';
 import type { Dict } from '@/lib/i18n/dictionaries';
 import type { Category } from '@/lib/types';
@@ -49,6 +50,7 @@ const BagIcon = () => (
 export default function Header({ locale, dict, categories }:
   { locale: Locale; dict: Dict; categories: Category[] }) {
   const { count, hydrated } = useCart();
+  const { count: wishCount, hydrated: wishHydrated } = useWishlist();
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -123,6 +125,19 @@ export default function Header({ locale, dict, categories }:
             <ThemeToggle />
           </div>
 
+          {/* Wishlist */}
+          <Link href={`/${locale}/wishlist`} aria-label="Wishlist"
+            className="pressable relative hidden h-10 w-10 place-items-center rounded-full bg-card md:grid">
+            <svg viewBox="0 0 24 24" className="h-[19px] w-[19px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M12 20s-7-4.5-9-9a4.5 4.5 0 0 1 9-2 4.5 4.5 0 0 1 9 2c-2 4.5-9 9-9 9z" />
+            </svg>
+            {wishHydrated && wishCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 grid h-[17px] min-w-[17px] place-items-center bg-gradient-to-r from-volt to-accent px-1 text-[10px] font-bold text-white"
+                style={{ borderRadius: '30% 70% 70% 30% / 50% 50% 50% 50%' }}>
+                {wishCount}
+              </span>
+            )}
+          </Link>
           <Link href={`/${locale}/account`} aria-label="Account"
             className="pressable hidden h-10 w-10 place-items-center rounded-full bg-card md:grid">
             <svg viewBox="0 0 24 24" className="h-[20px] w-[20px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
@@ -194,6 +209,13 @@ export default function Header({ locale, dict, categories }:
                 {dict.nav.trackRepair}
               </Link>
             </div>
+            <Link href={`/${locale}/wishlist`}
+              className="flex items-center justify-center gap-2 rounded-full bg-paper px-4 py-3 text-[14px] font-semibold">
+              <svg viewBox="0 0 24 24" className="h-[17px] w-[17px]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12 20s-7-4.5-9-9a4.5 4.5 0 0 1 9-2 4.5 4.5 0 0 1 9 2c-2 4.5-9 9-9 9z" />
+              </svg>
+              Wishlist{wishHydrated && wishCount > 0 ? ` (${wishCount})` : ''}
+            </Link>
 
             <div className="grid grid-cols-2 gap-x-3 gap-y-1 px-2 pt-4 text-[13.5px]">
               <Link href={`/${locale}/warranty`} className="py-1.5 text-muted transition-colors active:text-ink">{dict.warranty.title}</Link>

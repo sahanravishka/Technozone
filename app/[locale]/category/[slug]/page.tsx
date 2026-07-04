@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Locale } from '@/lib/i18n/config';
@@ -6,6 +7,7 @@ import { locales } from '@/lib/i18n/config';
 import { getDict } from '@/lib/i18n/dictionaries';
 import { getActiveDiscounts, getCategories, getProducts, localized } from '@/lib/data';
 import { SITE } from '@/lib/site';
+import { imageUrl } from '@/lib/supabase';
 import ProductGrid from '@/components/ProductGrid';
 import { safeJsonLd } from '@/lib/jsonld';
 
@@ -84,9 +86,15 @@ export default async function CategoryPage({ params }: Props) {
       {/* Category Header with organic shape */}
       <div className="relative mb-8 overflow-hidden bg-gradient-to-r from-tint-sky to-tint-mint p-8 md:p-12"
         style={{ borderRadius: '28px' }}>
+        {cat.image_path && (
+          <>
+            <Image src={imageUrl(cat.image_path)} alt="" fill sizes="100vw" className="object-cover" priority />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/30 to-transparent" aria-hidden />
+          </>
+        )}
         <div className="absolute -right-12 -top-12 h-40 w-40 bg-gradient-to-br from-volt/15 to-accent/15 blur-2xl" style={{ borderRadius: '40% 60% 60% 40%' }} aria-hidden />
-        <h1 className="relative z-10 text-2xl font-extrabold tracking-[-0.02em] md:text-3xl">{cat.name}</h1>
-        <p className="relative z-10 mt-2 text-[14px] text-muted">{products.length} items available</p>
+        <h1 className={`relative z-10 text-2xl font-extrabold tracking-[-0.02em] md:text-3xl ${cat.image_path ? 'text-white' : ''}`}>{cat.name}</h1>
+        <p className={`relative z-10 mt-2 text-[14px] ${cat.image_path ? 'text-white/85' : 'text-muted'}`}>{products.length} items available</p>
 
         {/* Category quick-filter chips */}
         {categories.length > 1 && (

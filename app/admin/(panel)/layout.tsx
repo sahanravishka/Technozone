@@ -8,13 +8,17 @@ export const dynamic = 'force-dynamic';
 const NAV: NavItem[] = [
   { label: 'Dashboard',  href: '/admin' },
   { label: 'Orders',     href: '/admin/orders' },
+  { label: 'Abandoned carts', href: '/admin/abandoned-carts' },
   { label: 'Repairs',    href: '/admin/repairs' },
   { label: 'Returns',    href: '/admin/returns' },
   { label: 'Warranties', href: '/admin/warranties' },
+  { label: 'Stock alerts', href: '/admin/stock-alerts' },
   { label: 'Customers',  href: '/admin/customers' },
   { label: 'Reviews',    href: '/admin/reviews' },
   { label: 'Products',   href: '/admin/products' },
+  { label: 'Categories', href: '/admin/categories' },
   { label: 'Discounts',  href: '/admin/discounts' },
+  { label: 'Banners',    href: '/admin/banners' },
   { label: 'Settings',   href: '/admin/settings' },
   { label: 'Staff',      href: '/admin/staff' },
 ];

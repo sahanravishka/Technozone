@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import type { Locale } from '@/lib/i18n/config';
 import { getDict } from '@/lib/i18n/dictionaries';
@@ -97,11 +98,17 @@ export default async function OrderPage({ params }:
           </div>
         )}
 
-        <a href={waLink(`Hi ${SITE.name}! About my order ${order.order_number}:`)}
-          target="_blank" rel="noopener noreferrer"
-          className="mt-7 block rounded-2xl bg-paper p-4 text-center text-[13px] font-semibold text-ok hover:bg-tint-mint">
-          {dict.order.help}
-        </a>
+        <div className="mt-7 grid gap-3 sm:grid-cols-2">
+          <Link href={`/${locale}/order/${order.id}/invoice`}
+            className="block rounded-2xl bg-paper p-4 text-center text-[13px] font-semibold hover:bg-line/60">
+            🧾 Download invoice
+          </Link>
+          <a href={waLink(`Hi ${SITE.name}! About my order ${order.order_number}:`)}
+            target="_blank" rel="noopener noreferrer"
+            className="block rounded-2xl bg-paper p-4 text-center text-[13px] font-semibold text-ok hover:bg-tint-mint">
+            {dict.order.help}
+          </a>
+        </div>
       </div>
     </div>
   );
