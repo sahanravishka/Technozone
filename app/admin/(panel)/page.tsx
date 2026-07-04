@@ -17,6 +17,7 @@ const STATUS_CLS: Record<string, string> = {
 };
 
 const PAID_STATUSES = ['paid', 'packed', 'shipped', 'delivered'];
+const OPEN_REPAIR = ['received', 'diagnosing', 'awaiting_approval', 'repairing', 'ready'];
 const RANGES = [7, 30, 90] as const;
 
 export default async function AdminDashboard({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
@@ -27,23 +28,36 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const rangeStart = new Date(today); rangeStart.setDate(rangeStart.getDate() - (range - 1));
+  const prevStart = new Date(rangeStart); prevStart.setDate(prevStart.getDate() - range);
 
-  const [{ count: todayOrders }, { data: monthPaid }, { data: lowStock }, { data: recent }, { data: rangeOrders }, { data: rangeItems }] =
-    await Promise.all([
-      supabase.from('orders').select('id', { count: 'exact', head: true })
-        .gte('created_at', today.toISOString()),
-      supabase.from('orders').select('total')
-        .gte('created_at', monthStart.toISOString())
-        .in('status', PAID_STATUSES),
-      supabase.from('product_variants').select('id, sku, stock_qty, low_stock_threshold')
-        .eq('is_active', true).order('stock_qty').limit(50),
-      supabase.from('orders').select('id, order_number, status, total, created_at')
-        .order('created_at', { ascending: false }).limit(8),
-      supabase.from('orders').select('id, order_number, status, total, created_at')
-        .gte('created_at', rangeStart.toISOString()).order('created_at', { ascending: true }).limit(2000),
-      supabase.from('order_items').select('product_name, qty, line_total, order_id, orders!inner(created_at, status)')
-        .gte('orders.created_at', rangeStart.toISOString()).in('orders.status', PAID_STATUSES).limit(5000),
-    ]);
+  const [
+    { count: todayOrders }, { data: monthPaid }, { data: lowStock }, { data: recent },
+    { data: rangeOrders }, { data: rangeItems }, { data: prevOrders },
+    { count: pendingOrders }, { count: pendingReturns }, { count: pendingReviews },
+    { count: openRepairs }, { count: newCustomers }
+  ] = await Promise.all([
+    supabase.from('orders').select('id', { count: 'exact', head: true })
+      .gte('created_at', today.toISOString()),
+    supabase.from('orders').select('total')
+      .gte('created_at', monthStart.toISOString())
+      .in('status', PAID_STATUSES),
+    supabase.from('product_variants').select('id, sku, stock_qty, low_stock_threshold')
+      .eq('is_active', true).order('stock_qty').limit(50),
+    supabase.from('orders').select('id, order_number, status, total, created_at')
+      .order('created_at', { ascending: false }).limit(8),
+    supabase.from('orders').select('id, order_number, status, total, created_at, customer_phone, shipping_address')
+      .gte('created_at', rangeStart.toISOString()).order('created_at', { ascending: true }).limit(2000),
+    supabase.from('order_items').select('product_name, qty, line_total, order_id, orders!inner(created_at, status)')
+      .gte('orders.created_at', rangeStart.toISOString()).in('orders.status', PAID_STATUSES).limit(5000),
+    supabase.from('orders').select('total, status')
+      .gte('created_at', prevStart.toISOString()).lt('created_at', rangeStart.toISOString())
+      .in('status', PAID_STATUSES).limit(2000),
+    supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('returns').select('id', { count: 'exact', head: true }).eq('status', 'requested'),
+    supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('service_jobs').select('id', { count: 'exact', head: true }).in('status', OPEN_REPAIR),
+    supabase.from('customers').select('id', { count: 'exact', head: true }).gte('created_at', monthStart.toISOString())
+  ]);
 
   const revenue = (monthPaid ?? []).reduce((n, o) => n + Number(o.total), 0);
   const low = (lowStock ?? []).filter(v => v.stock_qty <= v.low_stock_threshold);
@@ -54,8 +68,10 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     const d = new Date(rangeStart); d.setDate(d.getDate() + i);
     byDay.set(d.toISOString().slice(0, 10), 0);
   }
+  let paidCount = 0;
   for (const o of rangeOrders ?? []) {
     if (!PAID_STATUSES.includes(o.status)) continue;
+    paidCount++;
     const key = o.created_at.slice(0, 10);
     if (byDay.has(key)) byDay.set(key, (byDay.get(key) ?? 0) + Number(o.total));
   }
@@ -63,6 +79,11 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     label: new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }), value
   }));
   const rangeRevenue = chartData.reduce((n, d) => n + d.value, 0);
+
+  // vs. previous window of the same length -> honest growth signal
+  const prevRevenue = (prevOrders ?? []).reduce((n, o) => n + Number(o.total), 0);
+  const growth = prevRevenue > 0 ? ((rangeRevenue - prevRevenue) / prevRevenue) * 100 : null;
+  const aov = paidCount > 0 ? rangeRevenue / paidCount : 0;
 
   // Best sellers within the range
   const bestMap = new Map<string, { qty: number; revenue: number }>();
@@ -76,7 +97,31 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     .sort((a, b) => b[1].qty - a[1].qty)
     .slice(0, 5);
 
-  const stats: { label: string; value: string; accent: string; icon: React.ReactNode }[] = [
+  // Top customers within the range (by paid revenue, keyed on phone)
+  const custMap = new Map<string, { name: string; orders: number; revenue: number }>();
+  for (const o of rangeOrders ?? []) {
+    if (!PAID_STATUSES.includes(o.status)) continue;
+    const phone = o.customer_phone ?? '—';
+    const addr = o.shipping_address as { name?: string; full_name?: string } | null;
+    const cur = custMap.get(phone) ?? { name: addr?.name || addr?.full_name || phone, orders: 0, revenue: 0 };
+    cur.orders += 1;
+    cur.revenue += Number(o.total);
+    custMap.set(phone, cur);
+  }
+  const topCustomers = [...custMap.entries()]
+    .sort((a, b) => b[1].revenue - a[1].revenue)
+    .slice(0, 5);
+
+  // The "what needs me right now" inbox — the heart of a no-developer admin
+  const inbox = [
+    { count: pendingOrders ?? 0, label: 'orders waiting to be confirmed', href: '/admin/orders', cta: 'Process' },
+    { count: pendingReturns ?? 0, label: 'return requests to review', href: '/admin/returns', cta: 'Review' },
+    { count: pendingReviews ?? 0, label: 'reviews waiting for approval', href: '/admin/reviews', cta: 'Moderate' },
+    { count: openRepairs ?? 0, label: 'repair jobs in progress', href: '/admin/repairs', cta: 'View' },
+    { count: low.length, label: 'products low on stock', href: '/admin/products', cta: 'Restock' }
+  ].filter(t => t.count > 0);
+
+  const stats: { label: string; value: string; sub?: string; accent: string; icon: React.ReactNode }[] = [
     {
       label: 'Orders today', value: String(todayOrders ?? 0), accent: 'text-volt',
       icon: <path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4zM4 6h16M9 10a3 3 0 0 0 6 0" />
@@ -86,8 +131,13 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
       icon: <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
     },
     {
-      label: 'Low-stock items', value: String(low.length), accent: low.length ? 'text-warn' : 'text-muted',
-      icon: <path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+      label: `Avg. order · ${range}d`, value: formatLKR(Math.round(aov)),
+      sub: `${paidCount} paid orders`, accent: 'text-accent',
+      icon: <path d="M3 3v18h18M7 15l4-4 3 3 5-6" />
+    },
+    {
+      label: 'New customers · month', value: String(newCustomers ?? 0), accent: 'text-volt',
+      icon: <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
     }
   ];
 
@@ -95,7 +145,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     <div>
       <PageHeader title="Dashboard" subtitle="Today at a glance" />
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map(s => (
           <div key={s.label} className="admin-card flex items-center gap-4 p-5">
             <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-paper ${s.accent}`}>
@@ -103,27 +153,49 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
                 {s.icon}
               </svg>
             </span>
-            <span>
+            <span className="min-w-0">
               <span className="block text-[12px] font-semibold text-muted">{s.label}</span>
-              <span className="mt-0.5 block text-2xl font-bold tracking-tight">{s.value}</span>
+              <span className="mt-0.5 block truncate text-xl font-bold tracking-tight lg:text-2xl">{s.value}</span>
+              {s.sub && <span className="block text-[11px] text-muted">{s.sub}</span>}
             </span>
           </div>
         ))}
       </div>
 
-      {low.length > 0 && (
-        <div className="admin-card mt-4 border-l-4 border-warn p-4 text-[13px]">
-          <b className="text-warn">Low stock</b>{' '}
-          <span className="text-muted">{low.slice(0, 8).map(v => `${v.sku} (${v.stock_qty})`).join(' · ')}</span>
-        </div>
-      )}
+      {/* Action inbox — everything that needs a human, one click away */}
+      <div className="admin-card mt-4 p-5">
+        <h2 className="text-[15px] font-bold">Needs your attention</h2>
+        {inbox.length === 0 ? (
+          <p className="mt-2 text-[13px] text-muted">All caught up — nothing is waiting on you. 🎉</p>
+        ) : (
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+            {inbox.map(t => (
+              <li key={t.href + t.label}>
+                <Link href={t.href}
+                  className="pressable flex items-center gap-3 rounded-xl bg-paper px-4 py-3 text-[13px] transition-colors hover:bg-line/60">
+                  <b className="grid h-7 min-w-7 place-items-center rounded-full bg-warn-soft px-2 text-[12px] font-bold text-warn">{t.count}</b>
+                  <span className="min-w-0 flex-1 truncate font-semibold">{t.label}</span>
+                  <span className="shrink-0 text-[12px] font-bold text-volt">{t.cta} →</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {/* Revenue trend */}
       <div className="admin-card mt-8 p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-[15px] font-bold">Revenue trend</h2>
-            <p className="mt-0.5 text-[12.5px] text-muted">{formatLKR(rangeRevenue)} over the last {range} days</p>
+            <p className="mt-0.5 text-[12.5px] text-muted">
+              {formatLKR(rangeRevenue)} over the last {range} days
+              {growth !== null && (
+                <span className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-bold ${growth >= 0 ? 'bg-[#E8F7EE] text-ok' : 'bg-warn-soft text-warn'}`}>
+                  {growth >= 0 ? '▲' : '▼'} {Math.abs(growth).toFixed(1)}% vs previous {range}d
+                </span>
+              )}
+            </p>
           </div>
           <div className="flex items-center gap-1.5">
             {RANGES.map(r => (
@@ -152,6 +224,23 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
               </div>
             )) : (
               <p className="p-8 text-center text-[13px] text-muted">No sales in this range yet.</p>
+            )}
+          </div>
+
+          <h2 className="mb-3 mt-6 text-[15px] font-bold">Top customers <span className="font-normal text-muted">· last {range} days</span></h2>
+          <div className="admin-card overflow-hidden">
+            {topCustomers.length ? topCustomers.map(([phone, c], i) => (
+              <div key={phone} className={`flex items-center gap-3 px-4 py-3 text-[13px] ${i ? 'border-t border-line/70' : ''}`}>
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-paper text-[11px] font-bold text-muted">{i + 1}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold">{c.name}</span>
+                  <span className="block text-[11px] text-muted">{phone}</span>
+                </span>
+                <span className="text-[12px] text-muted">{c.orders} order{c.orders > 1 ? 's' : ''}</span>
+                <span className="w-24 text-right font-bold">{formatLKR(c.revenue)}</span>
+              </div>
+            )) : (
+              <p className="p-8 text-center text-[13px] text-muted">No paid orders in this range yet.</p>
             )}
           </div>
         </div>

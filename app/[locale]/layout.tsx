@@ -105,6 +105,25 @@ export default async function LocaleLayout({ children, params }:
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(LOCAL_BUSINESS_JSON_LD) }}
       />
+      {/* WebSite + SearchAction: makes the site eligible for the Google
+          sitelinks search box and names the site in results. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: SITE.name,
+            url: SITE.url,
+            inLanguage: locales,
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: { '@type': 'EntryPoint', urlTemplate: `${SITE.url}/en/search?q={search_term_string}` },
+              'query-input': 'required name=search_term_string'
+            }
+          })
+        }}
+      />
       <SetLang locale={l} />
       <PwaRegister />
       <Header locale={l} dict={dict} categories={categories} />

@@ -9,6 +9,7 @@ import { imageUrl } from '@/lib/supabase';
 import { formatLKR, waLink, SITE } from '@/lib/site';
 import Reveal from '@/components/Reveal';
 import ProductGrid from '@/components/ProductGrid';
+import RecentlyViewed from '@/components/RecentlyViewed';
 import FeaturedSpotlight from '@/components/FeaturedSpotlight';
 import { safeJsonLd } from '@/lib/jsonld';
 
@@ -332,6 +333,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
           </div>
         </section>
       </Reveal>
+
+      {/* Personal browsing trail — pulls from localStorage, hidden when empty */}
+      <RecentlyViewed locale={locale} title={dict.sections.recentlyViewed} />
     </div>
   );
 }

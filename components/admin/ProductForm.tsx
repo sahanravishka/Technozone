@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { upsertProduct } from '@/app/admin/actions';
 import VariantBuilder, { type Preset } from './VariantBuilder';
 import WarrantySelect from './WarrantySelect';
+import SeoPanel from './SeoPanel';
 
 export interface ProductFormProps {
   id: string;
@@ -128,6 +129,20 @@ export function ProductForm({
             <p className="mt-1 text-[11px] text-muted">Each line becomes a row in the product specs table</p>
           </div>
         </div>
+      </div>
+
+      {/* ── Section: SEO (Google search appearance) ── */}
+      <div className="admin-card overflow-hidden">
+        <div className="flex items-center gap-2 border-b border-line bg-paper/60 px-5 py-3.5">
+          <span className="grid h-6 w-6 place-items-center rounded-lg bg-[#E8F7EE] text-[11px] font-black text-ok">3</span>
+          <h3 className="text-[13.5px] font-bold">SEO — how it looks on Google <span className="ml-1 text-[11px] font-normal text-muted">optional</span></h3>
+        </div>
+        <SeoPanel
+          productName={String(product?.name ?? '')}
+          slug={slugVal}
+          metaTitle={String(product?.meta_title ?? '')}
+          metaDescription={String(product?.meta_description ?? '')}
+        />
       </div>
 
       {/* Product images now come from the colour photos in the Variants section below.

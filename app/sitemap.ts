@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { getCategories, getProducts } from '@/lib/data';
+import { getBrands, getCategories, getProducts, brandSlug } from '@/lib/data';
 import { locales } from '@/lib/i18n/config';
 import { SITE } from '@/lib/site';
 
@@ -13,7 +13,7 @@ const langAlts = (path: string) =>
   ]);
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [cats, products] = await Promise.all([getCategories(), getProducts()]);
+  const [cats, products, brands] = await Promise.all([getCategories(), getProducts(), getBrands()]);
   const now = new Date().toISOString();
   const out: MetadataRoute.Sitemap = [];
 
@@ -36,6 +36,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITE.url}/en/product/${p.slug}`,
       lastModified: now, changeFrequency: 'weekly', priority: 0.9,
       alternates: { languages: langAlts(`/product/${p.slug}`) }
+    });
+
+  // Brand landing pages — target "<brand> price in sri lanka" searches
+  for (const b of brands)
+    out.push({
+      url: `${SITE.url}/en/brand/${brandSlug(b)}`,
+      lastModified: now, changeFrequency: 'daily', priority: 0.85,
+      alternates: { languages: langAlts(`/brand/${brandSlug(b)}`) }
     });
 
   out.push({ url: `${SITE.url}/en/services`, lastModified: now, changeFrequency: 'monthly', priority: 0.7, alternates: { languages: langAlts('/services') } });

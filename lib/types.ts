@@ -12,6 +12,8 @@ export type Product = {
   description: string | null; specs: Record<string, string>;
   base_price: number; category_id: string | null;
   warranty_months?: number;
+  meta_title?: string | null;
+  meta_description?: string | null;
   product_variants: Variant[];
   product_images: ProductImage[];
   product_translations?: { locale: string; name: string; description: string | null }[];

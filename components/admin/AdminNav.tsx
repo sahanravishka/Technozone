@@ -6,6 +6,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { getBrowserSupabase } from '@/lib/supabase-clients/browser';
 import { SITE } from '@/lib/site';
 
+import AdminSearch from './AdminSearch';
+
 export type NavItem = { label: string; href: string };
 
 function Icon({ href }: { href: string }) {
@@ -241,10 +243,18 @@ export function AdminShell({
         <Link href="/admin" className="font-bold text-[15px] tracking-[-0.01em] text-ink">
           {SITE.wordmark[0]} <span className="text-accent">{SITE.wordmark[1]}</span>
         </Link>
-        <div className="ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-volt to-accent text-[11px] font-bold text-white">
-          {initials}
+        <div className="ml-auto flex items-center gap-2">
+          <AdminSearch />
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-volt to-accent text-[11px] font-bold text-white">
+            {initials}
+          </div>
         </div>
       </header>
+
+      {/* Desktop global search — floats top-right, or press Ctrl+K anywhere */}
+      <div className="fixed right-6 top-5 z-30 hidden md:block">
+        <AdminSearch />
+      </div>
 
       {/* ===== Main Content ===== */}
       <main className={`w-full transition-[margin-left] duration-200 ease-in-out pt-14 pb-20 px-4 sm:px-6 md:pt-8 md:pb-14 md:px-8 ${isCollapsed ? 'md:ml-16' : 'md:ml-60'}`}>

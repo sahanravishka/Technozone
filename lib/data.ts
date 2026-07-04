@@ -14,7 +14,7 @@ import {
 // ------------------------------------------------------------------
 
 const PRODUCT_SELECT = `
-  id, slug, name, brand, description, specs, base_price, category_id, rating_avg, rating_count,
+  id, slug, name, brand, description, specs, base_price, category_id, rating_avg, rating_count, meta_title, meta_description,
   product_variants ( id, sku, name, attributes, price, stock_qty, reserved_qty, is_default, is_active ),
   product_images ( id, storage_path, alt, sort_order, color_hex, variant_id ),
   product_translations ( locale, name, description )
@@ -260,6 +260,26 @@ export async function getBrands(): Promise<string[]> {
     if (data) return [...new Set(data.map(d => d.brand as string).filter(Boolean))].sort();
   }
   return [...new Set(demoProducts.map(p => p.brand ?? '').filter(Boolean))].sort();
+}
+
+// ---------------- Brand pages (SEO landing pages) ----------------
+/** URL-safe slug for a brand name ("Anker Soundcore" -> "anker-soundcore"). */
+export function brandSlug(brand: string): string {
+  return brand.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+/** Resolve a brand slug back to the canonical brand name + its products. */
+export async function getBrandBySlug(slug: string): Promise<{ brand: string; products: Product[] } | null> {
+  const brands = await getBrands();
+  const brand = brands.find(b => brandSlug(b) === slug);
+  if (!brand) return null;
+  const sb = getSupabase();
+  if (sb) {
+    const { data } = await sb.from('products').select(PRODUCT_SELECT)
+      .eq('is_active', true).eq('brand', brand).order('created_at', { ascending: false });
+    return { brand, products: (data as unknown as Product[]) ?? [] };
+  }
+  return { brand, products: demoProducts.filter(p => p.brand === brand) };
 }
 
 // ---------------- Couriers ----------------

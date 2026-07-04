@@ -69,6 +69,10 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
   return (
     <div>
       <PageHeader title="Products" subtitle={`Catalog, stock and pricing · ${totalCount} product${totalCount === 1 ? '' : 's'}`}>
+        <a href="/admin/products/export" download
+          className="pressable admin-card px-3.5 py-2.5 text-[12.5px] font-semibold text-muted hover:bg-paper">
+          ⬇ Export CSV
+        </a>
         <Link href="/admin/products/trash"
           className="pressable admin-card px-3.5 py-2.5 text-[12.5px] font-semibold text-muted hover:bg-paper">
           Trash

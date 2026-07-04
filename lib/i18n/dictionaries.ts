@@ -27,7 +27,7 @@ const en = {
     whatsapp: 'WhatsApp support', whatsappsub: 'A real human replies',
     payment: 'Secure payment', paymentsub: 'Cards · PayHere'
   },
-  sections: { featured: 'Fresh in stock', browse: 'Browse by category', related: 'Pairs well with', all: 'All products', popular: 'Popular right now.', reviews: 'Customer reviews', writeReview: 'Write a review', goesWith: 'Goes well with your cart' },
+  sections: { featured: 'Fresh in stock', browse: 'Browse by category', related: 'Pairs well with', all: 'All products', popular: 'Popular right now.', reviews: 'Customer reviews', writeReview: 'Write a review', goesWith: 'Goes well with your cart', recentlyViewed: 'Recently viewed' },
   services: {
     eyebrow: 'Repairs & Services', homeTitle: 'Cracked screen?\nWe\'ve got you.', homeSub: 'Phone and device repairs by trusted technicians. Drop it off, and we\'ll keep you posted on WhatsApp every step.',
     bookCta: 'Book a repair', trackCta: 'Track my repair',
@@ -138,7 +138,7 @@ const si: typeof en = {
     whatsapp: 'WhatsApp support', whatsappsub: 'A real human replies',
     payment: 'Secure payment', paymentsub: 'Cards · PayHere'
   },
-  sections: { featured: 'New Arrivals', browse: 'Category අනුව බලන්න', related: 'අදාළ Products', all: 'සියලුම Products', popular: 'දැන් ජනප්‍රියයි', reviews: 'Customer Reviews', writeReview: 'Review එකක් ලියන්න', goesWith: 'ඔබේ කරත්තයට ගැලපේ' },
+  sections: { featured: 'New Arrivals', browse: 'Category අනුව බලන්න', related: 'අදාළ Products', all: 'සියලුම Products', popular: 'දැන් ජනප්‍රියයි', reviews: 'Customer Reviews', writeReview: 'Review එකක් ලියන්න', goesWith: 'ඔබේ කරත්තයට ගැලපේ', recentlyViewed: 'මෑතකදී බැලූ' },
   services: {
     eyebrow: 'Repairs & Services', homeTitle: 'Screen එක කැඩිලාද?\nඅපි එය හදලා දෙන්නම්.', homeSub: 'විශ්වාසනීය කාර්මිකයන් අතින් දුරකථන සහ උපාංග repairs. භාර දෙන්න, සෑම පියවරක්ම WhatsApp හරහා අපි ඔබව දැනුවත් කරනවා.',
     bookCta: 'Book a repair', trackCta: 'Track my repair',
@@ -249,7 +249,7 @@ const ta: typeof en = {
     whatsapp: 'WhatsApp support', whatsappsub: 'A real human replies',
     payment: 'Secure payment', paymentsub: 'Cards · PayHere'
   },
-  sections: { featured: 'New Arrivals', browse: 'Category வாரியாக பாருங்கள்', related: 'இதனுடன் பொருந்தும்', all: 'அனைத்து Products', popular: 'இப்போது பிரபலம்.', reviews: 'Customer Reviews', writeReview: 'Review எழுதுங்கள்', goesWith: 'உங்கள் Cart-க்கு ஏற்றது' },
+  sections: { featured: 'New Arrivals', browse: 'Category வாரியாக பாருங்கள்', related: 'இதனுடன் பொருந்தும்', all: 'அனைத்து Products', popular: 'இப்போது பிரபலம்.', reviews: 'Customer Reviews', writeReview: 'Review எழுதுங்கள்', goesWith: 'உங்கள் Cart-க்கு ஏற்றது', recentlyViewed: 'சமீபத்தில் பார்த்தவை' },
   services: {
     eyebrow: 'Repairs & Services', homeTitle: 'Screen உடைந்ததா?\nநாங்கள் சரிசெய்கிறோம்.', homeSub: 'நம்பகமான தொழில்நுட்ப வல்லுநர்களால் சாதன repairs. கொடுங்கள், ஒவ்வொரு படியையும் WhatsApp-ல் தெரிவிப்போம்.',
     bookCta: 'Book a repair', trackCta: 'Track my repair',

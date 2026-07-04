@@ -10,6 +10,7 @@ import type { Dict } from '@/lib/i18n/dictionaries';
 import type { Category } from '@/lib/types';
 import { SITE, waLink } from '@/lib/site';
 import ThemeToggle from './ThemeToggle';
+import SearchBox from './SearchBox';
 
 import Image from 'next/image';
 
@@ -99,11 +100,10 @@ export default function Header({ locale, dict, categories }:
           </Link>
         </nav>
 
-        {/* desktop search pill */}
-        <Link href={`/${locale}/search`}
-          className="pressable btn-pill ml-auto mr-2 hidden h-10 items-center gap-2 bg-card px-4 text-[13px] font-medium text-muted transition-colors hover:text-ink md:flex">
-          <SearchIcon /> <span>{dict.search.go}</span>
-        </Link>
+        {/* desktop search — search-as-you-type with product suggestions */}
+        <div className="ml-auto mr-2 hidden min-w-0 flex-1 max-w-md md:block">
+          <SearchBox locale={locale} placeholder={dict.search.go} />
+        </div>
 
         <div className="ml-auto flex items-center gap-2 md:ml-0">
           {/* mobile search icon */}

@@ -87,6 +87,8 @@ export async function upsertProduct(form: FormData) {
     base_price: Number(form.get('base_price') || 0),
     is_active: form.get('is_active') === 'on',
     warranty_months: Math.max(0, Number(form.get('warranty_months') || 0)),
+    meta_title: String(form.get('meta_title') || '').trim().slice(0, 120) || null,
+    meta_description: String(form.get('meta_description') || '').trim().slice(0, 300) || null,
     has_storage_variants: form.get('has_storage_variants') === 'true',
     specs
   };
@@ -695,4 +697,49 @@ export async function purgeProduct(productId: string) {
   const { error } = await supabase.from('products').delete().eq('id', productId);
   if (error) throw new Error(error.message);
   revalidatePath('/admin/products/trash');
+}
+
+// ---------------- Global admin search (Ctrl+K palette) ----------------
+export type AdminHit = { kind: 'order' | 'product' | 'customer'; title: string; sub: string; href: string };
+
+export async function adminGlobalSearch(query: string): Promise<AdminHit[]> {
+  await requireStaff();
+  const q = query.trim().replace(/[^\p{L}\p{N}\s@.+-]/gu, '').slice(0, 60);
+  if (q.length < 2) return [];
+  const supabase = (await getServerSupabase())!;
+  const like = `%${q}%`;
+
+  const [orders, products, skus, contacts] = await Promise.all([
+    supabase.from('orders')
+      .select('id, order_number, status, total, customer_phone')
+      .or(`order_number.ilike.${like},customer_phone.ilike.${like}`)
+      .order('created_at', { ascending: false }).limit(5),
+    supabase.from('products')
+      .select('id, name, brand, is_active')
+      .or(`name.ilike.${like},brand.ilike.${like}`)
+      .limit(5),
+    supabase.from('product_variants')
+      .select('sku, products!inner(id, name)')
+      .ilike('sku', like).limit(3),
+    supabase.from('contacts')
+      .select('id, full_name, phone')
+      .or(`full_name.ilike.${like},phone.ilike.${like}`)
+      .limit(5)
+  ]);
+
+  const hits: AdminHit[] = [];
+  for (const o of orders.data ?? [])
+    hits.push({ kind: 'order', title: o.order_number, sub: `${o.status} · Rs ${Number(o.total).toLocaleString('en-LK')} · ${o.customer_phone}`, href: '/admin/orders' });
+  for (const p of products.data ?? [])
+    hits.push({ kind: 'product', title: p.name, sub: `${p.brand ?? 'Product'}${p.is_active ? '' : ' · inactive'}`, href: `/admin/products/${p.id}` });
+  for (const v of skus.data ?? []) {
+    const prod = v.products as unknown as { id: string; name: string };
+    hits.push({ kind: 'product', title: prod.name, sub: `SKU ${v.sku}`, href: `/admin/products/${prod.id}` });
+  }
+  for (const c of contacts.data ?? [])
+    hits.push({ kind: 'customer', title: c.full_name ?? c.phone ?? 'Customer', sub: c.phone ?? '', href: '/admin/customers' });
+
+  // de-dupe products found via both name and SKU
+  const seen = new Set<string>();
+  return hits.filter(h => { const k = h.kind + h.href + h.title; if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 12);
 }

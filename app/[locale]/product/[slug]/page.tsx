@@ -13,6 +13,7 @@ import ProductGrid from '@/components/ProductGrid';
 import Reviews from '@/components/Reviews';
 import Reveal from '@/components/Reveal';
 import { safeJsonLd } from '@/lib/jsonld';
+import RecentlyViewed, { RecentlyViewedTracker } from '@/components/RecentlyViewed';
 
 export const revalidate = 0;
 
@@ -28,11 +29,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Keyword pattern that ranks for local intent: "<Product> Price in Sri Lanka"
   const pricing = priceProduct(p, await getActiveDiscounts());
   const priceStr = pricing.price > 0 ? ` is Rs ${pricing.price.toLocaleString('en-LK')}` : '';
-  const title = `${p.name} Price in Sri Lanka`;
-  const desc = (p.description
+  // Staff can hand-tune these per product from the admin SEO panel;
+  // otherwise fall back to the local-intent template that ranks in LK.
+  const title = p.meta_title?.trim() || `${p.name} Price in Sri Lanka`;
+  const desc = (p.meta_description?.trim() || (p.description
     ? `${p.name}${priceStr} at ${SITE.name}. ${p.description}`
     : `${p.name}${priceStr} at ${SITE.name}. Genuine stock, official warranty and islandwide cash on delivery.`
-  ).slice(0, 160);
+  )).slice(0, 160);
   return {
     title,
     description: desc,
@@ -82,8 +85,30 @@ export default async function ProductPage({ params }: Props) {
       url: productUrl,
       priceCurrency: 'LKR',
       price: pricing.price,
+      // Google Merchant listing requirements: condition, price validity,
+      // shipping + return policy all make the listing eligible for the
+      // full rich result (price, stars, shipping) in Search.
+      itemCondition: 'https://schema.org/NewCondition',
+      priceValidUntil: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10),
       availability: pricing.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      seller: { '@type': 'Organization', name: SITE.name }
+      seller: { '@type': 'Organization', name: SITE.name },
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'LK' },
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 1, unitCode: 'DAY' },
+          transitTime: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 4, unitCode: 'DAY' }
+        }
+      },
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'LK',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        merchantReturnDays: 7,
+        returnMethod: 'https://schema.org/ReturnByMail',
+        returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility'
+      }
     }
   };
 
@@ -131,6 +156,15 @@ export default async function ProductPage({ params }: Props) {
           </section>
         </Reveal>
       )}
+
+      {/* Record this visit + show the visitor's own browsing trail */}
+      <RecentlyViewedTracker
+        slug={slug}
+        name={product.name}
+        image={product.product_images?.[0] ? imageUrl(product.product_images[0].storage_path) : null}
+        price={pricing.price}
+      />
+      <RecentlyViewed locale={locale} title={dict.sections.recentlyViewed} excludeSlug={slug} />
     </div>
   );
 }
