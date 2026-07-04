@@ -12,9 +12,10 @@ export default async function AdminStockAlerts() {
     .order('created_at', { ascending: false })
     .limit(500);
 
-  const groups = new Map<string, { productName: string; requests: { id: string; phone: string; created_at: string }[] }>();
+  type AlertReq = { id: string; phone: string; created_at: string };
+  const groups = new Map<string, { productName: string; requests: AlertReq[] }>();
   for (const r of requests ?? []) {
-    const g = groups.get(r.product_id) ?? { productName: r.product_name, requests: [] };
+    const g = groups.get(r.product_id) ?? { productName: r.product_name as string, requests: [] as AlertReq[] };
     g.requests.push({ id: r.id, phone: r.phone, created_at: r.created_at });
     groups.set(r.product_id, g);
   }
