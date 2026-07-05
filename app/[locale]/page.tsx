@@ -85,6 +85,34 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
       {/* JSON-LD Organization + WebSite schema for SEO */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(orgJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(siteJsonLd) }} />
+      {/* FAQPage schema — answers the exact questions LK buyers google before
+          purchasing from an online phone shop */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: `Does ${SITE.name} deliver islandwide in Sri Lanka?`,
+            acceptedAnswer: { '@type': 'Answer', text: `Yes. ${SITE.name} delivers to every district in Sri Lanka, usually within 1–4 working days, with cash on delivery available.` }
+          },
+          {
+            '@type': 'Question',
+            name: 'Is cash on delivery (COD) available?',
+            acceptedAnswer: { '@type': 'Answer', text: 'Yes, cash on delivery is available islandwide, so you can pay when your phone arrives. Online card payment via PayHere is also supported.' }
+          },
+          {
+            '@type': 'Question',
+            name: 'Are the phones genuine with warranty?',
+            acceptedAnswer: { '@type': 'Answer', text: `All phones and accessories at ${SITE.name} are 100% genuine with official warranty. Warranty is registered against your IMEI at dispatch.` }
+          },
+          {
+            '@type': 'Question',
+            name: 'Where is the shop located?',
+            acceptedAnswer: { '@type': 'Answer', text: `${SITE.name} is located in Nugegoda, Sri Lanka. You can order online for delivery or choose store pickup at checkout.` }
+          }
+        ]
+      }) }} />
 
       {/* ===================== HERO — with video background ===================== */}
       <section className="pt-6 md:pt-7" aria-label="Featured product">

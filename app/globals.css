@@ -577,3 +577,42 @@ body {
   to { transform: translateX(-50%); }
 }
 .brand-scroll:hover { animation-play-state: paused; }
+
+/* ===================================================================
+   ADMIN — mobile bottom tab bar + touch refinements
+   =================================================================== */
+.admin-bottom-nav {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 45;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.admin-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 2px 9px;
+  min-height: 56px;             /* comfy thumb target */
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+  transition: color .15s ease;
+}
+.admin-tab svg { height: 20px; width: 20px; }
+.admin-tab[data-active='true'] { color: var(--volt); }
+.admin-tab[data-active='true'] svg { stroke-width: 2.2; }
+.admin-tab:active { transform: scale(.94); }
+
+/* Bigger tap targets in the drawer/sidebar on coarse pointers */
+@media (pointer: coarse) {
+  .admin-nav-link { padding: 0.75rem 0.85rem; font-size: 14px; }
+}

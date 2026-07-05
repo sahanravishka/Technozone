@@ -8,7 +8,7 @@ import { SITE } from '@/lib/site';
 
 import AdminSearch from './AdminSearch';
 
-export type NavItem = { label: string; href: string };
+export type NavItem = { label: string; href: string; group?: string };
 
 function Icon({ href }: { href: string }) {
   const p = (() => {
@@ -36,6 +36,37 @@ function Icon({ href }: { href: string }) {
       strokeLinecap="round" strokeLinejoin="round" className="h-[17px] w-[17px] shrink-0" aria-hidden>
       {p}
     </svg>
+  );
+}
+
+/** Nav list with small group headings ("Selling", "My shop", …). */
+function GroupedNav({ nav, isActive, collapsed = false, onNavigate }:
+  { nav: NavItem[]; isActive: (h: string) => boolean; collapsed?: boolean; onNavigate?: () => void }) {
+  let lastGroup: string | undefined;
+  return (
+    <>
+      {nav.map(({ label, href, group }) => {
+        const heading = group && group !== lastGroup ? group : null;
+        lastGroup = group ?? lastGroup;
+        return (
+          <span key={href} className="contents">
+            {heading && !collapsed && (
+              <span className="mt-3 mb-1 block px-3 text-[10px] font-bold uppercase tracking-[0.12em] text-white/30 first:mt-0">
+                {heading}
+              </span>
+            )}
+            {heading && collapsed && <span className="my-1.5 block h-px bg-white/10" aria-hidden />}
+            <Link href={href} prefetch onClick={onNavigate}
+              data-active={isActive(href)}
+              title={collapsed ? label : undefined}
+              className={`admin-nav-link${collapsed ? ' justify-center' : ''}`}>
+              <Icon href={href} />
+              {!collapsed && <span className="truncate">{label}</span>}
+            </Link>
+          </span>
+        );
+      })}
+    </>
   );
 }
 
@@ -146,12 +177,8 @@ export function AdminShell({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-2.5 py-1 flex flex-col gap-0.5">
-          {nav.map(({ label, href }) => (
-            <Link key={href} href={href} prefetch onClick={() => setDrawerOpen(false)}
-              data-active={isActive(href)} className="admin-nav-link">
-              <Icon href={href} /><span>{label}</span>
-            </Link>
-          ))}
+          <div className="mb-2 px-0.5"><AdminSearch variant="dark" /></div>
+          <GroupedNav nav={nav} isActive={isActive} onNavigate={() => setDrawerOpen(false)} />
         </nav>
 
         <div className="shrink-0 border-t border-white/10 px-2.5 pt-3 pb-6 space-y-0.5">
@@ -202,17 +229,14 @@ export function AdminShell({
           )}
         </div>
 
+        {/* Global search — or press Ctrl+K anywhere */}
+        <div className="mx-2.5 mb-2 shrink-0">
+          <AdminSearch variant="dark" iconOnly={isCollapsed} />
+        </div>
+
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto px-2.5 flex flex-col gap-0.5">
-          {nav.map(({ label, href }) => (
-            <Link key={href} href={href} prefetch
-              data-active={isActive(href)}
-              title={isCollapsed ? label : undefined}
-              className={`admin-nav-link${isCollapsed ? ' justify-center' : ''}`}>
-              <Icon href={href} />
-              {!isCollapsed && <span className="truncate">{label}</span>}
-            </Link>
-          ))}
+          <GroupedNav nav={nav} isActive={isActive} collapsed={isCollapsed} />
         </nav>
 
         {/* Footer */}
@@ -251,10 +275,27 @@ export function AdminShell({
         </div>
       </header>
 
-      {/* Desktop global search — floats top-right, or press Ctrl+K anywhere */}
-      <div className="fixed right-6 top-5 z-30 hidden md:block">
-        <AdminSearch />
-      </div>
+
+      {/* ===== Mobile Bottom Tab Bar — thumb-reach nav for the 4 daily jobs ===== */}
+      <nav className="admin-bottom-nav md:hidden" aria-label="Quick navigation">
+        {([
+          { label: 'Home', href: '/admin' },
+          { label: 'Orders', href: '/admin/orders' },
+          { label: 'Products', href: '/admin/products' },
+          { label: 'Repairs', href: '/admin/repairs' }
+        ] as const).map(t => (
+          <Link key={t.href} href={t.href} prefetch data-active={isActive(t.href)} className="admin-tab">
+            <Icon href={t.href} />
+            <span>{t.label}</span>
+          </Link>
+        ))}
+        <button onClick={() => setDrawerOpen(true)} className="admin-tab" aria-label="More menu">
+          <svg viewBox="0 0 24 24" className="h-[17px] w-[17px] shrink-0" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden>
+            <circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" />
+          </svg>
+          <span>More</span>
+        </button>
+      </nav>
 
       {/* ===== Main Content ===== */}
       <main className={`w-full transition-[margin-left] duration-200 ease-in-out pt-14 pb-20 px-4 sm:px-6 md:pt-8 md:pb-14 md:px-8 ${isCollapsed ? 'md:ml-16' : 'md:ml-60'}`}>

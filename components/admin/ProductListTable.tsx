@@ -130,27 +130,39 @@ export default function ProductListTable({
           const img = p.product_images[0];
           return (
             <div key={p.id}
-              className={`flex items-center gap-3 px-4 py-3 transition-colors hover:bg-paper ${i ? 'border-t border-line/70' : ''}`}>
+              className={`flex items-start gap-3 px-3.5 py-3 transition-colors hover:bg-paper sm:items-center sm:px-4 ${i ? 'border-t border-line/70' : ''}`}>
               <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleOne(p.id)}
                 aria-label={`Select ${p.name}`}
-                className="h-4 w-4 shrink-0 rounded accent-volt" />
-              <Link href={`/admin/products/${p.id}`} className="flex min-w-0 flex-1 items-center gap-3.5">
-                <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-[#F0F3F8]">
-                  {img && <Image src={imageUrl(img.storage_path)} alt="" fill sizes="44px" className="object-cover" />}
+                className="mt-3.5 h-4 w-4 shrink-0 rounded accent-volt sm:mt-0" />
+              <Link href={`/admin/products/${p.id}`} className="flex min-w-0 flex-1 items-start gap-3 sm:items-center sm:gap-3.5">
+                <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[#F0F3F8] sm:h-11 sm:w-11 sm:rounded-lg">
+                  {img && <Image src={imageUrl(img.storage_path)} alt="" fill sizes="48px" className="object-cover" />}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <b className="block truncate text-[13.5px]">{p.name}</b>
-                  <span className="text-[11.5px] text-muted">
-                    /{p.slug} · {catName(p.category_id)} · {p.product_variants.length} variant{p.product_variants.length === 1 ? '' : 's'}
+                  {/* full name always readable: wraps to 2 lines on phones */}
+                  <b className="block text-[13.5px] leading-snug [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] overflow-hidden sm:truncate sm:[display:block]">{p.name}</b>
+                  <span className="mt-0.5 block truncate text-[11.5px] text-muted">
+                    {catName(p.category_id)} · {p.product_variants.length} variant{p.product_variants.length === 1 ? '' : 's'}
+                  </span>
+                  {/* phone-only second row: price + stock, never squeezed */}
+                  <span className="mt-1.5 flex items-center gap-2 sm:hidden">
+                    <span className="text-[13.5px] font-bold">{prices.length ? formatLKR(Math.min(...prices)) : '—'}</span>
+                    <span className={`rounded-lg px-2 py-0.5 text-[10.5px] font-semibold ${stock <= 3 ? 'bg-warn-soft text-warn' : 'bg-paper text-muted'}`}>
+                      {stock} in stock
+                    </span>
+                    <span className={`ml-auto rounded-full px-2 py-0.5 text-[10.5px] font-bold ${p.is_active ? 'bg-[#E8F7EE] text-ok' : 'bg-paper text-muted'}`}>
+                      {p.is_active ? 'Live' : 'Hidden'}
+                    </span>
                   </span>
                 </span>
-                <span className={`rounded-lg px-2 py-0.5 text-[11px] font-semibold ${stock <= 3 ? 'bg-warn-soft text-warn' : 'bg-paper text-muted'}`}>
+                {/* desktop-only columns */}
+                <span className={`hidden rounded-lg px-2 py-0.5 text-[11px] font-semibold sm:inline ${stock <= 3 ? 'bg-warn-soft text-warn' : 'bg-paper text-muted'}`}>
                   {stock} in stock
                 </span>
-                <span className="w-28 text-right text-[13px] font-bold">
+                <span className="hidden w-28 text-right text-[13px] font-bold sm:block">
                   {prices.length ? formatLKR(Math.min(...prices)) : '—'}
                 </span>
-                <span className={`h-2 w-2 rounded-full ${p.is_active ? 'bg-ok' : 'bg-line'}`} title={p.is_active ? 'Active' : 'Hidden'} />
+                <span className={`hidden h-2 w-2 rounded-full sm:block ${p.is_active ? 'bg-ok' : 'bg-line'}`} title={p.is_active ? 'Active' : 'Hidden'} />
               </Link>
             </div>
           );

@@ -145,17 +145,17 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     <div>
       <PageHeader title="Dashboard" subtitle="Today at a glance" />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         {stats.map(s => (
-          <div key={s.label} className="admin-card flex items-center gap-4 p-5">
-            <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-paper ${s.accent}`}>
+          <div key={s.label} className="admin-card flex items-center gap-3 p-3.5 sm:gap-4 sm:p-5">
+            <span className={`hidden h-11 w-11 shrink-0 place-items-center rounded-2xl bg-paper sm:grid ${s.accent}`}>
               <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 {s.icon}
               </svg>
             </span>
             <span className="min-w-0">
               <span className="block text-[12px] font-semibold text-muted">{s.label}</span>
-              <span className="mt-0.5 block truncate text-xl font-bold tracking-tight lg:text-2xl">{s.value}</span>
+              <span className="mt-0.5 block truncate text-[17px] font-bold tracking-tight sm:text-xl lg:text-2xl">{s.value}</span>
               {s.sub && <span className="block text-[11px] text-muted">{s.sub}</span>}
             </span>
           </div>

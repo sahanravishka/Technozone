@@ -66,7 +66,7 @@ export async function getProducts(opts?: { categorySlug?: string; limit?: number
   }
   const sb = getSupabase();
   if (sb) {
-    let q = sb.from('products').select(PRODUCT_SELECT).eq('is_active', true)
+    let q = sb.from('products').select(PRODUCT_SELECT).eq('is_active', true).is('deleted_at', null)
       .order('created_at', { ascending: false });
     if (opts?.categorySlug) {
       const { data: cat } = await sb.from('categories').select('id').eq('slug', opts.categorySlug).single();
@@ -93,7 +93,7 @@ export async function getProductsByIds(ids: string[]): Promise<Product[]> {
   }
   const sb = getSupabase();
   if (sb) {
-    const { data } = await sb.from('products').select(PRODUCT_SELECT).in('id', ids).eq('is_active', true);
+    const { data } = await sb.from('products').select(PRODUCT_SELECT).in('id', ids).eq('is_active', true).is('deleted_at', null);
     if (data) return data as unknown as Product[];
   }
   return demoProducts.filter(p => ids.includes(p.id));
@@ -106,7 +106,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
   const sb = getSupabase();
   if (sb) {
     const { data } = await sb.from('products').select(PRODUCT_SELECT)
-      .eq('slug', slug).eq('is_active', true).maybeSingle();
+      .eq('slug', slug).eq('is_active', true).is('deleted_at', null).maybeSingle();
     if (data) return data as unknown as Product;
   }
   return demoProducts.find(p => p.slug === slug) ?? null;
@@ -124,7 +124,7 @@ export async function getSuggestions(productId: string): Promise<Product[]> {
     if (links?.length) {
       const ids = links.map(l => l.suggested_product_id);
       const { data } = await sb.from('products').select(PRODUCT_SELECT)
-        .in('id', ids).eq('is_active', true);
+        .in('id', ids).eq('is_active', true).is('deleted_at', null);
       if (data?.length) return data as unknown as Product[];
     }
     if (links) return []; // connected, just no pins
@@ -199,12 +199,12 @@ export async function getCartSuggestions(productIds: string[], limit = 6): Promi
       .filter(id => !productIds.includes(id)).slice(0, limit);
     if (ids.length) {
       const { data } = await sb.from('products').select(PRODUCT_SELECT)
-        .in('id', ids).eq('is_active', true);
+        .in('id', ids).eq('is_active', true).is('deleted_at', null);
       if (data?.length) return data as unknown as Product[];
     }
     // fallback: cheap accessories from an "Accessories"/"Chargers" category
     const { data: acc } = await sb.from('products').select(PRODUCT_SELECT)
-      .eq('is_active', true).order('base_price').limit(limit + productIds.length);
+      .eq('is_active', true).is('deleted_at', null).order('base_price').limit(limit + productIds.length);
     return ((acc ?? []) as unknown as Product[]).filter(p => !productIds.includes(p.id)).slice(0, limit);
   }
   // demo
@@ -233,7 +233,7 @@ export async function searchProducts(query: string, limit = 60): Promise<Product
     if (skuIds.length) filter += `,id.in.(${skuIds.join(',')})`;
 
     const { data } = await sb.from('products').select(PRODUCT_SELECT)
-      .eq('is_active', true).or(filter).limit(limit);
+      .eq('is_active', true).is('deleted_at', null).or(filter).limit(limit);
     if (data) return data as unknown as Product[];
   }
   // demo fallback: match name/brand/sku in-memory
@@ -256,7 +256,7 @@ export async function getBrands(): Promise<string[]> {
   }
   const sb = getSupabase();
   if (sb) {
-    const { data } = await sb.from('products').select('brand').eq('is_active', true).not('brand', 'is', null);
+    const { data } = await sb.from('products').select('brand').eq('is_active', true).is('deleted_at', null).not('brand', 'is', null);
     if (data) return [...new Set(data.map(d => d.brand as string).filter(Boolean))].sort();
   }
   return [...new Set(demoProducts.map(p => p.brand ?? '').filter(Boolean))].sort();
@@ -276,7 +276,7 @@ export async function getBrandBySlug(slug: string): Promise<{ brand: string; pro
   const sb = getSupabase();
   if (sb) {
     const { data } = await sb.from('products').select(PRODUCT_SELECT)
-      .eq('is_active', true).eq('brand', brand).order('created_at', { ascending: false });
+      .eq('is_active', true).is('deleted_at', null).eq('brand', brand).order('created_at', { ascending: false });
     return { brand, products: (data as unknown as Product[]) ?? [] };
   }
   return { brand, products: demoProducts.filter(p => p.brand === brand) };

@@ -76,16 +76,35 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     publisher: SITE.name,
     creator: SITE.name,
     keywords: [
-      'mobile phones Sri Lanka', 'phone prices Sri Lanka', 'buy phones online Sri Lanka',
-      'Nokia price Sri Lanka', 'Samsung price Sri Lanka', 'phone shop Sri Lanka',
-      'chargers', 'earbuds', 'phone repair Sri Lanka', SITE.name
+      // English — how Sri Lankans actually search
+      'mobile phones Sri Lanka', 'phone price in Sri Lanka', 'phone price list Sri Lanka',
+      'buy phones online Sri Lanka', 'smartphone price Sri Lanka', 'mobile shop Colombo',
+      'Nokia price in Sri Lanka', 'Samsung price in Sri Lanka', 'keypad phone price Sri Lanka',
+      'phone shop Nugegoda', 'cash on delivery phones Sri Lanka', 'genuine phones Sri Lanka',
+      'phone accessories Sri Lanka', 'chargers Sri Lanka', 'earbuds price Sri Lanka',
+      'phone repair Sri Lanka', 'phone repair Nugegoda',
+      // Singlish / Sinhala transliterations people type into Google
+      'phone mila Sri Lanka', 'dura katha mila', 'ෆෝන් මිල ලංකාව', 'ජංගම දුරකථන මිල',
+      // Tamil
+      'மொபைல் போன் விலை இலங்கை',
+      SITE.name
     ],
     robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
     openGraph: {
-      type: 'website', siteName: SITE.name, locale,
+      type: 'website', siteName: SITE.name,
+      // proper territory-tagged locales so social/search know this is Sri Lanka
+      locale: ({ en: 'en_LK', si: 'si_LK', ta: 'ta_LK' } as Record<string, string>)[locale] ?? 'en_LK',
+      alternateLocale: ['en_LK', 'si_LK', 'ta_LK'],
       url: `${SITE.url}/${locale}`, title: SITE.seoTitle, description: SITE.description
     },
-    twitter: { card: 'summary_large_image', title: SITE.seoTitle, description: SITE.description }
+    twitter: { card: 'summary_large_image', title: SITE.seoTitle, description: SITE.description },
+    // Classic geo-targeting meta — still read by local/regional crawlers
+    other: {
+      'geo.region': 'LK-1',
+      'geo.placename': 'Nugegoda, Sri Lanka',
+      'geo.position': '6.8535;79.8997',
+      'ICBM': '6.8535, 79.8997'
+    }
   };
 }
 

@@ -5,22 +5,24 @@ import { AdminShell, type NavItem } from '@/components/admin/AdminNav';
 
 export const dynamic = 'force-dynamic';
 
+// Grouped in the order of a shop day: sell -> manage the shelf -> help
+// customers -> people -> shop setup. Plain words so anyone can find things.
 const NAV: NavItem[] = [
-  { label: 'Dashboard',  href: '/admin' },
-  { label: 'Orders',     href: '/admin/orders' },
-  { label: 'Abandoned carts', href: '/admin/abandoned-carts' },
-  { label: 'Repairs',    href: '/admin/repairs' },
-  { label: 'Returns',    href: '/admin/returns' },
-  { label: 'Warranties', href: '/admin/warranties' },
-  { label: 'Stock alerts', href: '/admin/stock-alerts' },
-  { label: 'Customers',  href: '/admin/customers' },
-  { label: 'Reviews',    href: '/admin/reviews' },
-  { label: 'Products',   href: '/admin/products' },
-  { label: 'Categories', href: '/admin/categories' },
-  { label: 'Discounts',  href: '/admin/discounts' },
-  { label: 'Banners',    href: '/admin/banners' },
-  { label: 'Settings',   href: '/admin/settings' },
-  { label: 'Staff',      href: '/admin/staff' },
+  { group: 'Selling',   label: 'Home',            href: '/admin' },
+  { group: 'Selling',   label: 'Orders',          href: '/admin/orders' },
+  { group: 'Selling',   label: 'Abandoned carts', href: '/admin/abandoned-carts' },
+  { group: 'My shop',   label: 'Products',        href: '/admin/products' },
+  { group: 'My shop',   label: 'Categories',      href: '/admin/categories' },
+  { group: 'My shop',   label: 'Discounts',       href: '/admin/discounts' },
+  { group: 'My shop',   label: 'Homepage banners', href: '/admin/banners' },
+  { group: 'My shop',   label: 'Stock alerts',    href: '/admin/stock-alerts' },
+  { group: 'Customer care', label: 'Repairs',     href: '/admin/repairs' },
+  { group: 'Customer care', label: 'Returns',     href: '/admin/returns' },
+  { group: 'Customer care', label: 'Warranties',  href: '/admin/warranties' },
+  { group: 'Customer care', label: 'Reviews',     href: '/admin/reviews' },
+  { group: 'People',    label: 'Customers',       href: '/admin/customers' },
+  { group: 'People',    label: 'Staff',           href: '/admin/staff' },
+  { group: 'Setup',     label: 'Settings',        href: '/admin/settings' },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

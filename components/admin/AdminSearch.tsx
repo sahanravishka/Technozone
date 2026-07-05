@@ -15,7 +15,8 @@ const KIND_BADGE: Record<AdminHit['kind'], { label: string; cls: string }> = {
  * search button, and jump straight to any order, product (by name or SKU) or
  * customer. Runs through a staff-gated server action.
  */
-export default function AdminSearch() {
+export default function AdminSearch({ variant = 'light', iconOnly = false }:
+  { variant?: 'light' | 'dark'; iconOnly?: boolean } = {}) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
   const [hits, setHits] = useState<AdminHit[]>([]);
@@ -65,13 +66,18 @@ export default function AdminSearch() {
   return (
     <>
       <button onClick={() => setOpen(true)}
-        className="pressable flex h-9 items-center gap-2 rounded-xl bg-paper px-3 text-[12.5px] font-semibold text-muted transition-colors hover:text-ink"
+        className={`pressable flex h-9 items-center gap-2 rounded-xl px-3 text-[12.5px] font-semibold transition-colors ${
+          variant === 'dark'
+            ? 'w-full bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+            : 'bg-paper text-muted hover:text-ink'
+        } ${iconOnly ? 'justify-center px-0' : ''}`}
+        title={iconOnly ? 'Search (Ctrl+K)' : undefined}
         aria-label="Search everything (Ctrl+K)">
-        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+        <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
           <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
         </svg>
-        <span className="hidden sm:inline">Search</span>
-        <kbd className="hidden rounded-md border border-line bg-card px-1.5 py-0.5 text-[10px] font-bold text-muted sm:inline">Ctrl K</kbd>
+        {!iconOnly && <span className="hidden sm:inline">Search anything</span>}
+        {!iconOnly && <kbd className={`ml-auto hidden rounded-md px-1.5 py-0.5 text-[10px] font-bold lg:inline ${variant === 'dark' ? 'border border-white/15 text-white/40' : 'border border-line bg-card text-muted'}`}>Ctrl K</kbd>}
       </button>
 
       {open && (
