@@ -108,7 +108,7 @@ const en = {
     number: 'Order', timeline: 'Order status', items: 'Items', total: 'Total',
     help: 'Questions about this order? Message us on WhatsApp.'
   },
-  footer: { rights: 'All rights reserved.', built: 'Genuine electronics, fair prices, fast delivery.' },
+  footer: { rights: 'All rights reserved.', built: 'Genuine electronics, fair prices, fast delivery.', terms: 'Terms & Conditions', warrantyPolicy: 'Warranty Policy', returnPolicy: 'Return Policy', privacy: 'Privacy Policy' },
   badge: { sale: 'SALE' }
 };
 
@@ -219,7 +219,7 @@ const si: typeof en = {
     number: 'Order අංකය', timeline: 'Order Status', items: 'Items', total: 'Total එක',
     help: 'මෙම order එක පිළිබඳව ප්‍රශ්න තිබේද? WhatsApp හරහා අපට පණිවිඩයක් එවන්න.'
   },
-  footer: { rights: 'All rights reserved.', built: 'සැබෑ ඉලෙක්ට්‍රොනික උපාංග, සාධාරණ මිල, වේගවත් delivery.' },
+  footer: { rights: 'All rights reserved.', built: 'සැබෑ ඉලෙක්ට්‍රොනික උපාංග, සාධාරණ මිල, වේගවත් delivery.', terms: 'නියම සහ කොන්දේසි', warrantyPolicy: 'වගකීම් ප්‍රතිපත්තිය', returnPolicy: 'ආපසු භාරදීමේ ප්‍රතිපත්තිය', privacy: 'රහස්‍යතා ප්‍රතිපත්තිය' },
   badge: { sale: 'SALE' }
 };
 
@@ -330,7 +330,7 @@ const ta: typeof en = {
     number: 'Order எண்', timeline: 'Order Status', items: 'Items', total: 'Total',
     help: 'இந்த order பற்றி கேள்விகளா? WhatsApp-ல் எங்களை தொடர்பு கொள்ளுங்கள்.'
   },
-  footer: { rights: 'All rights reserved.', built: 'அசல் electronics, நியாயமான விலை, விரைவான delivery.' },
+  footer: { rights: 'All rights reserved.', built: 'அசல் electronics, நியாயமான விலை, விரைவான delivery.', terms: 'விதிமுறைகள்', warrantyPolicy: 'உத்தரவாதக் கொள்கை', returnPolicy: 'திருப்பிக் கொள்கை', privacy: 'தனியுரிமைக் கொள்கை' },
   badge: { sale: 'SALE' }
 };
 

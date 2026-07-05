@@ -99,7 +99,16 @@ export default function Footer({ dict, categories, locale }:
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-[12.5px] font-semibold text-white/45 sm:flex-row">
+        {/* Policies — required by PayHere merchant review + genuinely useful */}
+        <nav aria-label="Policy links"
+          className="mt-12 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-white/10 pt-6 text-[12.5px] font-semibold sm:justify-start">
+          <Link href={`/${locale}/terms`} className={linkCls}>{dict.footer.terms}</Link>
+          <Link href={`/${locale}/warranty-policy`} className={linkCls}>{dict.footer.warrantyPolicy}</Link>
+          <Link href={`/${locale}/return-policy`} className={linkCls}>{dict.footer.returnPolicy}</Link>
+          <Link href={`/${locale}/privacy`} className={linkCls}>{dict.footer.privacy}</Link>
+        </nav>
+
+        <div className="mt-4 flex flex-col items-center justify-between gap-3 text-[12.5px] font-semibold text-white/45 sm:flex-row">
           <span>© {new Date().getFullYear()} {SITE.name} · {dict.footer.rights}</span>
           <span>{SITE.tagline}</span>
         </div>

@@ -46,6 +46,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       alternates: { languages: langAlts(`/brand/${brandSlug(b)}`) }
     });
 
+  // Policy pages — trust signals search engines look for on stores
+  for (const path of ['/terms', '/warranty-policy', '/return-policy', '/privacy'])
+    out.push({
+      url: `${SITE.url}/en${path}`,
+      lastModified: now, changeFrequency: 'monthly', priority: 0.3,
+      alternates: { languages: langAlts(path) }
+    });
+
   out.push({ url: `${SITE.url}/en/services`, lastModified: now, changeFrequency: 'monthly', priority: 0.7, alternates: { languages: langAlts('/services') } });
   out.push({ url: `${SITE.url}/en/warranty`, lastModified: now, changeFrequency: 'monthly', priority: 0.5, alternates: { languages: langAlts('/warranty') } });
   out.push({ url: `${SITE.url}/en/track`, lastModified: now, changeFrequency: 'monthly', priority: 0.5, alternates: { languages: langAlts('/track') } });
