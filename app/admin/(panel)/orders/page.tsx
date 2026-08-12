@@ -16,7 +16,7 @@ export default async function AdminOrders() {
   const [{ data: activeData }, { data: cancelledData }] = await Promise.all([
     supabase.from('orders')
       .select('id, order_number, status, payment_status, payment_method, fulfillment, total, customer_phone, created_at, shipping_address, order_items(qty, product_id, variant_id, product_name)')
-      .nin('status', ['cancelled', 'dispatched'])
+      .not('status', 'in', '(cancelled,dispatched)')
       .order('created_at', { ascending: false }).limit(200),
     supabase.from('orders')
       .select('id, order_number, status, payment_status, payment_method, fulfillment, total, customer_phone, created_at, shipping_address, order_items(qty, product_id, variant_id, product_name)')
