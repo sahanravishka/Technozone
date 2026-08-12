@@ -63,6 +63,96 @@ export async function getOrderDetail(orderId: string): Promise<OrderDetail> {
   return data as unknown as OrderDetail;
 }
 
+export type OrderJourneyEvent = {
+  type: 'created' | 'status_change' | 'serial_scanned';
+  timestamp: string;
+  title: string;
+  description: string;
+};
+
+export type OrderJourneyData = {
+  order_number: string;
+  created_at: string;
+  status: string;
+  payment_status: string;
+  payment_method: string;
+  customer_name: string;
+  customer_phone: string;
+  city: string;
+  total: number;
+  events: OrderJourneyEvent[];
+};
+
+export async function getOrderJourney(orderId: string): Promise<OrderJourneyData> {
+  await requireStaff();
+  const supabase = (await getServerSupabase())!;
+
+  const { data: order, error } = await supabase.from('orders')
+    .select('id, order_number, status, payment_status, payment_method, total, created_at, customer_phone, shipping_address')
+    .eq('id', orderId).single();
+  if (error || !order) throw new Error('Order not found');
+
+  const addr = order.shipping_address as { name?: string; city?: string } | null;
+
+  const [{ data: statusLogs }, { data: serials }] = await Promise.all([
+    supabase.from('order_status_log')
+      .select('from_status, to_status, note, created_at')
+      .eq('order_id', orderId)
+      .order('created_at', { ascending: true }),
+    supabase.from('order_item_serials')
+      .select('product_name, serial_no, created_at')
+      .eq('order_id', orderId)
+      .order('created_at', { ascending: true })
+  ]);
+
+  const events: OrderJourneyEvent[] = [];
+
+  // 1. Initial Order Placed Event
+  events.push({
+    type: 'created',
+    timestamp: order.created_at,
+    title: 'Order Placed',
+    description: `Customer placed order ${order.order_number} via ${order.payment_method === 'cod' ? 'Cash on Delivery' : order.payment_method === 'whatsapp' ? 'WhatsApp Pay' : 'Online Payment'}.`
+  });
+
+  // 2. Status Log Events
+  (statusLogs ?? []).forEach(log => {
+    const fromLabel = log.from_status ? String(log.from_status).toUpperCase() : 'NEW';
+    const toLabel = log.to_status ? String(log.to_status).toUpperCase() : 'UNKNOWN';
+    events.push({
+      type: 'status_change',
+      timestamp: log.created_at,
+      title: `Status: ${fromLabel} ➔ ${toLabel}`,
+      description: log.note || `Order transitioned from ${log.from_status} to ${log.to_status}`
+    });
+  });
+
+  // 3. Serial Scanned Events
+  (serials ?? []).forEach(s => {
+    events.push({
+      type: 'serial_scanned',
+      timestamp: s.created_at,
+      title: `IMEI / Serial Scanned`,
+      description: `${s.product_name} — S/N: ${s.serial_no}`
+    });
+  });
+
+  events.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+  return {
+    order_number: order.order_number,
+    created_at: order.created_at,
+    status: order.status,
+    payment_status: order.payment_status,
+    payment_method: order.payment_method,
+    customer_name: addr?.name ?? 'Customer',
+    customer_phone: order.customer_phone,
+    city: addr?.city ?? '—',
+    total: order.total,
+    events
+  };
+}
+
 export async function recallOrder(orderId: string) {
   await requireStaff(['owner']);
   const supabase = (await getServerSupabase())!;
@@ -541,6 +631,23 @@ export async function setServiceEstimate(jobId: string, estimate: number, finalP
 }
 
 // ---------------- Cash on Delivery / WhatsApp order collection ----------------
+export async function confirmPendingOrder(orderId: string) {
+  await requireStaff();
+  const supabase = (await getServerSupabase())!;
+  const { data: order } = await supabase.from('orders').select('payment_method').eq('id', orderId).single();
+  if (order?.payment_method === 'cod') {
+    // For COD, advance status from 'pending' to 'paid' (confirmed) while keeping payment_status as 'unpaid'
+    const { error } = await supabase.from('orders')
+      .update({ status: 'paid', updated_at: new Date().toISOString() })
+      .eq('id', orderId);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase.rpc('mark_order_collected', { p_order_id: orderId });
+    if (error) throw new Error(error.message);
+  }
+  revalidatePath('/admin/orders');
+}
+
 export async function markOrderCollected(orderId: string) {
   await requireStaff();
   const supabase = (await getServerSupabase())!;

@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 const NAV: NavItem[] = [
   { group: 'Selling',   label: 'Home',            href: '/admin' },
   { group: 'Selling',   label: 'Orders',          href: '/admin/orders' },
+  { group: 'Selling',   label: 'Invoices',        href: '/admin/invoices' },
   { group: 'Selling',   label: 'Abandoned carts', href: '/admin/abandoned-carts' },
   { group: 'My shop',   label: 'Products',        href: '/admin/products' },
   { group: 'My shop',   label: 'Categories',      href: '/admin/categories' },

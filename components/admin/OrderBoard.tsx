@@ -4,14 +4,14 @@ import { useState } from 'react';
 import OrderCard, { type AdminOrder } from './OrderCard';
 import PackModal from './PackModal';
 import OrderDetailModal from './OrderDetailModal';
+import OrderJourneyModal from './OrderJourneyModal';
 import PageHeader from './PageHeader';
 
 const STATUS_TABS = [
-  { key: 'all',        label: 'All',        dot: '' },
+  { key: 'all',        label: 'All Active', dot: '' },
   { key: 'pending',    label: 'Pending',    dot: '#B06A0A' },
-  { key: 'paid',       label: 'Paid',       dot: '#1B6FD8' },
+  { key: 'paid',       label: 'Confirmed',  dot: '#1B6FD8' },
   { key: 'packed',     label: 'Packed',     dot: '#0284C7' },
-  { key: 'dispatched', label: 'Dispatched', dot: '#059669' },
   { key: 'cancelled',  label: 'Cancelled',  dot: '#9CA3AF' },
 ] as const;
 
@@ -22,6 +22,7 @@ export default function OrderBoard({
   const [sel, setSel]         = useState<Set<string>>(new Set());
   const [packing, setPacking] = useState<AdminOrder | null>(null);
   const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [journeyId, setJourneyId] = useState<string | null>(null);
 
   const onSelect = (id: string, on: boolean) =>
     setSel(prev => { const n = new Set(prev); on ? n.add(id) : n.delete(id); return n; });
@@ -78,6 +79,7 @@ export default function OrderBoard({
             onSelect={onSelect}
             onPack={setPacking}
             onViewDetails={setDetailsId}
+            onViewJourney={setJourneyId}
           />
         ))}
         {!shown.length && (
@@ -92,6 +94,7 @@ export default function OrderBoard({
 
       {packing && <PackModal order={packing} onClose={() => setPacking(null)} />}
       {detailsId && <OrderDetailModal orderId={detailsId} onClose={() => setDetailsId(null)} />}
+      {journeyId && <OrderJourneyModal orderId={journeyId} onClose={() => setJourneyId(null)} />}
     </div>
   );
 }

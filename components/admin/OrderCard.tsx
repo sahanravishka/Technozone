@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { advanceOrder, markOrderCollected, recallOrder } from '@/app/admin/actions';
+import { advanceOrder, confirmPendingOrder, markOrderCollected, recallOrder } from '@/app/admin/actions';
 import { formatLKR } from '@/lib/site';
 
 /* ── Types ── */
@@ -29,35 +29,36 @@ const STATUS_PILL: Record<string, { label: string; bg: string; color: string }> 
 const PAY_LABEL: Record<string, string> = {
   cod: 'Cash on delivery', whatsapp: 'WhatsApp pay', payhere: 'Online payment',
 };
-// pending -> paid needs a real payment/COD confirmation, not a plain "next" click,
-// so it's handled separately below (confirmPending / needsPayConfirm).
 const NEXT: Record<string, string> = { paid: 'packed', packed: 'dispatched' };
 const NEXT_BTN: Record<string, string> = {
   paid: '✓ Pack order', packed: '✓ Mark dispatched',
 };
 
 export default function OrderCard({
-  order, waHref, selected, onSelect, onPack, onViewDetails,
+  order, waHref, selected, onSelect, onPack, onViewDetails, onViewJourney
 }: {
   order: AdminOrder; waHref: string; selected: boolean;
   onSelect: (id: string, on: boolean) => void;
   onPack:   (o: AdminOrder) => void;
   onViewDetails: (id: string) => void;
+  onViewJourney?: (id: string) => void;
 }) {
   const [pending, start]       = useTransition();
   const [cancelStep, setCancelStep] = useState(0); // 0=idle 1=warn 2=confirm
   const [recallStep, setRecallStep] = useState(0); // 0=idle 1=confirm
   const [recallErr, setRecallErr]   = useState('');
 
+  const isCod    = order.payment_method === 'cod';
   const next     = NEXT[order.status];
-  const pill     = STATUS_PILL[order.status];
+  const rawPill  = STATUS_PILL[order.status];
+  // For COD orders, when status is 'paid' (internally confirmed), show 'Confirmed' instead of 'Paid ✓'
+  const pill     = isCod && order.status === 'paid'
+    ? { label: 'Confirmed', bg: '#FEF3C7', color: '#92400E' }
+    : rawPill;
+
   const needScan = (order.requiredSerials ?? 0) > 0;
-  const paid     = order.payment_status === 'paid';
-  // COD and WhatsApp orders sit at 'pending' until staff confirm the order/
-  // payment; only PayHere auto-advances (via webhook). Previously this only
-  // checked 'whatsapp', so COD orders — the common case — had no way off
-  // Pending at all except Cancel.
-  const needsPayConfirm = (order.payment_method === 'whatsapp' || order.payment_method === 'cod') && !paid;
+  // Payment confirm button is only shown for unconfirmed pending COD / WhatsApp orders
+  const needsPayConfirm = (order.payment_method === 'whatsapp' || isCod) && order.status === 'pending';
   const isCancelled     = order.status === 'cancelled';
 
   const totalQty  = order.order_items.reduce((n, i) => n + i.qty, 0);
@@ -94,6 +95,16 @@ export default function OrderCard({
           className="pressable rounded-lg px-2 py-1 text-[11.5px] font-semibold text-muted hover:bg-paper hover:text-ink">
           👁 Details
         </button>
+        {onViewJourney && (
+          <button onClick={() => onViewJourney(order.id)}
+            className="pressable rounded-lg bg-paper px-2 py-1 text-[11.5px] font-semibold text-muted hover:text-ink hover:bg-line">
+            🗺️ Journey
+          </button>
+        )}
+        <a href={`/admin/orders/${order.id}/invoice`} target="_blank" rel="noopener noreferrer"
+          className="pressable rounded-lg bg-volt/10 px-2 py-1 text-[11.5px] font-bold text-volt-deep hover:bg-volt/20">
+          🧾 Invoice
+        </a>
         {pill && (
           <span className="rounded-lg px-2.5 py-1 text-[11.5px] font-bold"
             style={{ background: pill.bg, color: pill.color }}>{pill.label}</span>
@@ -103,7 +114,7 @@ export default function OrderCard({
         </span>
         {needsPayConfirm && (
           <span className="rounded-lg bg-[#FEE2E2] px-2.5 py-1 text-[11.5px] font-bold text-sale">
-            ⚠ Payment not received
+            ⚠ Awaiting confirmation
           </span>
         )}
         {order.fulfillment === 'pickup' && (
@@ -128,28 +139,35 @@ export default function OrderCard({
         {/* ── Active order actions ── */}
         {!isCancelled && (
           <>
-            {/* Primary: advance status */}
-            {next && (order.status === 'paid'
-              ? (
-                <button onClick={() => onPack(order)} disabled={pending}
-                  className="pressable rounded-xl bg-volt px-5 py-2.5 text-[13px] font-bold text-white hover:bg-volt-deep disabled:opacity-50">
-                  {needScan ? '📷 Pack & scan IMEI' : '✓ Pack order'}
-                </button>
-              ) : (
-                <button onClick={() => start(() => advanceOrder(order.id, next))} disabled={pending}
-                  className="pressable rounded-xl bg-volt px-5 py-2.5 text-[13px] font-bold text-white hover:bg-volt-deep disabled:opacity-50">
-                  {NEXT_BTN[order.status]}
-                </button>
-              )
-            )}
-
-            {/* Confirm order (COD: cash arranged/collected · WhatsApp: payment received) */}
-            {needsPayConfirm && (
-              <button onClick={() => start(() => markOrderCollected(order.id))} disabled={pending}
-                className="pressable rounded-xl bg-[#E8F7EE] px-5 py-2.5 text-[13px] font-bold text-ok hover:bg-[#d5f0e2] disabled:opacity-50">
-                {order.payment_method === 'cod' ? '✓ Confirm order' : '💵 Confirm payment'}
+            {/* Direct Mark Dispatched button */}
+            {order.status !== 'dispatched' && (
+              <button onClick={() => start(() => advanceOrder(order.id, 'dispatched'))} disabled={pending}
+                className="pressable rounded-xl bg-volt px-5 py-2.5 text-[13px] font-bold text-white hover:bg-volt-deep disabled:opacity-50">
+                🚀 Mark Dispatched
               </button>
             )}
+
+            {/* Optional Scan IMEI button */}
+            {needScan && (
+              <button onClick={() => onPack(order)} disabled={pending}
+                className="pressable rounded-xl bg-paper px-4 py-2.5 text-[13px] font-bold text-ink hover:bg-line border border-line">
+                📷 Scan IMEI ({order.scannedSerials ?? 0}/{order.requiredSerials})
+              </button>
+            )}
+
+            {/* Confirm order (COD: cash on delivery order confirmation) */}
+            {needsPayConfirm && (
+              <button onClick={() => start(() => confirmPendingOrder(order.id))} disabled={pending}
+                className="pressable rounded-xl bg-[#E8F7EE] px-5 py-2.5 text-[13px] font-bold text-ok hover:bg-[#d5f0e2] disabled:opacity-50">
+                {isCod ? '✓ Confirm order' : '💵 Confirm payment'}
+              </button>
+            )}
+
+            {/* Invoice button */}
+            <a href={`/admin/orders/${order.id}/invoice`} target="_blank" rel="noopener noreferrer"
+              className="pressable rounded-xl border border-line bg-card px-4 py-2.5 text-[13px] font-bold text-ink hover:bg-paper">
+              🧾 Invoice
+            </a>
 
             {/* WhatsApp */}
             <a href={waHref} target="_blank" rel="noopener noreferrer"

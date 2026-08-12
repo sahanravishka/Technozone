@@ -109,9 +109,9 @@ export default function PackModal({ order, onClose }: { order: AdminOrder; onClo
 
         {err && <p className="mt-3 rounded-lg bg-sale/10 px-3 py-2 text-[12px] font-medium text-sale">{err}</p>}
 
-        <button onClick={pack} disabled={pending || remaining > 0}
+        <button onClick={pack} disabled={pending}
           className="pressable mt-4 flex h-11 w-full items-center justify-center rounded-btn bg-ink font-semibold text-white disabled:bg-line disabled:text-muted">
-          {remaining > 0 ? `Scan ${remaining} more to pack` : 'Mark packed'}
+          Mark packed
         </button>
       </div>
     </div>

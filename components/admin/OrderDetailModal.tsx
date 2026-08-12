@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getOrderDetail, type OrderDetail } from '@/app/admin/actions';
+import OrderJourneyModal from './OrderJourneyModal';
 import { formatLKR } from '@/lib/site';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -23,11 +24,27 @@ export default function OrderDetailModal({ orderId, onClose }: { orderId: string
     return () => { cancelled = true; };
   }, [orderId]);
 
+  const [journeyOpen, setJourneyOpen] = useState(false);
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={onClose}>
       <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-card p-5" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <b className="text-[15px]">{data ? data.order_number : 'Order details'}</b>
+          <div className="flex flex-wrap items-center gap-2">
+            <b className="text-[15px]">{data ? data.order_number : 'Order details'}</b>
+            {data && (
+              <>
+                <a href={`/admin/orders/${data.id}/invoice`} target="_blank" rel="noopener noreferrer"
+                  className="pressable rounded-lg bg-volt/10 px-2 py-0.5 text-[11px] font-bold text-volt-deep hover:bg-volt/20">
+                  🧾 Invoice
+                </a>
+                <button onClick={() => setJourneyOpen(true)}
+                  className="pressable rounded-lg bg-paper px-2 py-0.5 text-[11px] font-bold text-muted hover:text-ink">
+                  🗺️ Journey
+                </button>
+              </>
+            )}
+          </div>
           <button onClick={onClose} className="px-1 text-[18px] leading-none text-muted hover:text-ink" aria-label="Close">✕</button>
         </div>
 
@@ -101,6 +118,8 @@ export default function OrderDetailModal({ orderId, onClose }: { orderId: string
           </div>
         )}
       </div>
+
+      {journeyOpen && <OrderJourneyModal orderId={orderId} onClose={() => setJourneyOpen(false)} />}
     </div>
   );
 }

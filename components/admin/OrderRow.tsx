@@ -1,7 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
-import { advanceOrder, markOrderCollected } from '@/app/admin/actions';
+import { advanceOrder, confirmPendingOrder, markOrderCollected } from '@/app/admin/actions';
 import { formatLKR } from '@/lib/site';
 import type { AdminOrder } from './OrderCard';
 
@@ -66,13 +66,14 @@ export default function OrderRow({ order, waHref, selected, onSelect, onPack }:
       <td className="px-3 py-2.5">
         <div className="flex flex-wrap justify-end gap-1.5">
           {next && (order.status === 'paid'
-            ? <button disabled={pending} onClick={() => onPack(order)} className={`${btn} bg-ink text-white`}>{needScan ? '📷 Pack & scan' : '→ Pack'}</button>
+            ? <button disabled={pending} onClick={() => onPack(order)} className={`${btn} bg-ink text-white`}>→ Pack</button>
             : <button disabled={pending} onClick={() => start(() => advanceOrder(order.id, next))} className={`${btn} bg-ink text-white`}>→ {next.charAt(0).toUpperCase() + next.slice(1)}</button>
           )}
-          {isOffline && !paid && (
-            <button disabled={pending} onClick={() => start(() => markOrderCollected(order.id))}
-              className={`${btn} bg-volt text-white`}>Mark paid</button>
+          {isOffline && order.status === 'pending' && (
+            <button disabled={pending} onClick={() => start(() => confirmPendingOrder(order.id))}
+              className={`${btn} bg-volt text-white`}>{order.payment_method === 'cod' ? '✓ Confirm' : 'Mark paid'}</button>
           )}
+          <a href={`/admin/orders/${order.id}/invoice`} target="_blank" rel="noopener noreferrer" className={`${btn} bg-paper text-ink border border-line`}>🧾 Invoice</a>
           <a href={waHref} target="_blank" rel="noopener noreferrer" className={`${btn} bg-[#E8F7EE] text-[#0F8A55]`}>WhatsApp</a>
           {order.status === 'pending' && (
             <button disabled={pending} onClick={() => start(() => advanceOrder(order.id, 'cancelled'))}
