@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import { imageUrl } from '@/lib/supabase';
 import { uploadProductImage, deleteProductImage } from '@/app/admin/actions';
 
+const MAX_DIM = 1600;
+const WEBP_QUALITY = 0.9;
+
 export default function ExistingImageManager({ 
   productId, 
   images 
@@ -17,15 +20,66 @@ export default function ExistingImageManager({
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const compress = (file: File, img: HTMLImageElement): Promise<File> =>
+    new Promise((resolve) => {
+      const { naturalWidth: w, naturalHeight: h } = img;
+      const scale = Math.min(1, MAX_DIM / Math.max(w, h));
+      const tw = Math.round(w * scale);
+      const th = Math.round(h * scale);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = tw;
+      canvas.height = th;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return resolve(file);
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, tw, th);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob || blob.size >= file.size) return resolve(file);
+          const base = file.name.replace(/\.[^.]+$/, '');
+          resolve(new File([blob], `${base}.webp`, { type: 'image/webp' }));
+        },
+        'image/webp',
+        WEBP_QUALITY
+      );
+    });
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
     setBusy(true);
+    
     try {
+      // 1. Client-side compression to avoid Next.js 1MB Server Action limit
+      const url = URL.createObjectURL(file);
+      const optimizedFile = await new Promise<File>((resolve, reject) => {
+        const img = new window.Image();
+        img.onload = async () => {
+          try {
+            const compressed = await compress(file, img);
+            URL.revokeObjectURL(url);
+            resolve(compressed);
+          } catch (err) {
+            URL.revokeObjectURL(url);
+            reject(err);
+          }
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error('Could not read image file'));
+        };
+        img.src = url;
+      });
+
+      // 2. Upload via server action
       const data = new FormData();
       data.append('product_id', productId);
-      data.append('file', file);
+      data.append('file', optimizedFile);
       await uploadProductImage(data);
       router.refresh();
     } catch (err) {
@@ -83,7 +137,7 @@ export default function ExistingImageManager({
                     src={imageUrl(img.storage_path)} 
                     alt="Product photo" 
                     fill 
-                    className="object-contain rounded-lg bg-white" 
+                    className="object-contain rounded-lg bg-[#0b1526]" 
                   />
                 </div>
                 <button 
