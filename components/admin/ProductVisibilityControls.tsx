@@ -22,6 +22,10 @@ export default function ProductVisibilityControls({
   const [err, setErr] = useState('');
   const router = useRouter();
 
+  if (isActive !== active && !pending) {
+    setActive(isActive);
+  }
+
   const toggle = () =>
     start(async () => {
       setErr('');

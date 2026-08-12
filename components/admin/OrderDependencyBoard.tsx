@@ -86,8 +86,10 @@ export default function OrderDependencyBoard({
   });
 
   // Summary Metrics
-  const totalCount = filtered.length;
-  const totalRev = filtered.reduce((n, r) => n + r.total, 0);
+  const totalCount = filtered.filter(r => r.status !== 'cancelled').length;
+  const totalRev = filtered
+    .filter(r => r.status !== 'cancelled')
+    .reduce((n, r) => n + r.total, 0);
   const dispatchedCount = filtered.filter(r => r.status === 'dispatched').length;
   const codCount = filtered.filter(r => r.payment_method === 'cod').length;
   const cancelledCount = filtered.filter(r => r.status === 'cancelled').length;

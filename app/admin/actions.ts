@@ -863,6 +863,8 @@ export async function setProductActive(productId: string, active: boolean) {
   if (error) throw new Error(error.message);
   revalidatePath('/admin/products');
   revalidatePath('/admin/products/' + productId);
+  revalidatePath('/shop');
+  revalidatePath('/', 'layout');
 }
 
 /** Soft delete: moves a product to Trash (kept for order/warranty history). */

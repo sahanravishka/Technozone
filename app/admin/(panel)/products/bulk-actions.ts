@@ -18,6 +18,8 @@ export async function bulkSetActive(ids: string[], active: boolean) {
   const { error } = await supabase.from('products').update({ is_active: active }).in('id', ids);
   if (error) throw new Error(error.message);
   revalidatePath('/admin/products');
+  revalidatePath('/shop');
+  revalidatePath('/', 'layout');
 }
 
 export async function bulkSetCategory(ids: string[], categoryId: string | null) {

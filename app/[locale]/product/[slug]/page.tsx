@@ -165,6 +165,8 @@ export default async function ProductPage({ params }: Props) {
         price={pricing.price}
       />
       <RecentlyViewed locale={locale} title={dict.sections.recentlyViewed} excludeSlug={slug} />
+      {/* Spacer so sticky mobile CTA bar doesn't cover the last section */}
+      <div className="h-28 md:hidden" aria-hidden />
     </div>
   );
 }

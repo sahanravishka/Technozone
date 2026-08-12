@@ -219,21 +219,45 @@ function QuickToggle({ productId, active }: { productId: string; active: boolean
   const [pending, start] = useTransition();
   const router = useRouter();
 
-  const toggle = () => {
+  // Sync state with incoming prop changes
+  if (active !== on && !pending) {
+    setOn(active);
+  }
+
+  const toggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (pending) return;
     const next = !on;
     setOn(next);
     start(async () => {
-      try { await bulkSetActive([productId], next); router.refresh(); }
-      catch { setOn(on); }
+      try {
+        await bulkSetActive([productId], next);
+        router.refresh();
+      } catch {
+        setOn(on); // Revert on failure
+      }
     });
   };
 
   return (
-    <button type="button" onClick={e => { e.preventDefault(); toggle(); }} disabled={pending}
-      role="switch" aria-checked={on} aria-label={on ? 'Hide from website' : 'Publish to website'}
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={pending}
+      role="switch"
+      aria-checked={on}
+      aria-label={on ? 'Hide from website' : 'Publish to website'}
       title={on ? 'Live — tap to hide' : 'Hidden — tap to publish'}
-      className={`pressable relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${on ? 'bg-ok' : 'bg-line'}`}>
-      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+      className={`pressable relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+        on ? 'bg-ok' : 'bg-line'
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+          on ? 'translate-x-[22px]' : 'translate-x-0.5'
+        }`}
+      />
     </button>
   );
 }
