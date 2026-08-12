@@ -20,27 +20,29 @@ export type AdminOrder = {
 
 /* ── Style maps ── */
 const STATUS_PILL: Record<string, { label: string; bg: string; color: string }> = {
-  pending:   { label: 'Pending',     bg: '#FEF3C7', color: '#92400E' },
-  paid:      { label: 'Paid ✓',      bg: '#DBEAFE', color: '#1E40AF' },
-  packed:    { label: 'Packed',      bg: '#E0F2FE', color: '#075985' },
-  shipped:   { label: 'Shipped',     bg: '#EDE9FE', color: '#5B21B6' },
-  delivered: { label: 'Delivered ✓', bg: '#D1FAE5', color: '#065F46' },
-  cancelled: { label: 'Cancelled',   bg: '#F3F4F6', color: '#6B7280' },
+  pending:    { label: 'Pending',      bg: '#FEF3C7', color: '#92400E' },
+  paid:       { label: 'Paid ✓',       bg: '#DBEAFE', color: '#1E40AF' },
+  packed:     { label: 'Packed',       bg: '#E0F2FE', color: '#075985' },
+  dispatched: { label: 'Dispatched ✓', bg: '#D1FAE5', color: '#065F46' },
+  cancelled:  { label: 'Cancelled',    bg: '#F3F4F6', color: '#6B7280' },
 };
 const PAY_LABEL: Record<string, string> = {
   cod: 'Cash on delivery', whatsapp: 'WhatsApp pay', payhere: 'Online payment',
 };
-const NEXT: Record<string, string> = { paid: 'packed', packed: 'shipped', shipped: 'delivered' };
+// pending -> paid needs a real payment/COD confirmation, not a plain "next" click,
+// so it's handled separately below (confirmPending / needsPayConfirm).
+const NEXT: Record<string, string> = { paid: 'packed', packed: 'dispatched' };
 const NEXT_BTN: Record<string, string> = {
-  paid: '✓ Pack order', packed: '✓ Mark shipped', shipped: '✓ Mark delivered',
+  paid: '✓ Pack order', packed: '✓ Mark dispatched',
 };
 
 export default function OrderCard({
-  order, waHref, selected, onSelect, onPack,
+  order, waHref, selected, onSelect, onPack, onViewDetails,
 }: {
   order: AdminOrder; waHref: string; selected: boolean;
   onSelect: (id: string, on: boolean) => void;
   onPack:   (o: AdminOrder) => void;
+  onViewDetails: (id: string) => void;
 }) {
   const [pending, start]       = useTransition();
   const [cancelStep, setCancelStep] = useState(0); // 0=idle 1=warn 2=confirm
@@ -51,7 +53,11 @@ export default function OrderCard({
   const pill     = STATUS_PILL[order.status];
   const needScan = (order.requiredSerials ?? 0) > 0;
   const paid     = order.payment_status === 'paid';
-  const needsPayConfirm = order.payment_method === 'whatsapp' && !paid;
+  // COD and WhatsApp orders sit at 'pending' until staff confirm the order/
+  // payment; only PayHere auto-advances (via webhook). Previously this only
+  // checked 'whatsapp', so COD orders — the common case — had no way off
+  // Pending at all except Cancel.
+  const needsPayConfirm = (order.payment_method === 'whatsapp' || order.payment_method === 'cod') && !paid;
   const isCancelled     = order.status === 'cancelled';
 
   const totalQty  = order.order_items.reduce((n, i) => n + i.qty, 0);
@@ -84,6 +90,10 @@ export default function OrderCard({
             className="h-4 w-4 shrink-0 accent-volt" aria-label={`Select ${order.order_number}`} />
         )}
         <span className="text-[15px] font-extrabold tracking-tight">{order.order_number}</span>
+        <button onClick={() => onViewDetails(order.id)}
+          className="pressable rounded-lg px-2 py-1 text-[11.5px] font-semibold text-muted hover:bg-paper hover:text-ink">
+          👁 Details
+        </button>
         {pill && (
           <span className="rounded-lg px-2.5 py-1 text-[11.5px] font-bold"
             style={{ background: pill.bg, color: pill.color }}>{pill.label}</span>
@@ -133,11 +143,11 @@ export default function OrderCard({
               )
             )}
 
-            {/* Confirm WhatsApp payment (COD pays at delivery — no confirm needed) */}
+            {/* Confirm order (COD: cash arranged/collected · WhatsApp: payment received) */}
             {needsPayConfirm && (
               <button onClick={() => start(() => markOrderCollected(order.id))} disabled={pending}
                 className="pressable rounded-xl bg-[#E8F7EE] px-5 py-2.5 text-[13px] font-bold text-ok hover:bg-[#d5f0e2] disabled:opacity-50">
-                💵 Confirm payment
+                {order.payment_method === 'cod' ? '✓ Confirm order' : '💵 Confirm payment'}
               </button>
             )}
 

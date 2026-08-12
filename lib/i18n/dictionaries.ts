@@ -100,8 +100,8 @@ const en = {
     google: 'Continue with Google', view: 'View', notConfigured: 'Accounts activate once the store is connected to Supabase.'
   },
   status: {
-    pending: 'Pending', paid: 'Paid', packed: 'Packed', shipped: 'Shipped',
-    delivered: 'Delivered', cancelled: 'Cancelled', refunded: 'Refunded'
+    pending: 'Pending', paid: 'Paid', packed: 'Packed',
+    dispatched: 'Dispatched', cancelled: 'Cancelled', refunded: 'Refunded'
   },
   order: {
     thanks: 'Order received!', confirming: 'Confirming your payment…',
@@ -211,8 +211,8 @@ const si: typeof en = {
     google: 'Google හරහා Sign in වන්න', view: 'View', notConfigured: 'Supabase සම්බන්ධ වූ පසු ගිණුම් සක්‍රිය වේ.'
   },
   status: {
-    pending: 'Pending', paid: 'Paid', packed: 'Packed', shipped: 'Shipped',
-    delivered: 'Delivered', cancelled: 'Cancelled', refunded: 'Refunded'
+    pending: 'Pending', paid: 'Paid', packed: 'Packed',
+    dispatched: 'Dispatched', cancelled: 'Cancelled', refunded: 'Refunded'
   },
   order: {
     thanks: 'ඔබගේ Order එක ලැබුණා!', confirming: 'ඔබගේ payment එක තහවුරු කරමින් පවතී…',
@@ -322,8 +322,8 @@ const ta: typeof en = {
     google: 'Google மூலம் Sign in செய்', view: 'View', notConfigured: 'Supabase இணைக்கப்பட்டதும் கணக்குகள் செயல்படும்.'
   },
   status: {
-    pending: 'Pending', paid: 'Paid', packed: 'Packed', shipped: 'Shipped',
-    delivered: 'Delivered', cancelled: 'Cancelled', refunded: 'Refunded'
+    pending: 'Pending', paid: 'Paid', packed: 'Packed',
+    dispatched: 'Dispatched', cancelled: 'Cancelled', refunded: 'Refunded'
   },
   order: {
     thanks: 'உங்கள் Order பெறப்பட்டது!', confirming: 'Payment உறுதிப்படுத்தப்படுகிறது…',

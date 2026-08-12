@@ -6,11 +6,10 @@ type OrderLike = {
 };
 
 const TEMPLATES: Record<string, (o: OrderLike) => string> = {
-  paid:      o => `Hi! Your ${SITE.name} order ${o.order_number} is confirmed. We're getting it ready. 🙌`,
-  packed:    o => `Your order ${o.order_number} is packed and will be handed to the courier shortly. 📦`,
-  shipped:   o => `Good news! Order ${o.order_number} is on its way with the courier. 🚚`,
-  delivered: o => `Order ${o.order_number} marked as delivered. Enjoy! Reply here if anything's wrong.`,
-  cancelled: o => `Your order ${o.order_number} has been cancelled. If this is unexpected, reply here.`
+  paid:       o => `Hi! Your ${SITE.name} order ${o.order_number} is confirmed. We're getting it ready. 🙌`,
+  packed:     o => `Your order ${o.order_number} is packed and will be handed to the courier shortly. 📦`,
+  dispatched: o => `Good news! Order ${o.order_number} has been dispatched with the courier. 🚚`,
+  cancelled:  o => `Your order ${o.order_number} has been cancelled. If this is unexpected, reply here.`
 };
 
 export function statusMessage(order: OrderLike, status: string) {

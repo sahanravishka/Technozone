@@ -5,6 +5,7 @@ import { getAdminSupabase } from '@/lib/supabase-clients/admin';
 import { buildCheckoutFields, payhereConfigured, payhereGateway } from '@/lib/payhere';
 import { priceVariant } from '@/lib/pricing';
 import { rateLimitByIp } from '@/lib/rate-limit';
+import { sendNewOrderEmail } from '@/lib/email';
 import type { Discount, Product } from '@/lib/types';
 
 type CartLine = { variantId: string; qty: number };
@@ -153,6 +154,14 @@ export async function createOrder(input: {
 
   // Order placed — this phone's in-progress checkout (if any) is no longer abandoned.
   await clearAbandonedCart(input.phone);
+
+  // Notify the shop owner. Fire-and-forget: never let email delivery block checkout.
+  void sendNewOrderEmail({
+    orderNumber: order.order_number, total, paymentMethod: method,
+    fulfillment: isPickup ? 'pickup' : 'delivery',
+    customerName: input.name, customerPhone: input.phone, city: input.city,
+    items: items.map(i => ({ name: i.product_name, qty: i.qty, line: i.line_total }))
+  });
 
   // ---- 4. Branch by payment method ----
   if (method === 'payhere') {

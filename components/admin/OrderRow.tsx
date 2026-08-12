@@ -5,12 +5,12 @@ import { advanceOrder, markOrderCollected } from '@/app/admin/actions';
 import { formatLKR } from '@/lib/site';
 import type { AdminOrder } from './OrderCard';
 
-const NEXT: Record<string, string> = { paid: 'packed', packed: 'shipped', shipped: 'delivered' };
+const NEXT: Record<string, string> = { paid: 'packed', packed: 'dispatched' };
 
 const STATUS_CLS: Record<string, string> = {
   pending: 'bg-[#F3EAD8] text-[#9A6B12]', paid: 'bg-volt-soft text-volt',
-  packed: 'bg-[#E6F4FB] text-[#155CB8]', shipped: 'bg-[#EDE9FE] text-[#6D4DF6]',
-  delivered: 'bg-[#E8F7EE] text-ok', cancelled: 'bg-sale/10 text-sale'
+  packed: 'bg-[#E6F4FB] text-[#155CB8]', dispatched: 'bg-[#E8F7EE] text-ok',
+  cancelled: 'bg-sale/10 text-sale'
 };
 
 const PAY_BADGE: Record<string, { label: string; cls: string }> = {

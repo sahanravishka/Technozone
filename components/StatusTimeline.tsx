@@ -1,6 +1,6 @@
 import type { Dict } from '@/lib/i18n/dictionaries';
 
-const FLOW = ['pending', 'paid', 'packed', 'shipped', 'delivered'] as const;
+const FLOW = ['pending', 'paid', 'packed', 'dispatched'] as const;
 
 export default function StatusTimeline({ status, dict }: { status: string; dict: Dict }) {
   const idx = FLOW.indexOf(status as typeof FLOW[number]);

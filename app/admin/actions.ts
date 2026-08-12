@@ -13,7 +13,7 @@ async function requireStaff(roles?: string[]) {
 }
 
 // ---------------- Orders ----------------
-const FLOW = ['pending', 'paid', 'packed', 'shipped', 'delivered'];
+const FLOW = ['pending', 'paid', 'packed', 'dispatched'];
 
 export async function advanceOrder(orderId: string, to: string) {
   await requireStaff();                       // packers included
@@ -47,6 +47,36 @@ export async function advanceOrder(orderId: string, to: string) {
     await admin.rpc('release_order_reservations', { p_order_id: orderId });
   }
   revalidatePath('/admin/orders');
+}
+
+export type OrderDetail = {
+  id: string; order_number: string; status: string; payment_status: string;
+  payment_method: string; fulfillment: string; channel: string;
+  subtotal: number; discount_total: number; delivery_fee: number; total: number;
+  coupon_code: string | null; delivery_zone_name: string | null;
+  shipping_address: { name?: string; phone?: string; line1?: string; city?: string; postal_code?: string };
+  customer_phone: string; guest_email: string | null; notes: string | null;
+  payhere_payment_id: string | null; payhere_method: string | null;
+  created_at: string; updated_at: string;
+  order_items: { qty: number; product_name: string; variant_name?: string | null; sku?: string | null; unit_price: number; discount_each: number; line_total: number }[];
+};
+
+// Full order detail for the admin "View details" panel — separate from the
+// list query so the orders board itself stays light.
+export async function getOrderDetail(orderId: string): Promise<OrderDetail> {
+  await requireStaff();
+  const supabase = (await getServerSupabase())!;
+  const { data, error } = await supabase.from('orders')
+    .select(`
+      id, order_number, status, payment_status, payment_method, fulfillment, channel,
+      subtotal, discount_total, delivery_fee, total, coupon_code, delivery_zone_name,
+      shipping_address, customer_phone, guest_email, notes,
+      payhere_payment_id, payhere_method, created_at, updated_at,
+      order_items(qty, product_name, variant_name, sku, unit_price, discount_each, line_total)
+    `)
+    .eq('id', orderId).single();
+  if (error || !data) throw new Error(error?.message ?? 'Order not found');
+  return data as unknown as OrderDetail;
 }
 
 export async function recallOrder(orderId: string) {
@@ -571,8 +601,8 @@ export async function assignShipment(orderId: string, courierCode: string, track
   } else {
     await supabase.from('shipments').insert({ order_id: orderId, courier_code: courierCode, tracking_number: tracking });
   }
-  // move the order to 'shipped' so the board stays in sync
-  await supabase.from('orders').update({ status: 'shipped' }).eq('id', orderId).in('status', ['paid', 'packed']);
+  // move the order to 'dispatched' so the board stays in sync
+  await supabase.from('orders').update({ status: 'dispatched' }).eq('id', orderId).in('status', ['paid', 'packed']);
   revalidatePath('/admin/shipments');
 }
 

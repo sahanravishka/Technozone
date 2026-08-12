@@ -35,7 +35,7 @@ export async function submitReview(input: {
       .select('id, orders!inner(customer_id, status)')
       .eq('product_id', input.productId)
       .eq('orders.customer_id', user.id)
-      .in('orders.status', ['paid', 'packed', 'shipped', 'delivered']).limit(1);
+      .in('orders.status', ['paid', 'packed', 'dispatched']).limit(1);
     verified = !!data?.length;
   }
 

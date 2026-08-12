@@ -11,12 +11,11 @@ const STATUS_CLS: Record<string, string> = {
   pending: 'bg-warn-soft text-warn',
   paid: 'bg-volt-soft text-volt',
   packed: 'bg-volt-soft text-volt',
-  shipped: 'bg-volt-soft text-volt',
-  delivered: 'bg-[#E8F7EE] text-ok',
+  dispatched: 'bg-[#E8F7EE] text-ok',
   cancelled: 'bg-paper text-muted'
 };
 
-const PAID_STATUSES = ['paid', 'packed', 'shipped', 'delivered'];
+const PAID_STATUSES = ['paid', 'packed', 'dispatched'];
 const OPEN_REPAIR = ['received', 'diagnosing', 'awaiting_approval', 'repairing', 'ready'];
 const RANGES = [7, 30, 90] as const;
 

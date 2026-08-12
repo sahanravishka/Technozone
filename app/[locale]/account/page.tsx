@@ -12,9 +12,8 @@ export const dynamic = 'force-dynamic';
 
 const STATUS_TINT: Record<string, string> = {
   pending: 'bg-paper text-muted', paid: 'bg-volt-soft text-volt',
-  packed: 'bg-warn-soft text-warn', shipped: 'bg-volt-soft text-volt',
-  delivered: 'bg-[#E8F7EE] text-ok', cancelled: 'bg-sale/10 text-sale',
-  refunded: 'bg-sale/10 text-sale'
+  packed: 'bg-warn-soft text-warn', dispatched: 'bg-[#E8F7EE] text-ok',
+  cancelled: 'bg-sale/10 text-sale', refunded: 'bg-sale/10 text-sale'
 };
 
 export default async function AccountPage({ params }: { params: Promise<{ locale: Locale }> }) {
