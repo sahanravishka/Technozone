@@ -53,13 +53,15 @@ export default function OrderRow({ order, waHref, selected, onSelect, onPack }:
             {PAY_BADGE[order.payment_method].label}
           </span>
         )}
-        <span className={`ml-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${paid ? 'bg-[#E8F7EE] text-ok' : 'bg-sale/10 text-sale'}`}>
-          {paid ? 'Paid' : 'Unpaid'}
-        </span>
+        {order.payment_method !== 'cod' && (
+          <span className={`ml-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${paid ? 'bg-[#E8F7EE] text-ok' : 'bg-sale/10 text-sale'}`}>
+            {paid ? 'Paid' : 'Unpaid'}
+          </span>
+        )}
       </td>
       <td className="px-3 py-2.5">
         <span className={`rounded-md px-2 py-0.5 text-[10.5px] font-semibold capitalize ${STATUS_CLS[order.status] ?? 'bg-paper text-muted'}`}>
-          {order.status}
+          {order.payment_method === 'cod' && order.status === 'paid' ? 'Confirmed' : order.status}
         </span>
       </td>
       <td className="whitespace-nowrap px-3 py-2.5 text-muted">{new Date(order.created_at).toLocaleDateString('en-GB')}</td>

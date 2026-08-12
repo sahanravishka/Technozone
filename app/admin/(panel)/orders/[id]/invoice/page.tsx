@@ -66,7 +66,7 @@ export default async function AdminOrderInvoicePage({ params }:
             <p className="mt-1 text-[14px] font-extrabold text-ink">{order.order_number}</p>
             <p className="text-[11.5px] text-muted">Date: {date}</p>
             <span className="mt-2 inline-block rounded-full bg-paper px-3 py-1 text-[11px] font-bold uppercase tracking-wide">
-              Status: {order.status}
+              Status: {isCod && order.status === 'paid' ? 'Confirmed' : order.status}
             </span>
           </div>
         </div>

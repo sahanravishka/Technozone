@@ -51,9 +51,14 @@ export default function OrderCard({
   const isCod    = order.payment_method === 'cod';
   const next     = NEXT[order.status];
   const rawPill  = STATUS_PILL[order.status];
-  // For COD orders, when status is 'paid' (internally confirmed), show 'Confirmed' instead of 'Paid ✓'
-  const pill     = isCod && order.status === 'paid'
-    ? { label: 'Confirmed', bg: '#FEF3C7', color: '#92400E' }
+  const pill     = isCod
+    ? {
+        pending:    { label: 'Pending COD', bg: '#FEF3C7', color: '#92400E' },
+        paid:       { label: 'Confirmed',   bg: '#FEF3C7', color: '#92400E' },
+        packed:     { label: 'Packed',      bg: '#E0F2FE', color: '#075985' },
+        dispatched: { label: 'Dispatched',  bg: '#D1FAE5', color: '#065F46' },
+        cancelled:  { label: 'Cancelled',   bg: '#F3F4F6', color: '#6B7280' },
+      }[order.status] ?? rawPill
     : rawPill;
 
   const needScan = (order.requiredSerials ?? 0) > 0;

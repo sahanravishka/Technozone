@@ -55,11 +55,15 @@ export default function OrderDetailModal({ orderId, onClose }: { orderId: string
           <div className="mt-3 space-y-4 text-[13px]">
             {/* Status + meta */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-lg bg-paper px-2.5 py-1 text-[11.5px] font-bold">{STATUS_LABEL[data.status] ?? data.status}</span>
-              <span className="rounded-lg bg-paper px-2.5 py-1 text-[11.5px] text-muted">{PAY_LABEL[data.payment_method] ?? data.payment_method}</span>
-              <span className="rounded-lg bg-paper px-2.5 py-1 text-[11.5px] text-muted">
-                {data.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
+              <span className="rounded-lg bg-paper px-2.5 py-1 text-[11.5px] font-bold">
+                {data.payment_method === 'cod' && data.status === 'paid' ? 'Confirmed' : (STATUS_LABEL[data.status] ?? data.status)}
               </span>
+              <span className="rounded-lg bg-paper px-2.5 py-1 text-[11.5px] text-muted">{PAY_LABEL[data.payment_method] ?? data.payment_method}</span>
+              {data.payment_method !== 'cod' && (
+                <span className="rounded-lg bg-paper px-2.5 py-1 text-[11.5px] text-muted">
+                  {data.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
+                </span>
+              )}
               <span className="rounded-lg bg-paper px-2.5 py-1 text-[11.5px] text-muted capitalize">{data.fulfillment}</span>
             </div>
             <p className="text-[11.5px] text-muted">
