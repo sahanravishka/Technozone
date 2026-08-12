@@ -515,7 +515,7 @@ export async function saveVariant(form: FormData) {
 // ---------------- Existing Product Image Management ----------------
 
 export async function uploadProductImage(form: FormData) {
-  await requireStaff(['owner', 'manager', 'editor']);
+  await requireStaff(['owner', 'manager']);
   const admin = getAdminSupabase()!;
   const supabase = (await getServerSupabase())!;
   
@@ -560,7 +560,7 @@ export async function uploadProductImage(form: FormData) {
 }
 
 export async function deleteProductImage(imageId: string) {
-  await requireStaff(['owner', 'manager', 'editor']);
+  await requireStaff(['owner', 'manager']);
   const supabase = (await getServerSupabase())!;
   const admin = getAdminSupabase()!;
 
