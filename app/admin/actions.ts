@@ -153,6 +153,100 @@ export async function getOrderJourney(orderId: string): Promise<OrderJourneyData
   };
 }
 
+export type DependencyReportRow = {
+  id: string;
+  order_number: string;
+  created_at: string;
+  updated_at: string;
+  status: string;
+  payment_status: string;
+  payment_method: string;
+  fulfillment: string;
+  total: number;
+  customer_name: string;
+  customer_phone: string;
+  city: string;
+  address_line: string;
+  items_summary: string;
+  serials: { product_name: string; serial_no: string; scanned_at: string }[];
+  status_history: { from_status: string | null; to_status: string; created_at: string; note: string | null }[];
+};
+
+export async function getOrderDependencyReport(
+  startDate?: string,
+  endDate?: string
+): Promise<DependencyReportRow[]> {
+  await requireStaff();
+  const supabase = (await getServerSupabase())!;
+
+  let query = supabase.from('orders')
+    .select(`
+      id, order_number, status, payment_status, payment_method, fulfillment, total, created_at, updated_at,
+      customer_phone, shipping_address,
+      order_items(qty, product_name)
+    `)
+    .order('created_at', { ascending: false });
+
+  if (startDate) query = query.gte('created_at', startDate);
+  if (endDate) query = query.lte('created_at', endDate);
+
+  const { data: orders, error } = await query.limit(500);
+  if (error || !orders) throw new Error(error?.message ?? 'Failed to fetch report');
+
+  const orderIds = orders.map(o => o.id);
+  if (orderIds.length === 0) return [];
+
+  const [{ data: statusLogs }, { data: serials }] = await Promise.all([
+    supabase.from('order_status_log')
+      .select('order_id, from_status, to_status, note, created_at')
+      .in('order_id', orderIds)
+      .order('created_at', { ascending: true }),
+    supabase.from('order_item_serials')
+      .select('order_id, product_name, serial_no, created_at')
+      .in('order_id', orderIds)
+      .order('created_at', { ascending: true })
+  ]);
+
+  const logsByOrder = new Map<string, { from_status: string | null; to_status: string; created_at: string; note: string | null }[]>();
+  (statusLogs ?? []).forEach(l => {
+    const arr = logsByOrder.get(l.order_id) ?? [];
+    arr.push({ from_status: l.from_status, to_status: l.to_status, created_at: l.created_at, note: l.note });
+    logsByOrder.set(l.order_id, arr);
+  });
+
+  const serialsByOrder = new Map<string, { product_name: string; serial_no: string; scanned_at: string }[]>();
+  (serials ?? []).forEach(s => {
+    const arr = serialsByOrder.get(s.order_id) ?? [];
+    arr.push({ product_name: s.product_name, serial_no: s.serial_no, scanned_at: s.created_at });
+    serialsByOrder.set(s.order_id, arr);
+  });
+
+  return orders.map(o => {
+    const addr = o.shipping_address as { name?: string; city?: string; line1?: string } | null;
+    const items = (o.order_items as { qty: number; product_name: string }[] ?? []);
+    const items_summary = items.map(i => `${i.qty}x ${i.product_name}`).join('; ');
+
+    return {
+      id: o.id,
+      order_number: o.order_number,
+      created_at: o.created_at,
+      updated_at: o.updated_at,
+      status: o.status,
+      payment_status: o.payment_status,
+      payment_method: o.payment_method,
+      fulfillment: o.fulfillment,
+      total: o.total,
+      customer_name: addr?.name ?? 'Customer',
+      customer_phone: o.customer_phone,
+      city: addr?.city ?? '—',
+      address_line: addr?.line1 ?? '',
+      items_summary,
+      serials: serialsByOrder.get(o.id) ?? [],
+      status_history: logsByOrder.get(o.id) ?? []
+    };
+  });
+}
+
 export async function recallOrder(orderId: string) {
   await requireStaff(['owner']);
   const supabase = (await getServerSupabase())!;
