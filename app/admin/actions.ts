@@ -20,24 +20,8 @@ export async function advanceOrder(orderId: string, to: string) {
   if (![...FLOW, 'cancelled'].includes(to)) throw new Error('bad status');
   const supabase = (await getServerSupabase())!;
 
-  // Mandatory warranty scan: an order can't be packed until every warranty-
-  // eligible unit (product.warranty_months > 0) has a scanned IMEI/serial.
-  // Defensive: if migration 0009 isn't applied (no warranty_months column /
-  // no order_item_serials table), the queries error out and we don't block.
-  if (to === 'packed') {
-    const { data: items } = await supabase.from('order_items').select('product_id, qty').eq('order_id', orderId);
-    const ids = [...new Set((items ?? []).map(i => i.product_id).filter(Boolean))] as string[];
-    if (ids.length) {
-      const { data: warr } = await supabase.from('products').select('id, warranty_months').in('id', ids);
-      const months = new Map((warr ?? []).map(p => [p.id, (p as { warranty_months?: number }).warranty_months ?? 0]));
-      const required = (items ?? []).reduce((n, i) => n + ((months.get(i.product_id as string) ?? 0) > 0 ? i.qty : 0), 0);
-      if (warr && required > 0) {
-        const { data: ser } = await supabase.from('order_item_serials').select('id').eq('order_id', orderId);
-        const scanned = (ser ?? []).length;
-        if (scanned < required) throw new Error(`Scan IMEI/serial for all warranty items before packing (${scanned}/${required}).`);
-      }
-    }
-  }
+  // IMEI/serial scan is optional — staff can scan via the Pack modal to
+  // register warranties, but it no longer blocks advancing to 'packed'.
 
   // RLS: staff update policy applies; status log written by trigger with auth.uid()
   const { error } = await supabase.from('orders').update({ status: to }).eq('id', orderId);
