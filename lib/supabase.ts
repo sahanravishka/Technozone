@@ -13,7 +13,7 @@ export function getSupabase(): SupabaseClient | null {
 }
 
 export function imageUrl(path: string): string {
-  if (path.startsWith('http')) return path;
+  if (path.startsWith('http') || path.startsWith('/')) return path;
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   return `${base}/storage/v1/object/public/product-images/${path}`;
 }
