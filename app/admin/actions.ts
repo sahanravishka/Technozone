@@ -512,6 +512,66 @@ export async function saveVariant(form: FormData) {
   revalidatePath(`/admin/products/${productId}`);
 }
 
+// ---------------- Existing Product Image Management ----------------
+
+export async function uploadProductImage(form: FormData) {
+  await requireStaff(['owner', 'manager', 'editor']);
+  const admin = getAdminSupabase()!;
+  const supabase = (await getServerSupabase())!;
+  
+  const productId = String(form.get('product_id'));
+  const file = form.get('file') as File;
+  if (!productId || !file || file.size === 0) throw new Error('Invalid file');
+
+  let buf = new Uint8Array(await file.arrayBuffer());
+  let contentType = file.type || 'image/webp';
+  let ext = 'webp';
+
+  let sharp: typeof import('sharp') | null = null;
+  try { sharp = (await import('sharp')).default as unknown as typeof import('sharp'); } catch { sharp = null; }
+
+  if (sharp) {
+    try {
+      buf = new Uint8Array(await sharp(Buffer.from(buf))
+        .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 90 })
+        .toBuffer());
+      contentType = 'image/webp';
+    } catch { 
+      ext = (file.name.split('.').pop() || 'webp').toLowerCase(); 
+    }
+  }
+
+  const path = `${productId}/colors/${Date.now()}-ext.${ext}`;
+  const { error: upErr } = await admin.storage.from('product-images')
+    .upload(path, buf, { contentType, upsert: true });
+  
+  if (upErr) throw new Error(upErr.message);
+
+  const { error } = await supabase.from('product_images').insert({
+    product_id: productId,
+    storage_path: path,
+    alt: '',
+    sort_order: 99
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/products/${productId}`);
+}
+
+export async function deleteProductImage(imageId: string) {
+  await requireStaff(['owner', 'manager', 'editor']);
+  const supabase = (await getServerSupabase())!;
+  const admin = getAdminSupabase()!;
+
+  const { data: img } = await supabase.from('product_images').select('product_id, storage_path').eq('id', imageId).single();
+  if (!img) return;
+
+  await admin.storage.from('product-images').remove([img.storage_path]);
+  await supabase.from('product_images').delete().eq('id', imageId);
+  revalidatePath(`/admin/products/${img.product_id}`);
+}
+
 // ---------------- Discounts & coupons ----------------
 export async function createDiscount(form: FormData) {
   await requireStaff(['owner', 'manager']);

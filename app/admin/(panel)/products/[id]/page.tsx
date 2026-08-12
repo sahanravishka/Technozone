@@ -5,6 +5,7 @@ import Link from 'next/link';
 import PageHeader from '@/components/admin/PageHeader';
 import { ProductForm } from '@/components/admin/ProductForm';
 import ProductVisibilityControls from '@/components/admin/ProductVisibilityControls';
+import ExistingImageManager from '@/components/admin/ExistingImageManager';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +30,7 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
   if (!isNew) {
     const { data } = await supabase
       .from('products')
-      .select('*, product_variants(id, sku, name, price, stock_qty, is_active), product_suggestions!product_suggestions_product_id_fkey(suggested_product_id), product_images(storage_path)')
+      .select('*, product_variants(id, sku, name, price, stock_qty, is_active), product_suggestions!product_suggestions_product_id_fkey(suggested_product_id), product_images(id, storage_path)')
       .eq('id', id)
       .maybeSingle();
     if (!data) notFound();
@@ -37,6 +38,8 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
     variants = data.product_variants;
     suggested = data.product_suggestions.map((s: { suggested_product_id: string }) => s.suggested_product_id);
   }
+
+  const images = product?.product_images as { id: string; storage_path: string }[] || [];
 
   const specsText = product?.specs
     ? Object.entries(product.specs as Record<string, string>).map(([k, v]) => `${k}: ${v}`).join('\n')
@@ -68,10 +71,16 @@ export default async function ProductEditor({ params }: { params: Promise<{ id: 
 
       {/* Visibility: publish/hide + delete to trash (existing products only) */}
       {!isNew && (
-        <ProductVisibilityControls
-          productId={id}
-          isActive={Boolean(product?.is_active)}
-        />
+        <>
+          <ProductVisibilityControls
+            productId={id}
+            isActive={Boolean(product?.is_active)}
+          />
+          <ExistingImageManager 
+            productId={id} 
+            images={images} 
+          />
+        </>
       )}
 
       {/* Variants section — only shown for existing products */}

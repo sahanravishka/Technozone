@@ -22,12 +22,12 @@ export default function ProductCard({ product, discounts, locale, dict, priority
       className={`group card-soft shimmer-sweep flex h-full flex-col overflow-hidden border border-line transition-all duration-300 ${oos ? 'oos-overlay' : ''}`}
       style={{ borderRadius: '24px' }}>
       {/* --- Image area --- */}
-      <div className="plate-img relative aspect-square overflow-hidden bg-white" style={{ borderRadius: '24px 24px 0 0' }}>
+      <div className="plate-img relative aspect-square overflow-hidden bg-gradient-to-b from-card to-tint-tone" style={{ borderRadius: '24px 24px 0 0' }}>
         {img ? (
           <Image src={imageUrl(img.storage_path)} alt={img.alt ?? product.name}
             fill sizes="(max-width: 768px) 50vw, 25vw" priority={priority}
             quality={75}
-            className="object-contain p-2" />
+            className="object-cover" />
         ) : (
           <div className="absolute inset-0 grid place-items-center text-muted/40">
             <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth="1.5">

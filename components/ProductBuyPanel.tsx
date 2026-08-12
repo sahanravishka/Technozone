@@ -132,12 +132,12 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
     <div className="grid gap-7 md:grid-cols-2 md:gap-12">
       {/* ---------- gallery ---------- */}
       <div>
-        <div className="img-zoom-scroll relative mx-auto aspect-square w-full max-w-[420px] overflow-hidden bg-white md:max-w-none" style={{ borderRadius: '28px' }}>
+        <div className="img-zoom-scroll relative mx-auto aspect-square w-full max-w-[420px] overflow-hidden bg-card md:max-w-none" style={{ borderRadius: '28px' }}>
           {img ? (
             <Image key={img.id} src={imageUrl(img.storage_path)} alt={img.alt ?? product.name}
               fill priority fetchPriority="high" sizes="(max-width: 768px) 100vw, 50vw"
               quality={90}
-              className="page-enter object-contain p-3" />
+              className="page-enter object-cover" />
           ) : (
             <div className="absolute inset-0 grid place-items-center text-muted/40">
               <svg viewBox="0 0 24 24" className="h-16 w-16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -159,7 +159,7 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
               <button key={im.id} onClick={() => { setImgIdx(i); if (im.color_hex) setSelColor(im.color_hex); }} aria-label={`Image ${i + 1}`}
                 className={`relative h-16 w-16 shrink-0 overflow-hidden transition-all ${i === effectiveImgIdx ? 'ring-2 ring-volt' : 'opacity-65 hover:opacity-100'}`}
                 style={{ borderRadius: '14px' }}>
-                <Image src={imageUrl(im.storage_path)} alt="" fill sizes="64px" quality={60} className="object-contain p-1" />
+                <Image src={imageUrl(im.storage_path)} alt="" fill sizes="64px" quality={60} className="object-cover" />
               </button>
             ))}
           </div>
