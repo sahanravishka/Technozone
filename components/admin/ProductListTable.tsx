@@ -6,11 +6,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { imageUrl } from '@/lib/supabase';
 import { formatLKR } from '@/lib/site';
-import { bulkSetActive, bulkSetCategory, bulkAdjustPrice, bulkTrash } from '@/app/admin/(panel)/products/bulk-actions';
+import { bulkSetActive, bulkSetCategory, bulkAdjustPrice, bulkTrash, setVariantStock } from '@/app/admin/(panel)/products/bulk-actions';
 
 type Row = {
   id: string; name: string; slug: string; is_active: boolean; category_id: string | null;
-  product_variants: { price: number; stock_qty: number; sku: string }[];
+  product_variants: { id: string; price: number; stock_qty: number; sku: string }[];
   product_images: { storage_path: string }[];
 };
 
@@ -128,9 +128,10 @@ export default function ProductListTable({
           const stock = p.product_variants.reduce((n, v) => n + v.stock_qty, 0);
           const prices = p.product_variants.map(v => Number(v.price));
           const img = p.product_images[0];
+          const singleVariant = p.product_variants.length === 1 ? p.product_variants[0] : null;
           return (
             <div key={p.id}
-              className={`flex items-start gap-3 px-3.5 py-3 transition-colors hover:bg-paper sm:items-center sm:px-4 ${i ? 'border-t border-line/70' : ''}`}>
+              className={`flex flex-wrap items-start gap-3 px-3.5 py-3 transition-colors hover:bg-paper sm:flex-nowrap sm:items-center sm:px-4 ${i ? 'border-t border-line/70' : ''}`}>
               <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleOne(p.id)}
                 aria-label={`Select ${p.name}`}
                 className="mt-3.5 h-4 w-4 shrink-0 rounded accent-volt sm:mt-0" />
@@ -144,31 +145,95 @@ export default function ProductListTable({
                   <span className="mt-0.5 block truncate text-[11.5px] text-muted">
                     {catName(p.category_id)} · {p.product_variants.length} variant{p.product_variants.length === 1 ? '' : 's'}
                   </span>
-                  {/* phone-only second row: price + stock, never squeezed */}
-                  <span className="mt-1.5 flex items-center gap-2 sm:hidden">
-                    <span className="text-[13.5px] font-bold">{prices.length ? formatLKR(Math.min(...prices)) : '—'}</span>
-                    <span className={`rounded-lg px-2 py-0.5 text-[10.5px] font-semibold ${stock <= 3 ? 'bg-warn-soft text-warn' : 'bg-paper text-muted'}`}>
-                      {stock} in stock
-                    </span>
-                    <span className={`ml-auto rounded-full px-2 py-0.5 text-[10.5px] font-bold ${p.is_active ? 'bg-[#E8F7EE] text-ok' : 'bg-paper text-muted'}`}>
-                      {p.is_active ? 'Live' : 'Hidden'}
-                    </span>
+                  <span className="mt-1 block text-[13px] font-bold sm:hidden">
+                    {prices.length ? formatLKR(Math.min(...prices)) : '—'}
                   </span>
-                </span>
-                {/* desktop-only columns */}
-                <span className={`hidden rounded-lg px-2 py-0.5 text-[11px] font-semibold sm:inline ${stock <= 3 ? 'bg-warn-soft text-warn' : 'bg-paper text-muted'}`}>
-                  {stock} in stock
                 </span>
                 <span className="hidden w-28 text-right text-[13px] font-bold sm:block">
                   {prices.length ? formatLKR(Math.min(...prices)) : '—'}
                 </span>
-                <span className={`hidden h-2 w-2 rounded-full sm:block ${p.is_active ? 'bg-ok' : 'bg-line'}`} title={p.is_active ? 'Active' : 'Hidden'} />
               </Link>
+
+              {/* Quick stock — single-variant products only; multi-variant needs the editor */}
+              {singleVariant ? (
+                <QuickStock variantId={singleVariant.id} stock={singleVariant.stock_qty} />
+              ) : (
+                <Link href={`/admin/products/${p.id}`}
+                  className={`shrink-0 rounded-lg px-2 py-1 text-[11px] font-semibold ${stock <= 3 ? 'bg-warn-soft text-warn' : 'bg-paper text-muted'}`}>
+                  {stock} in stock
+                </Link>
+              )}
+
+              {/* Quick publish/hide toggle */}
+              <QuickToggle productId={p.id} active={p.is_active} />
             </div>
           );
         })}
         {!products.length && <p className="p-8 text-center text-muted">No products match these filters.</p>}
       </div>
     </div>
+  );
+}
+
+/** Inline stock stepper — +/- buttons plus a tappable number, saved on change with no page navigation. */
+function QuickStock({ variantId, stock }: { variantId: string; stock: number }) {
+  const [value, setValue] = useState(stock);
+  const [pending, start] = useTransition();
+  const router = useRouter();
+
+  const commit = (next: number) => {
+    const qty = Math.max(0, next);
+    setValue(qty);
+    start(async () => {
+      try { await setVariantStock(variantId, qty); router.refresh(); }
+      catch { setValue(stock); /* revert on failure */ }
+    });
+  };
+
+  return (
+    <div onClick={e => e.preventDefault()}
+      className={`flex shrink-0 items-center gap-1 rounded-lg px-1 py-1 ${value <= 3 ? 'bg-warn-soft' : 'bg-paper'}`}>
+      <button type="button" disabled={pending || value <= 0} onClick={() => commit(value - 1)}
+        aria-label="Decrease stock"
+        className={`pressable grid h-6 w-6 place-items-center rounded-md text-[13px] font-bold disabled:opacity-30 ${value <= 3 ? 'text-warn' : 'text-muted'} hover:bg-white/60`}>
+        −
+      </button>
+      <input type="number" inputMode="numeric" value={value} disabled={pending}
+        onClick={e => e.stopPropagation()}
+        onChange={e => setValue(Math.max(0, Number(e.target.value) || 0))}
+        onBlur={() => value !== stock && commit(value)}
+        aria-label="Stock quantity"
+        className={`h-6 w-10 rounded-md bg-transparent text-center text-[12px] font-bold outline-none ${value <= 3 ? 'text-warn' : 'text-ink'}`} />
+      <button type="button" disabled={pending} onClick={() => commit(value + 1)}
+        aria-label="Increase stock"
+        className={`pressable grid h-6 w-6 place-items-center rounded-md text-[13px] font-bold disabled:opacity-30 ${value <= 3 ? 'text-warn' : 'text-muted'} hover:bg-white/60`}>
+        +
+      </button>
+    </div>
+  );
+}
+
+/** One-tap publish/hide switch, right in the list — no need to open the product editor. */
+function QuickToggle({ productId, active }: { productId: string; active: boolean }) {
+  const [on, setOn] = useState(active);
+  const [pending, start] = useTransition();
+  const router = useRouter();
+
+  const toggle = () => {
+    const next = !on;
+    setOn(next);
+    start(async () => {
+      try { await bulkSetActive([productId], next); router.refresh(); }
+      catch { setOn(on); }
+    });
+  };
+
+  return (
+    <button type="button" onClick={e => { e.preventDefault(); toggle(); }} disabled={pending}
+      role="switch" aria-checked={on} aria-label={on ? 'Hide from website' : 'Publish to website'}
+      title={on ? 'Live — tap to hide' : 'Hidden — tap to publish'}
+      className={`pressable relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${on ? 'bg-ok' : 'bg-line'}`}>
+      <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+    </button>
   );
 }

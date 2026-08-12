@@ -23,11 +23,19 @@ export default function ProductCard({ product, discounts, locale, dict, priority
       style={{ borderRadius: '24px' }}>
       {/* --- Image area --- */}
       <div className="plate-img relative aspect-square overflow-hidden bg-gradient-to-b from-card to-tint-tone" style={{ borderRadius: '24px 24px 0 0' }}>
-        {img && (
+        {img ? (
           <Image src={imageUrl(img.storage_path)} alt={img.alt ?? product.name}
             fill sizes="(max-width: 768px) 50vw, 25vw" priority={priority}
             quality={75}
             className="object-cover" />
+        ) : (
+          <div className="absolute inset-0 grid place-items-center text-muted/40">
+            <svg viewBox="0 0 24 24" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="3" y="5" width="18" height="14" rx="2" />
+              <circle cx="8.5" cy="10" r="1.5" fill="currentColor" stroke="none" />
+              <path d="m3 16 5-4 4 3 3-2 6 5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
         )}
         {/* badges with unique shapes */}
         {savePct > 0 ? (

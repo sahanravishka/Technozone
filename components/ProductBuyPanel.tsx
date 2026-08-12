@@ -133,11 +133,19 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
       {/* ---------- gallery ---------- */}
       <div>
         <div className="img-zoom-scroll relative mx-auto aspect-square w-full max-w-[420px] overflow-hidden bg-card md:max-w-none" style={{ borderRadius: '28px' }}>
-          {img && (
+          {img ? (
             <Image key={img.id} src={imageUrl(img.storage_path)} alt={img.alt ?? product.name}
               fill priority fetchPriority="high" sizes="(max-width: 768px) 100vw, 50vw"
               quality={90}
               className="page-enter object-cover" />
+          ) : (
+            <div className="absolute inset-0 grid place-items-center text-muted/40">
+              <svg viewBox="0 0 24 24" className="h-16 w-16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <circle cx="8.5" cy="10" r="1.5" fill="currentColor" stroke="none" />
+                <path d="m3 16 5-4 4 3 3-2 6 5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
           )}
           {savePct > 0 && (
             <span className="badge-hex absolute left-3.5 top-3.5 z-10 flex h-12 w-16 items-center justify-center bg-gradient-to-br from-volt to-accent text-[11.5px] font-bold text-white shadow-lg">

@@ -51,6 +51,16 @@ export async function bulkAdjustPrice(ids: string[], pct: number) {
   revalidatePath('/admin/products');
 }
 
+/** Quick inline stock edit from the product list — single variant, no need to open the editor. */
+export async function setVariantStock(variantId: string, qty: number) {
+  await requireStaff(['owner', 'manager']);
+  const supabase = (await getServerSupabase())!;
+  const { error } = await supabase.from('product_variants')
+    .update({ stock_qty: Math.max(0, Math.round(qty)) }).eq('id', variantId);
+  if (error) throw new Error(error.message);
+  revalidatePath('/admin/products');
+}
+
 export async function bulkTrash(ids: string[]) {
   const staff = await requireStaff(['owner', 'manager']);
   if (!ids.length) return;

@@ -24,7 +24,7 @@ export default async function AdminProducts({ searchParams }: { searchParams: Pr
   const { data: categories } = await supabase.from('categories').select('id, name').order('sort_order');
 
   let query = supabase.from('products')
-    .select('id, name, slug, is_active, category_id, base_price, product_variants(price, stock_qty, sku), product_images(storage_path)', { count: 'exact' })
+    .select('id, name, slug, is_active, category_id, base_price, product_variants(id, price, stock_qty, sku), product_images(storage_path)', { count: 'exact' })
     .is('deleted_at', null);
 
   if (q) query = query.ilike('name', `%${q}%`);
