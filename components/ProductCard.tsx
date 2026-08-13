@@ -52,6 +52,11 @@ export default function ProductCard({ product, discounts, locale, dict, priority
             {pricing.stock} {dict.product.lowStock}
           </span>
         ) : null}
+        {/charger|adapter/i.test(product.name) && (
+          <span className="absolute right-3 top-3 z-10 rounded bg-white/90 px-1.5 py-1 text-[9.5px] font-extrabold uppercase tracking-widest text-deep shadow-sm backdrop-blur-md">
+            🇬🇧 UK Plug
+          </span>
+        )}
         <WishlistButton productId={product.id} />
       </div>
 

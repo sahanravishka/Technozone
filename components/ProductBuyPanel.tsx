@@ -153,6 +153,11 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
               {dict.product.save} {savePct}%
             </span>
           )}
+          {/charger|adapter/i.test(product.name) && (
+            <span className="absolute right-3.5 top-3.5 z-10 rounded bg-white/90 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-widest text-deep shadow-sm backdrop-blur-md">
+              🇬🇧 UK Plug
+            </span>
+          )}
         </div>
         {images.length > 1 && (
           <div className="rail mt-3 flex gap-2 overflow-x-auto">
