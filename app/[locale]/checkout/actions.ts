@@ -6,6 +6,7 @@ import { buildCheckoutFields, payhereConfigured, payhereGateway } from '@/lib/pa
 import { priceVariant } from '@/lib/pricing';
 import { rateLimitByIp } from '@/lib/rate-limit';
 import { sendNewOrderEmail } from '@/lib/email';
+import { sendNewOrderTelegram } from '@/lib/telegram';
 import type { Discount, Product } from '@/lib/types';
 
 type CartLine = { variantId: string; qty: number };
@@ -155,13 +156,15 @@ export async function createOrder(input: {
   // Order placed — this phone's in-progress checkout (if any) is no longer abandoned.
   await clearAbandonedCart(input.phone);
 
-  // Notify the shop owner. Fire-and-forget: never let email delivery block checkout.
-  void sendNewOrderEmail({
+  // Notify the shop owner. Fire-and-forget: never let notification delivery block checkout.
+  const notifyPayload = {
     orderNumber: order.order_number, total, paymentMethod: method,
     fulfillment: isPickup ? 'pickup' : 'delivery',
     customerName: input.name, customerPhone: input.phone, city: input.city,
     items: items.map(i => ({ name: i.product_name, qty: i.qty, line: i.line_total }))
-  });
+  };
+  void sendNewOrderEmail(notifyPayload);
+  void sendNewOrderTelegram(notifyPayload);
 
   // ---- 4. Branch by payment method ----
   if (method === 'payhere') {
