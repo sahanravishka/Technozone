@@ -7,6 +7,7 @@ import { priceProduct } from '@/lib/pricing';
 import { imageUrl } from '@/lib/supabase';
 import { formatLKR } from '@/lib/site';
 import WishlistButton from './WishlistButton';
+import FastChargeBadge from './FastChargeBadge';
 
 export default function ProductCard({ product, discounts, locale, dict, priority = false }:
   { product: Product; discounts: Discount[]; locale: Locale; dict: Dict; priority?: boolean }) {
@@ -60,6 +61,9 @@ export default function ProductCard({ product, discounts, locale, dict, priority
           <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">{product.brand}</span>
         )}
         <h3 className="line-clamp-2 text-[15px] font-bold leading-snug tracking-[-0.01em]">{product.name}</h3>
+        {!!product.specs?.['Fast Charging'] && (
+          <div><FastChargeBadge /></div>
+        )}
         {!!product.rating_count && (
           <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-muted">
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-warn" fill="currentColor" aria-hidden>

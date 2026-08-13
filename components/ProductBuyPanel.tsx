@@ -13,6 +13,7 @@ import StockBadge from './StockBadge';
 import { WhatsAppIcon } from './WhatsAppButton';
 import WishlistButton from './WishlistButton';
 import NotifyMeForm from './NotifyMeForm';
+import FastChargeBadge from './FastChargeBadge';
 
 export default function ProductBuyPanel({ product, discounts, dict, productUrl }:
   { product: Product; discounts: Discount[]; dict: Dict; productUrl: string }) {
@@ -176,6 +177,9 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
           <h1 className="mt-1.5 text-[1.45rem] font-bold leading-tight tracking-tight md:text-[1.8rem]">
             {product.name}
           </h1>
+          {!!product.specs?.['Fast Charging'] && (
+            <div className="mt-2"><FastChargeBadge size="md" /></div>
+          )}
           {!!product.rating_count && (
             <p className="mt-1.5 text-[12.5px]">
               <span className="stars" style={{ fontSize: 13 }}>{'★★★★★'.slice(0, Math.round(product.rating_avg ?? 0))}</span>

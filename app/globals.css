@@ -464,6 +464,11 @@ body {
 /* skeleton shimmer */
 .skeleton { background: linear-gradient(100deg, #EBEEF3 40%, #F5F7FA 50%, #EBEEF3 60%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
 @keyframes shimmer { to { background-position: -200% 0; } }
+@keyframes bolt-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.85); }
+}
+.animate-bolt-pulse { animation: bolt-pulse 1.3s ease-in-out infinite; }
 
 /* ---------- accessibility: motion off when requested ---------- */
 @media (prefers-reduced-motion: reduce) {
