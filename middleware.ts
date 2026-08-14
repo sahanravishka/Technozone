@@ -5,9 +5,10 @@ import { locales, defaultLocale } from './lib/i18n/config';
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // /admin lives outside locale routing
+  // /admin and /order-form (Facebook lead form) live outside locale routing
   const needsLocale =
     !pathname.startsWith('/admin') &&
+    !pathname.startsWith('/order-form') &&
     !locales.some(l => pathname === `/${l}` || pathname.startsWith(`/${l}/`));
   if (needsLocale) {
     const url = req.nextUrl.clone();

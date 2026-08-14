@@ -15,11 +15,11 @@ export default async function AdminOrders() {
   // Active orders + recent cancelled (so owners can recall mistakes)
   const [{ data: activeData }, { data: cancelledData }] = await Promise.all([
     supabase.from('orders')
-      .select('id, order_number, status, payment_status, payment_method, fulfillment, total, customer_phone, created_at, shipping_address, order_items(qty, product_id, variant_id, product_name)')
+      .select('id, order_number, status, payment_status, payment_method, fulfillment, channel, total, customer_phone, created_at, shipping_address, order_items(qty, product_id, variant_id, product_name)')
       .not('status', 'in', '(cancelled,dispatched)')
       .order('created_at', { ascending: false }).limit(200),
     supabase.from('orders')
-      .select('id, order_number, status, payment_status, payment_method, fulfillment, total, customer_phone, created_at, shipping_address, order_items(qty, product_id, variant_id, product_name)')
+      .select('id, order_number, status, payment_status, payment_method, fulfillment, channel, total, customer_phone, created_at, shipping_address, order_items(qty, product_id, variant_id, product_name)')
       .eq('status', 'cancelled')
       .order('created_at', { ascending: false }).limit(30),
   ]);

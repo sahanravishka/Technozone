@@ -11,7 +11,7 @@ export type AdminOrderItem = {
 };
 export type AdminOrder = {
   id: string; order_number: string; status: string; total: number;
-  payment_status?: string; payment_method?: string; fulfillment?: string;
+  payment_status?: string; payment_method?: string; fulfillment?: string; channel?: string;
   customer_phone: string; created_at: string;
   shipping_address: { name?: string; city?: string };
   order_items: AdminOrderItem[];
@@ -96,6 +96,9 @@ export default function OrderCard({
             className="h-4 w-4 shrink-0 accent-volt" aria-label={`Select ${order.order_number}`} />
         )}
         <span className="text-[15px] font-extrabold tracking-tight">{order.order_number}</span>
+        {order.channel === 'facebook' && (
+          <span className="rounded-full bg-[#E7F0FF] px-2 py-0.5 text-[10.5px] font-bold text-[#1877F2]">Facebook</span>
+        )}
         <button onClick={() => onViewDetails(order.id)}
           className="pressable rounded-lg px-2 py-1 text-[11.5px] font-semibold text-muted hover:bg-paper hover:text-ink">
           👁 Details
