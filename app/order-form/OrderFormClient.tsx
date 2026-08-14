@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { SRI_LANKA_CITIES } from '@/lib/sri-lanka-cities';
 import { submitFacebookOrder, type LeadLine } from './actions';
+import { ORDER_FORM_DICT, type OrderFormLocale } from './dictionary';
 
 type ModuleVariant = { id: string; name: string; price: number; inStock: boolean };
 type Module = { id: string; name: string; brand: string | null; variants: ModuleVariant[] };
@@ -11,6 +12,11 @@ type SelectedLine = { key: string; productId: string; variantId: string; label: 
 const LKR = (n: number) => `Rs ${n.toLocaleString('en-LK')}`;
 
 export default function OrderFormClient({ modules }: { modules: Module[] }) {
+  const [lang, setLang] = useState<OrderFormLocale>('en');
+  const t = ORDER_FORM_DICT[lang];
+
+  useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+
   const [lines, setLines] = useState<SelectedLine[]>([]);
   const [productQuery, setProductQuery] = useState('');
   const [showProductList, setShowProductList] = useState(false);
@@ -68,14 +74,14 @@ export default function OrderFormClient({ modules }: { modules: Module[] }) {
 
   function validate(): boolean {
     const e: Record<string, string> = {};
-    if (!lines.length) e.lines = 'Select at least one item.';
-    if (!name.trim()) e.name = 'Required';
-    if (!address.trim()) e.address = 'Required';
-    if (!city.trim()) e.city = 'Required';
+    if (!lines.length) e.lines = t.errItems;
+    if (!name.trim()) e.name = t.errRequired;
+    if (!address.trim()) e.address = t.errRequired;
+    if (!city.trim()) e.city = t.errRequired;
     const p1 = phone1.replace(/\s/g, '');
-    if (!/^0\d{9}$/.test(p1)) e.phone1 = 'Enter a valid mobile number (e.g. 0771234567)';
+    if (!/^0\d{9}$/.test(p1)) e.phone1 = t.errPhone;
     const p2 = phone2.replace(/\s/g, '');
-    if (p2 && !/^0\d{9}$/.test(p2)) e.phone2 = 'Looks invalid';
+    if (p2 && !/^0\d{9}$/.test(p2)) e.phone2 = t.errPhone2;
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -98,33 +104,42 @@ export default function OrderFormClient({ modules }: { modules: Module[] }) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 text-center">
         <div className="grid h-16 w-16 place-items-center rounded-full bg-[#E8F7EE] text-3xl">✓</div>
-        <h1 className="mt-5 text-xl font-extrabold tracking-tight">Order received!</h1>
-        <p className="mt-2 text-[14px] text-muted">
-          Your reference number is <b className="text-ink">{orderNumber}</b>. Our team will call you shortly to confirm the details.
-        </p>
-        <p className="mt-6 text-[12.5px] text-muted">Techno Zone Lanka</p>
+        <h1 className="mt-5 text-xl font-extrabold tracking-tight">{t.successTitle}</h1>
+        <p className="mt-2 text-[14px] text-muted">{t.successBody(orderNumber)}</p>
+        <p className="mt-6 text-[12.5px] text-muted">{t.successFooter}</p>
       </main>
     );
   }
 
   return (
     <main className="mx-auto min-h-screen max-w-md px-4 pb-16 pt-6 sm:max-w-lg sm:px-6">
+      <div className="mb-4 flex justify-center gap-1.5">
+        {(['en', 'si', 'ta'] as OrderFormLocale[]).map(l => (
+          <button key={l} type="button" onClick={() => setLang(l)}
+            className={`pressable rounded-full px-3.5 py-1.5 text-[12.5px] font-bold transition-colors ${
+              lang === l ? 'bg-ink text-white' : 'border border-line bg-card text-muted hover:bg-paper'
+            }`}>
+            {l === 'en' ? 'English' : l === 'si' ? 'සිංහල' : 'தமிழ்'}
+          </button>
+        ))}
+      </div>
+
       <header className="mb-6 text-center">
-        <h1 className="text-[1.4rem] font-extrabold tracking-tight">Place Your Order</h1>
-        <p className="mt-1 text-[13px] text-muted">Fill in your details below and we'll call to confirm.</p>
+        <h1 className="text-[1.4rem] font-extrabold tracking-tight">{t.title}</h1>
+        <p className="mt-1 text-[13px] text-muted">{t.subtitle}</p>
       </header>
 
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {/* ---- Item picker ---- */}
         <section>
-          <label className="mb-1.5 block text-[13px] font-bold">What would you like to order? *</label>
+          <label className="mb-1.5 block text-[13px] font-bold">{t.itemsLabel}</label>
           <div className="relative" ref={productBoxRef}>
             <input
               type="text"
               value={productQuery}
               onFocus={() => setShowProductList(true)}
               onChange={e => { setProductQuery(e.target.value); setShowProductList(true); }}
-              placeholder="Search a phone, charger, headphone…"
+              placeholder={t.itemsSearchPlaceholder}
               className="w-full rounded-xl border border-line bg-card px-3.5 py-3 text-[14.5px] outline-none focus:border-volt"
             />
             {showProductList && (
@@ -132,7 +147,7 @@ export default function OrderFormClient({ modules }: { modules: Module[] }) {
                 <div className="fixed inset-0 z-10" onClick={() => setShowProductList(false)} />
                 <div className="absolute z-20 mt-1.5 max-h-72 w-full overflow-y-auto rounded-xl border border-line bg-card shadow-lg">
                   {filteredProducts.length === 0 && (
-                    <p className="p-3.5 text-[13px] text-muted">No matching products.</p>
+                    <p className="p-3.5 text-[13px] text-muted">{t.itemsNoMatch}</p>
                   )}
                   {filteredProducts.map(m => (
                     <div key={m.id} className="border-b border-line/60 last:border-0">
@@ -142,9 +157,9 @@ export default function OrderFormClient({ modules }: { modules: Module[] }) {
                           key={v.id} type="button" disabled={!v.inStock}
                           onClick={() => addLine(m, v)}
                           className="flex w-full items-center justify-between gap-2 px-3.5 py-2.5 text-left text-[13.5px] hover:bg-paper disabled:opacity-40">
-                          <span>{v.name && v.name !== 'Default' ? v.name : 'Standard'}</span>
+                          <span>{v.name && v.name !== 'Default' ? v.name : t.standard}</span>
                           <span className="shrink-0 font-semibold">
-                            {v.inStock ? LKR(v.price) : 'Out of stock'}
+                            {v.inStock ? LKR(v.price) : t.outOfStock}
                           </span>
                         </button>
                       ))}
@@ -163,7 +178,7 @@ export default function OrderFormClient({ modules }: { modules: Module[] }) {
                 <li key={l.key} className="flex items-center gap-2 rounded-xl border border-line bg-card px-3 py-2.5">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13.5px] font-semibold">{l.label}</p>
-                    <p className="text-[12px] text-muted">{LKR(l.price)} each</p>
+                    <p className="text-[12px] text-muted">{LKR(l.price)} {t.each}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1 rounded-lg bg-paper px-1 py-1">
                     <button type="button" onClick={() => updateQty(l.key, l.qty - 1)}
@@ -177,7 +192,7 @@ export default function OrderFormClient({ modules }: { modules: Module[] }) {
                 </li>
               ))}
               <li className="flex justify-between px-1 pt-1 text-[14px] font-extrabold">
-                <span>Total</span><span>{LKR(total)}</span>
+                <span>{t.total}</span><span>{LKR(total)}</span>
               </li>
             </ul>
           )}
@@ -186,27 +201,27 @@ export default function OrderFormClient({ modules }: { modules: Module[] }) {
         {/* ---- Contact details ---- */}
         <section className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-[13px] font-bold">Full Name *</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Your name"
+            <label className="mb-1.5 block text-[13px] font-bold">{t.nameLabel}</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder={t.namePlaceholder}
               className="w-full rounded-xl border border-line bg-card px-3.5 py-3 text-[14.5px] outline-none focus:border-volt" />
             {errors.name && <p className="mt-1 text-[12px] font-medium text-sale">{errors.name}</p>}
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[13px] font-bold">Delivery Address *</label>
+            <label className="mb-1.5 block text-[13px] font-bold">{t.addressLabel}</label>
             <textarea value={address} onChange={e => setAddress(e.target.value)} rows={2}
-              placeholder="House no, street, area"
+              placeholder={t.addressPlaceholder}
               className="w-full resize-none rounded-xl border border-line bg-card px-3.5 py-3 text-[14.5px] outline-none focus:border-volt" />
             {errors.address && <p className="mt-1 text-[12px] font-medium text-sale">{errors.address}</p>}
           </div>
 
           <div className="relative" ref={cityBoxRef}>
-            <label className="mb-1.5 block text-[13px] font-bold">Nearest City *</label>
+            <label className="mb-1.5 block text-[13px] font-bold">{t.cityLabel}</label>
             <input
               value={city}
               onFocus={() => setShowCityList(true)}
               onChange={e => { setCity(e.target.value); setShowCityList(true); }}
-              placeholder="Start typing your city…"
+              placeholder={t.cityPlaceholder}
               className="w-full rounded-xl border border-line bg-card px-3.5 py-3 text-[14.5px] outline-none focus:border-volt" />
             {showCityList && filteredCities.length > 0 && (
               <>
@@ -227,23 +242,23 @@ export default function OrderFormClient({ modules }: { modules: Module[] }) {
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1.5 block text-[13px] font-bold">Mobile Number *</label>
+              <label className="mb-1.5 block text-[13px] font-bold">{t.phone1Label}</label>
               <input value={phone1} onChange={e => setPhone1(e.target.value)} placeholder="07XXXXXXXX" inputMode="tel"
                 className="w-full rounded-xl border border-line bg-card px-3.5 py-3 text-[14.5px] outline-none focus:border-volt" />
               {errors.phone1 && <p className="mt-1 text-[12px] font-medium text-sale">{errors.phone1}</p>}
             </div>
             <div>
-              <label className="mb-1.5 block text-[13px] font-bold">2nd Mobile Number</label>
-              <input value={phone2} onChange={e => setPhone2(e.target.value)} placeholder="Optional" inputMode="tel"
+              <label className="mb-1.5 block text-[13px] font-bold">{t.phone2Label}</label>
+              <input value={phone2} onChange={e => setPhone2(e.target.value)} placeholder={t.phone2Optional} inputMode="tel"
                 className="w-full rounded-xl border border-line bg-card px-3.5 py-3 text-[14.5px] outline-none focus:border-volt" />
               {errors.phone2 && <p className="mt-1 text-[12px] font-medium text-sale">{errors.phone2}</p>}
             </div>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[13px] font-bold">Special Note</label>
+            <label className="mb-1.5 block text-[13px] font-bold">{t.noteLabel}</label>
             <textarea value={note} onChange={e => setNote(e.target.value)} rows={2}
-              placeholder="Anything we should know? (e.g. best time to call, landmark, colour preference)"
+              placeholder={t.notePlaceholder}
               className="w-full resize-none rounded-xl border border-line bg-card px-3.5 py-3 text-[14.5px] outline-none focus:border-volt" />
           </div>
         </section>
@@ -254,7 +269,7 @@ export default function OrderFormClient({ modules }: { modules: Module[] }) {
 
         <button type="submit" disabled={pending}
           className="pressable w-full rounded-xl bg-ink py-3.5 text-[14.5px] font-bold text-white disabled:opacity-50">
-          {pending ? 'Submitting…' : 'Submit Order'}
+          {pending ? t.submitting : t.submit}
         </button>
       </form>
     </main>
