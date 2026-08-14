@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { getProducts } from '@/lib/data';
+import { getProducts, getCategories } from '@/lib/data';
+import { imageUrl } from '@/lib/supabase';
 import OrderFormClient from './OrderFormClient';
 
 // Never indexed — this page only exists for direct links shared with people
@@ -11,8 +12,16 @@ export const metadata: Metadata = {
 
 export const revalidate = 0;
 
+const CATEGORY_ICON: Record<string, string> = {
+  'phones-tablets': '📱', 'audio': '🎧', 'chargers-cables': '🔌',
+  'accessories': '🎒', 'smart-devices': '⌚',
+};
+
 export default async function OrderFormPage() {
-  const products = await getProducts({ limit: 500 });
+  const [products, categories] = await Promise.all([
+    getProducts({ limit: 500 }),
+    getCategories(),
+  ]);
 
   const modules = products
     .filter(p => p.product_variants?.length)
@@ -20,6 +29,8 @@ export default async function OrderFormPage() {
       id: p.id,
       name: p.name,
       brand: p.brand,
+      categoryId: p.category_id,
+      image: p.product_images?.[0] ? imageUrl(p.product_images[0].storage_path) : null,
       variants: p.product_variants.map(v => ({
         id: v.id,
         name: v.name,
@@ -28,5 +39,11 @@ export default async function OrderFormPage() {
       })),
     }));
 
-  return <OrderFormClient modules={modules} />;
+  const cats = categories.map(c => ({
+    id: c.id, name: c.name, slug: c.slug,
+    icon: CATEGORY_ICON[c.slug] ?? '🛍️',
+    count: modules.filter(m => m.categoryId === c.id).length,
+  })).filter(c => c.count > 0);
+
+  return <OrderFormClient modules={modules} categories={cats} />;
 }

@@ -2,8 +2,12 @@ export type OrderFormLocale = 'en' | 'si' | 'ta';
 
 export const ORDER_FORM_DICT: Record<OrderFormLocale, {
   title: string; subtitle: string;
+  step1: string; step1Sub: string;
+  step2: string; step2Sub: string;
+  step3: string;
   itemsLabel: string; itemsSearchPlaceholder: string; itemsNoMatch: string;
   outOfStock: string; standard: string; each: string; total: string;
+  selectedLabel: string; pickCategoryFirst: string;
   nameLabel: string; namePlaceholder: string;
   addressLabel: string; addressPlaceholder: string;
   cityLabel: string; cityPlaceholder: string;
@@ -15,7 +19,12 @@ export const ORDER_FORM_DICT: Record<OrderFormLocale, {
 }> = {
   en: {
     title: 'Place Your Order',
-    subtitle: "Fill in your details below and we'll call to confirm.",
+    subtitle: "Pick what you need, tell us where to send it — takes under a minute.",
+    step1: 'Choose a category',
+    step1Sub: 'Tap all that apply',
+    step2: 'Pick your items',
+    step2Sub: 'Tap to select, tap again to remove',
+    step3: 'Your details',
     itemsLabel: 'What would you like to order? *',
     itemsSearchPlaceholder: 'Search a phone, charger, headphone…',
     itemsNoMatch: 'No matching products.',
@@ -23,6 +32,8 @@ export const ORDER_FORM_DICT: Record<OrderFormLocale, {
     standard: 'Standard',
     each: 'each',
     total: 'Total',
+    selectedLabel: 'Selected items',
+    pickCategoryFirst: 'Choose a category above to see products',
     nameLabel: 'Full Name *',
     namePlaceholder: 'Your name',
     addressLabel: 'Delivery Address *',
@@ -46,7 +57,12 @@ export const ORDER_FORM_DICT: Record<OrderFormLocale, {
   },
   si: {
     title: 'ඔබේ ඇණවුම කරන්න',
-    subtitle: 'පහත විස්තර පුරවන්න, අපි ඇමතුමක් දී තහවුරු කරගන්නම්.',
+    subtitle: 'ඔබට ඕන දේ තෝරන්න, යවන්නේ කොහෙද කියලා කියන්න — විනාඩියකින් ඉවරයි.',
+    step1: 'කාණ්ඩයක් තෝරන්න',
+    step1Sub: 'අදාළ සියල්ල තට්ටු කරන්න',
+    step2: 'ඔබේ අයිතම තෝරන්න',
+    step2Sub: 'තෝරන්න තට්ටු කරන්න, ඉවත් කිරීමට නැවත තට්ටු කරන්න',
+    step3: 'ඔබේ විස්තර',
     itemsLabel: 'ඔබට ඕන කරන්නේ මොනවද? *',
     itemsSearchPlaceholder: 'දුරකථනයක්, චාජරයක්, හෙඩ්ෆෝන් එකක් සොයන්න…',
     itemsNoMatch: 'ගැලපෙන නිෂ්පාදන නැත.',
@@ -54,6 +70,8 @@ export const ORDER_FORM_DICT: Record<OrderFormLocale, {
     standard: 'සාමාන්‍ය',
     each: 'එකකට',
     total: 'එකතුව',
+    selectedLabel: 'තෝරාගත් අයිතම',
+    pickCategoryFirst: 'නිෂ්පාදන බැලීමට ඉහත කාණ්ඩයක් තෝරන්න',
     nameLabel: 'සම්පූර්ණ නම *',
     namePlaceholder: 'ඔබේ නම',
     addressLabel: 'බෙදාහැරීමේ ලිපිනය *',
@@ -77,7 +95,12 @@ export const ORDER_FORM_DICT: Record<OrderFormLocale, {
   },
   ta: {
     title: 'உங்கள் ஆர்டரை செய்யுங்கள்',
-    subtitle: 'கீழே உங்கள் விவரங்களை நிரப்புங்கள், நாங்கள் அழைத்து உறுதிப்படுத்துவோம்.',
+    subtitle: 'உங்களுக்கு தேவையானதைத் தேர்ந்தெடுங்கள், எங்கே அனுப்புவது என்று சொல்லுங்கள் — ஒரு நிமிடத்திற்குள்.',
+    step1: 'ஒரு வகையைத் தேர்ந்தெடுக்கவும்',
+    step1Sub: 'பொருந்தும் அனைத்தையும் தட்டவும்',
+    step2: 'உங்கள் பொருட்களைத் தேர்ந்தெடுக்கவும்',
+    step2Sub: 'தேர்ந்தெடுக்க தட்டவும், நீக்க மீண்டும் தட்டவும்',
+    step3: 'உங்கள் விவரங்கள்',
     itemsLabel: 'நீங்கள் என்ன ஆர்டர் செய்ய விரும்புகிறீர்கள்? *',
     itemsSearchPlaceholder: 'ஃபோன், சார்ஜர், ஹெட்·ஃபோன் தேடுங்கள்…',
     itemsNoMatch: 'பொருந்தும் பொருட்கள் இல்லை.',
@@ -85,6 +108,8 @@ export const ORDER_FORM_DICT: Record<OrderFormLocale, {
     standard: 'சாதாரண',
     each: 'ஒன்றுக்கு',
     total: 'மொத்தம்',
+    selectedLabel: 'தேர்ந்தெடுக்கப்பட்ட பொருட்கள்',
+    pickCategoryFirst: 'பொருட்களைப் பார்க்க மேலே ஒரு வகையைத் தேர்ந்தெடுக்கவும்',
     nameLabel: 'முழுப் பெயர் *',
     namePlaceholder: 'உங்கள் பெயர்',
     addressLabel: 'விநியோக முகவரி *',
