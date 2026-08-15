@@ -15,6 +15,11 @@ const CATEGORY_ICON: Record<string, string> = {
   'phones-tablets': '📱', 'audio': '🎧', 'chargers-cables': '🔌',
   'accessories': '🎒', 'smart-devices': '⌚',
 };
+const CATEGORY_PHOTO: Record<string, string> = {
+  'phones-tablets': '/order-form/phones-tablets.jpg',
+  'audio': '/order-form/audio.jpg',
+  'chargers-cables': '/order-form/chargers-cables.jpg',
+};
 
 // Deliberately lighter than lib/data.ts's shared getProducts(): this page
 // only needs id/name/brand/category/variants/first-image — no descriptions,
@@ -75,6 +80,7 @@ export default async function OrderFormPage() {
   const cats = categories.map(c => ({
     id: c.id, name: c.name, slug: c.slug,
     icon: CATEGORY_ICON[c.slug] ?? '🛍️',
+    photo: CATEGORY_PHOTO[c.slug] ?? null,
     count: modules.filter(m => m.categoryId === c.id).length,
   })).filter(c => c.count > 0);
 
