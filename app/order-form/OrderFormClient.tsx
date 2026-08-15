@@ -378,8 +378,22 @@ export default function OrderFormClient({ modules, categories }: { modules: Modu
             <div className="min-w-0 flex-1">
               {lines.length > 0 ? (
                 <>
+                  {/* Selected products at a glance — thumbnails + names, scrollable if many */}
+                  <div className="mb-1 flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {lines.map(l => (
+                      <span key={l.key}
+                        className={`flex shrink-0 items-center gap-1.5 rounded-lg border ${LINE} bg-[#FBF8F3] py-0.5 pl-0.5 pr-2`}>
+                        <span className="relative h-6 w-6 shrink-0 overflow-hidden rounded bg-[#F4F0E9]">
+                          {l.image && <Image src={l.image} alt="" fill sizes="24px" className="object-cover" />}
+                        </span>
+                        <span className="max-w-[7.5rem] truncate text-[11px] font-bold">{l.label}</span>
+                        {l.qty > 1 && <span className="text-[10.5px] font-bold text-[#A29A8E]">×{l.qty}</span>}
+                        <span className="text-[11px] font-extrabold">{LKR(l.price * l.qty)}</span>
+                      </span>
+                    ))}
+                  </div>
                   <p className="text-[11px] font-bold uppercase tracking-wide text-[#A29A8E]">
-                    {itemCount} item{itemCount !== 1 ? 's' : ''}
+                    {itemCount} item{itemCount !== 1 ? 's' : ''} · {t.total}
                   </p>
                   <p className="truncate text-[19px] font-extrabold leading-tight">{LKR(total)}</p>
                 </>
