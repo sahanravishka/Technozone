@@ -32,7 +32,9 @@ export async function sendNewOrderTelegram(order: NewOrderTelegramInput) {
   }
 
   try {
-    const itemLines = order.items.map(i => `• ${i.qty}× ${i.name} — ${formatLKR(i.line)}`).join('\n');
+    const itemLines = order.items
+      .map(i => `• ${i.qty}× ${escapeMd(i.name)} — ${escapeMd(formatLKR(i.line))}`)
+      .join('\n');
     const text = [
       `🛒 *New order ${escapeMd(order.orderNumber)}*`,
       ``,
@@ -42,7 +44,7 @@ export async function sendNewOrderTelegram(order: NewOrderTelegramInput) {
       ``,
       itemLines,
       ``,
-      `*Total: ${formatLKR(order.total)}*`,
+      `*Total: ${escapeMd(formatLKR(order.total))}*`,
       ``,
       `[Open in admin](${SITE.url}/admin/orders)`,
     ].filter(Boolean).join('\n');
