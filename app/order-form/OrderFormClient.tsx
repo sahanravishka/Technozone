@@ -347,7 +347,7 @@ export default function OrderFormClient({ modules, categories }: { modules: Modu
 
             <div>
               <label className={labelCls}>{t.phone2Label}</label>
-              <input value={phone2} onChange={e => setPhone2(e.target.value)} placeholder={t.phone2Optional} inputMode="tel" className={inputCls} />
+              <input value={phone2} onChange={e => setPhone2(e.target.value)} placeholder="07XXXXXXXX" inputMode="tel" className={inputCls} />
               {errors.phone2 && <p className="mt-1.5 text-[13px] font-bold text-[#D14343]">{errors.phone2}</p>}
             </div>
 

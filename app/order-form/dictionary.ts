@@ -11,7 +11,7 @@ export const ORDER_FORM_DICT: Record<OrderFormLocale, {
   nameLabel: string; namePlaceholder: string;
   addressLabel: string; addressPlaceholder: string;
   cityLabel: string; cityPlaceholder: string;
-  phone1Label: string; phone2Label: string; phone2Optional: string;
+  phone1Label: string; phone2Label: string;
   noteLabel: string; notePlaceholder: string;
   submit: string; submitting: string;
   errRequired: string; errPhone: string; errPhone2: string; errItems: string;
@@ -42,7 +42,6 @@ export const ORDER_FORM_DICT: Record<OrderFormLocale, {
     cityPlaceholder: 'Start typing your city…',
     phone1Label: 'Mobile Number *',
     phone2Label: '2nd Mobile Number',
-    phone2Optional: 'Optional',
     noteLabel: 'Special Note',
     notePlaceholder: 'Anything we should know? (e.g. best time to call, landmark)',
     submit: 'Submit Order',
@@ -80,7 +79,6 @@ export const ORDER_FORM_DICT: Record<OrderFormLocale, {
     cityPlaceholder: 'ඔබේ නගරයේ නම ඇතුළත් කරන්න…',
     phone1Label: 'ජංගම දුරකථන අංකය *',
     phone2Label: 'දෙවන ජංගම දුරකථන අංකය',
-    phone2Optional: 'අනිවාර්ය නොවේ',
     noteLabel: 'විශේෂ සටහන',
     notePlaceholder: 'අප දැනගත යුතු වෙනත් යමක් තිබේද? (උදා: කතා කිරීමට සුදුසුම වේලාව, හඳුනාගැනීමේ සලකුණක්)',
     submit: 'ඇණවුම ලබා දෙන්න',
@@ -118,7 +116,6 @@ export const ORDER_FORM_DICT: Record<OrderFormLocale, {
     cityPlaceholder: 'உங்கள் நகரத்தை தட்டச்சு செய்யத் தொடங்குங்கள்…',
     phone1Label: 'மொபைல் எண் *',
     phone2Label: '2வது மொபைல் எண்',
-    phone2Optional: 'விருப்பத்தேர்வு',
     noteLabel: 'சிறப்பு குறிப்பு',
     notePlaceholder: 'நாங்கள் அறிய வேண்டியது ஏதேனும் உள்ளதா? (எ.கா: அழைக்க சிறந்த நேரம், அடையாளம்)',
     submit: 'ஆர்டரை சமர்ப்பிக்கவும்',
