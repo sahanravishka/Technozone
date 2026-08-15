@@ -1,5 +1,6 @@
 'use server';
 
+import { after } from 'next/server';
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { getAdminSupabase } from '@/lib/supabase-clients/admin';
 import { buildCheckoutFields, payhereConfigured, payhereGateway } from '@/lib/payhere';
@@ -156,15 +157,19 @@ export async function createOrder(input: {
   // Order placed — this phone's in-progress checkout (if any) is no longer abandoned.
   await clearAbandonedCart(input.phone);
 
-  // Notify the shop owner. Fire-and-forget: never let notification delivery block checkout.
+  // Notify the shop owner. after() keeps this serverless function alive
+  // until these finish, even though the response has already gone back to
+  // the customer — a plain fire-and-forget `void` call here gets killed
+  // mid-flight by Vercel as soon as the response is sent, which is why
+  // notifications were silently never arriving for real orders.
   const notifyPayload = {
     orderNumber: order.order_number, total, paymentMethod: method,
     fulfillment: isPickup ? 'pickup' : 'delivery',
     customerName: input.name, customerPhone: input.phone, city: input.city,
     items: items.map(i => ({ name: i.product_name, qty: i.qty, line: i.line_total }))
   };
-  void sendNewOrderEmail(notifyPayload);
-  void sendNewOrderTelegram(notifyPayload);
+  after(() => sendNewOrderEmail(notifyPayload));
+  after(() => sendNewOrderTelegram(notifyPayload));
 
   // ---- 4. Branch by payment method ----
   if (method === 'payhere') {

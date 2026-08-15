@@ -1,7 +1,10 @@
 'use server';
 
+import { after } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase-clients/admin';
 import { rateLimitByIp } from '@/lib/rate-limit';
+import { sendNewOrderEmail } from '@/lib/email';
+import { sendNewOrderTelegram } from '@/lib/telegram';
 
 export type LeadLine = { variantId: string; qty: number };
 
@@ -82,6 +85,14 @@ export async function submitFacebookOrder(input: {
   const { error: oiErr } = await admin.from('order_items')
     .insert(items.map(i => ({ ...i, order_id: order.id })));
   if (oiErr) console.error('[order-form] order_items insert failed', oiErr.message);
+
+  const notifyPayload = {
+    orderNumber: order.order_number, total: subtotal, paymentMethod: 'cod', fulfillment: 'delivery',
+    customerName: name, customerPhone: phone1, city,
+    items: items.map(i => ({ name: i.product_name, qty: i.qty, line: i.line_total }))
+  };
+  after(() => sendNewOrderEmail(notifyPayload));
+  after(() => sendNewOrderTelegram(notifyPayload));
 
   return { ok: true, orderNumber: order.order_number };
 }
