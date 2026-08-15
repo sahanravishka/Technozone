@@ -42,6 +42,7 @@ export async function sendNewOrderEmail(order: NewOrderEmailInput) {
       subject: `🛒 New order ${order.orderNumber} — ${formatLKR(order.total)}`,
       html: `
         <div style="font-family:sans-serif;max-width:480px">
+          <img src="${SITE.url}/logo.jpg" alt="${escapeHtml(SITE.name)}" width="56" height="56" style="border-radius:12px;margin-bottom:12px;display:block" />
           <h2 style="margin:0 0 8px">New order: ${escapeHtml(order.orderNumber)}</h2>
           <p style="margin:0 0 4px"><b>Customer:</b> ${escapeHtml(order.customerName)} (${escapeHtml(order.customerPhone)})</p>
           ${order.city ? `<p style="margin:0 0 4px"><b>City:</b> ${escapeHtml(order.city)}</p>` : ''}
