@@ -2,6 +2,7 @@ import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { updateShipping } from './actions';
 import CodSettings from '@/components/admin/CodSettings';
 import PageHeader from '@/components/admin/PageHeader';
+import TestNotifications from '@/components/admin/TestNotifications';
 import { formatLKR } from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
@@ -44,6 +45,11 @@ export default async function AdminSettings() {
       <section>
         <h2 className="mb-3 text-[15px] font-bold">Cash on delivery</h2>
         <CodSettings maxValue={maxValue} blocks={blocks ?? []} />
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-[15px] font-bold">New-order notifications</h2>
+        <TestNotifications />
       </section>
     </div>
   );
