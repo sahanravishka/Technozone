@@ -12,13 +12,21 @@ type CategoryTile = { id: string; name: string; slug: string; icon: string; phot
 type SelectedLine = { key: string; productId: string; variantId: string; label: string; image: string | null; price: number; qty: number };
 
 const LKR = (n: number) => `Rs ${n.toLocaleString('en-LK')}`;
-const STEPS = ['lang', 'cats', 'items', 'cart', 'details'] as const;
+const STEPS = ['lang', 'shop', 'details'] as const;
 type Step = typeof STEPS[number];
 
 export default function OrderFormClient({ modules, categories }: { modules: Module[]; categories: CategoryTile[] }) {
   const [lang, setLang] = useState<OrderFormLocale>('en');
   const t = ORDER_FORM_DICT[lang];
   useEffect(() => { document.documentElement.lang = lang; }, [lang]);
+
+  // This page is always cream/light regardless of the visitor's saved site theme.
+  useEffect(() => {
+    const html = document.documentElement;
+    const prev = html.getAttribute('data-theme');
+    html.setAttribute('data-theme', 'light');
+    return () => { prev ? html.setAttribute('data-theme', prev) : html.removeAttribute('data-theme'); };
+  }, []);
 
   const [step, setStep] = useState<Step>('lang');
   const [activeCats, setActiveCats] = useState<Set<string>>(new Set());
@@ -38,15 +46,7 @@ export default function OrderFormClient({ modules, categories }: { modules: Modu
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
-  const stepIdx = STEPS.indexOf(step);
   const go = (s: Step) => { setStep(s); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }); };
-
-  function canReach(s: Step): boolean {
-    const i = STEPS.indexOf(s);
-    if (i <= 1) return true;
-    if (i === 2) return activeCats.size > 0;
-    return lines.length > 0;
-  }
 
   const toggleCat = (id: string) => setActiveCats(prev => {
     const n = new Set(prev);
@@ -114,317 +114,290 @@ export default function OrderFormClient({ modules, categories }: { modules: Modu
     });
   }
 
-  // ── Flat, calm palette — no glows, no busy gradients ──
-  const bg = 'bg-[#111318]';
-  const card = 'bg-[#1A1D24]';
-  const border = 'border-[#2A2E38]';
-  const inputCls = `w-full rounded-lg border ${border} ${card} px-3.5 py-3 text-[14.5px] text-white placeholder:text-white/30 outline-none transition-colors focus:border-accent`;
-  const labelCls = 'mb-1.5 block text-[12px] font-semibold text-white/45';
+  // ── Cream / warm-white palette ──
+  const CREAM = 'bg-[#FBF8F3]';
+  const INK = 'text-[#1C1A17]';
+  const LINE = 'border-[#E5DFD4]';
+  // Dark, high-contrast answer fields so they're unmistakable against the cream page.
+  const inputCls = `w-full rounded-xl border-2 ${LINE} bg-[#2B2825] px-4 py-4 text-[16px] font-medium text-white placeholder:text-white/35 outline-none transition-colors focus:border-[#1C1A17]`;
+  const labelCls = `mb-2 block text-[18px] font-extrabold tracking-tight ${INK}`;
 
   if (orderNumber) {
     return (
-      <main className={`grid min-h-screen place-items-center ${bg} px-6 text-center`}>
+      <main className={`grid min-h-screen place-items-center ${CREAM} px-6 text-center`}>
         <div>
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-accent text-2xl text-[#111318]">✓</div>
-          <h1 className="mt-5 text-xl font-bold text-white">{t.successTitle}</h1>
-          <p className="mt-2 max-w-xs text-[14px] text-white/55">{t.successBody(orderNumber)}</p>
-          <p className="mt-6 text-[12px] font-semibold text-white/30">{t.successFooter}</p>
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#1C1A17] text-3xl text-[#FBF8F3]">✓</div>
+          <h1 className={`mt-5 text-2xl font-extrabold tracking-tight ${INK}`}>{t.successTitle}</h1>
+          <p className="mt-2 max-w-xs text-[15px] text-[#6B645B]">{t.successBody(orderNumber)}</p>
+          <p className="mt-6 text-[13px] font-bold text-[#A29A8E]">{t.successFooter}</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className={`min-h-screen ${bg} pb-28`}>
-      {step !== 'lang' && (
-        <div className={`sticky top-0 z-40 border-b ${border} ${bg}/95 px-4 py-3 backdrop-blur sm:px-6`}>
-          <div className="mx-auto flex max-w-2xl items-center gap-1.5">
-            {STEPS.slice(1).map(s => {
-              const reachable = canReach(s);
-              const done = STEPS.indexOf(s) < stepIdx;
-              const current = s === step;
-              return (
-                <button key={s} type="button" disabled={!reachable}
-                  onClick={() => reachable && go(s)}
-                  className={`h-[3px] flex-1 rounded-full transition-colors ${
-                    current || done ? 'bg-accent' : 'bg-white/10'
-                  } ${reachable && !current ? 'cursor-pointer' : ''}`}
-                  aria-label={s}
-                />
-              );
-            })}
+    <main className={`min-h-screen ${CREAM} ${INK} pb-32`}>
+      {/* ══════ STEP 0: LANGUAGE ══════ */}
+      {step === 'lang' && (
+        <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-6 text-center">
+          <p className="text-[12px] font-extrabold uppercase tracking-[0.2em] text-[#A29A8E]">Techno Zone Lanka</p>
+          <h1 className="mt-3 text-[2rem] font-extrabold leading-tight tracking-tight">Choose your language</h1>
+          <p className="mt-2 text-[15px] text-[#6B645B]">භාෂාව තෝරන්න · மொழியைத் தேர்ந்தெடுக்கவும்</p>
+
+          <div className="mt-10 w-full space-y-3">
+            {([
+              { key: 'en' as const, label: 'English' },
+              { key: 'si' as const, label: 'සිංහල' },
+              { key: 'ta' as const, label: 'தமிழ்' },
+            ]).map(l => (
+              <button key={l.key} type="button"
+                onClick={() => { setLang(l.key); go('shop'); }}
+                className={`flex w-full items-center justify-between rounded-2xl border-2 ${LINE} bg-white px-6 py-5 text-left transition-all hover:border-[#1C1A17] hover:shadow-sm`}>
+                <span className="text-[20px] font-extrabold tracking-tight">{l.label}</span>
+                <span className="text-[20px] text-[#C4BCB0]">→</span>
+              </button>
+            ))}
           </div>
         </div>
       )}
 
-      <div className="mx-auto max-w-2xl px-4 pt-6 sm:px-6">
-        {/* ══ STEP 0: LANGUAGE ══ */}
-        {step === 'lang' && (
-          <div className="flex min-h-[85vh] flex-col items-center justify-center text-center">
-            <p className="text-[12px] font-bold uppercase tracking-[0.15em] text-accent">Techno Zone Lanka</p>
-            <h1 className="mt-3 text-[1.5rem] font-bold text-white sm:text-[1.8rem]">Choose your language</h1>
-            <p className="mt-1 text-[13px] text-white/40">භාෂාව තෝරන්න · மொழியைத் தேர்ந்தெடுக்கவும்</p>
-
-            <div className="mt-8 w-full max-w-xs space-y-2.5">
-              {([
-                { key: 'en' as const, label: 'English' },
-                { key: 'si' as const, label: 'සිංහල' },
-                { key: 'ta' as const, label: 'தமிழ்' },
-              ]).map(l => (
-                <button key={l.key} type="button"
-                  onClick={() => { setLang(l.key); go('cats'); }}
-                  className={`flex w-full items-center justify-between rounded-lg border ${border} ${card} px-5 py-3.5 text-left transition-colors hover:border-accent`}>
-                  <span className="text-[15px] font-semibold text-white">{l.label}</span>
-                  <span className="text-white/25">→</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ══ STEP 1: CATEGORIES ══ */}
-        {step === 'cats' && (
-          <div className="min-h-[75vh] pt-2">
-            <StepHeading n={1} title={t.step1} sub={t.step1Sub} />
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {categories.map(c => {
-                const on = activeCats.has(c.id);
-                return (
-                  <button key={c.id} type="button" onClick={() => toggleCat(c.id)}
-                    className={`group relative overflow-hidden rounded-xl border text-left transition-colors ${
-                      on ? 'border-accent' : `${border} hover:border-white/25`
-                    }`}>
-                    <div className="relative h-32 w-full bg-[#1A1D24] sm:h-36">
-                      {c.photo ? (
-                        <Image src={c.photo} alt={c.name} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover" />
-                      ) : (
-                        <div className="grid h-full place-items-center text-4xl">{c.icon}</div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-                      {on && (
-                        <span className="absolute right-2.5 top-2.5 grid h-5 w-5 place-items-center rounded-full bg-accent text-[10px] font-bold text-[#111318]">✓</span>
-                      )}
-                      <div className="absolute inset-x-0 bottom-0 p-3">
-                        <p className="text-[14px] font-bold text-white">{c.name}</p>
-                        <p className="text-[11px] text-white/60">{c.count} items</p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ══ STEP 2: PRODUCTS ══ */}
-        {step === 'items' && (
-          <div className="min-h-[75vh] pt-2">
-            <StepHeading n={2} title={t.step2} sub={t.step2Sub} />
-            <input
-              type="text" value={productQuery} onChange={e => setProductQuery(e.target.value)}
-              placeholder={t.itemsSearchPlaceholder}
-              className={`${inputCls} mb-3`}
-            />
-            {visibleProducts.length === 0 ? (
-              <p className={`rounded-xl border border-dashed ${border} px-4 py-8 text-center text-[13px] text-white/35`}>{t.itemsNoMatch}</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                {visibleProducts.map(m => m.variants.map(v => {
-                  const selected = isSelected(v.id);
-                  const vLabel = v.name && v.name !== 'Default' ? v.name : t.standard;
+      {/* ══════ STEP 1: SHOP (categories + products on one page) ══════ */}
+      {step === 'shop' && (
+        <>
+          {/* Sticky category strip at the top */}
+          <div className={`sticky top-0 z-30 border-b-2 ${LINE} ${CREAM}/95 backdrop-blur`}>
+            <div className="mx-auto max-w-2xl px-4 pb-3 pt-4 sm:px-6">
+              <h2 className="mb-2.5 text-[13px] font-extrabold uppercase tracking-wide text-[#A29A8E]">{t.step1}</h2>
+              <div className="flex gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {categories.map(c => {
+                  const on = activeCats.has(c.id);
                   return (
-                    <button key={v.id} type="button" onClick={() => toggleLine(m, v)} disabled={!v.inStock}
-                      className={`relative overflow-hidden rounded-lg border text-left transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${
-                        selected ? 'border-accent' : `${border} hover:border-white/25`
-                      }`}>
-                      <div className={`relative aspect-square w-full ${card}`}>
-                        {m.image ? (
-                          <Image src={m.image} alt={m.name} fill sizes="180px" className="object-cover" />
+                    <button key={c.id} type="button" onClick={() => toggleCat(c.id)}
+                      className={`relative shrink-0 overflow-hidden rounded-2xl border-2 transition-all ${
+                        on ? 'border-[#1C1A17] shadow-md' : `${LINE} opacity-70`
+                      }`}
+                      style={{ width: 108 }}>
+                      <div className="relative h-[76px] w-full bg-white">
+                        {c.photo ? (
+                          <Image src={c.photo} alt={c.name} fill sizes="108px"
+                            className={`object-cover transition-all duration-300 ${on ? '' : 'grayscale'}`} />
                         ) : (
-                          <div className="grid h-full w-full place-items-center text-white/15">
-                            <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.5">
-                              <rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="8.5" cy="10" r="1.5" fill="currentColor" stroke="none" />
-                              <path d="m3 16 5-4 4 3 3-2 6 5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </div>
+                          <div className={`grid h-full place-items-center text-3xl ${on ? '' : 'grayscale'}`}>{c.icon}</div>
                         )}
-                        {selected && (
-                          <span className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-accent text-[11px] font-bold text-[#111318]">✓</span>
-                        )}
-                        {!v.inStock && (
-                          <span className="absolute inset-x-0 bottom-0 bg-black/70 py-1 text-center text-[10px] font-semibold text-white">{t.outOfStock}</span>
+                        {on && (
+                          <span className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-[#1C1A17] text-[10px] font-bold text-white">✓</span>
                         )}
                       </div>
-                      <div className="p-2.5">
-                        <p className="line-clamp-2 text-[12px] font-medium leading-snug text-white/90">{m.name}</p>
-                        {vLabel !== t.standard && <p className="mt-0.5 text-[10.5px] text-white/40">{vLabel}</p>}
-                        <p className="mt-1 text-[12.5px] font-bold text-accent">{LKR(v.price)}</p>
-                      </div>
+                      <p className={`px-1.5 py-1.5 text-center text-[11px] font-bold leading-tight ${on ? INK : 'text-[#8C857B]'}`}>
+                        {c.name}
+                      </p>
                     </button>
                   );
-                }))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ══ STEP 3: CART ══ */}
-        {step === 'cart' && (
-          <div className="min-h-[75vh] pt-2">
-            <StepHeading n={3} title={t.selectedLabel} />
-            <ul className="space-y-2">
-              {lines.map(l => (
-                <li key={l.key} className={`flex items-center gap-3 rounded-lg border ${border} ${card} px-3 py-2.5`}>
-                  <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md bg-white/5">
-                    {l.image && <Image src={l.image} alt="" fill sizes="44px" className="object-cover" />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-medium text-white">{l.label}</p>
-                    <p className="text-[11.5px] text-white/40">{LKR(l.price)} {t.each}</p>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1 rounded-md bg-white/5 px-1 py-1">
-                    <button type="button" onClick={() => updateQty(l.key, l.qty - 1)}
-                      className="grid h-6 w-6 place-items-center rounded text-[13px] font-bold text-white/60 hover:bg-white/10">−</button>
-                    <span className="w-5 text-center text-[12px] font-bold text-white">{l.qty}</span>
-                    <button type="button" onClick={() => updateQty(l.key, l.qty + 1)}
-                      className="grid h-6 w-6 place-items-center rounded text-[13px] font-bold text-white/60 hover:bg-white/10">+</button>
-                  </div>
-                  <button type="button" onClick={() => removeLine(l.key)} aria-label="Remove"
-                    className="shrink-0 px-1 text-[15px] leading-none text-white/30 hover:text-[#FF6B6B]">✕</button>
-                </li>
-              ))}
-            </ul>
-            <button type="button" onClick={() => go('items')}
-              className={`mt-3 w-full rounded-lg border border-dashed ${border} py-3 text-[13px] font-medium text-white/40 hover:border-accent hover:text-accent`}>
-              + {t.step2}
-            </button>
-          </div>
-        )}
-
-        {/* ══ STEP 4: DETAILS ══ */}
-        {step === 'details' && (
-          <form onSubmit={handleSubmit} noValidate className="min-h-[75vh] pt-2">
-            <StepHeading n={4} title={t.step3} />
-            <div className={`space-y-4 rounded-xl border ${border} p-4 sm:p-5`}>
-              <div>
-                <label className={labelCls}>{t.nameLabel}</label>
-                <input value={name} onChange={e => setName(e.target.value)} placeholder={t.namePlaceholder} className={inputCls} />
-                {errors.name && <p className="mt-1 text-[12px] font-medium text-[#FF6B6B]">{errors.name}</p>}
-              </div>
-
-              <div>
-                <label className={labelCls}>{t.addressLabel}</label>
-                <textarea value={address} onChange={e => setAddress(e.target.value)} rows={2}
-                  placeholder={t.addressPlaceholder} className={`${inputCls} resize-none`} />
-                {errors.address && <p className="mt-1 text-[12px] font-medium text-[#FF6B6B]">{errors.address}</p>}
-              </div>
-
-              <div className="relative">
-                <label className={labelCls}>{t.cityLabel}</label>
-                <input
-                  value={city}
-                  onFocus={() => setShowCityList(true)}
-                  onChange={e => { setCity(e.target.value); setShowCityList(true); }}
-                  placeholder={t.cityPlaceholder} className={inputCls} />
-                {showCityList && filteredCities.length > 0 && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setShowCityList(false)} />
-                    <div className={`absolute z-20 mt-1.5 max-h-56 w-full overflow-y-auto rounded-lg border ${border} ${card} shadow-xl`}>
-                      {filteredCities.map(c => (
-                        <button key={c} type="button"
-                          onClick={() => { setCity(c); setShowCityList(false); }}
-                          className="block w-full px-3.5 py-2.5 text-left text-[13.5px] text-white/80 hover:bg-white/5">
-                          {c}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-                {errors.city && <p className="mt-1 text-[12px] font-medium text-[#FF6B6B]">{errors.city}</p>}
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className={labelCls}>{t.phone1Label}</label>
-                  <input value={phone1} onChange={e => setPhone1(e.target.value)} placeholder="07XXXXXXXX" inputMode="tel" className={inputCls} />
-                  {errors.phone1 && <p className="mt-1 text-[12px] font-medium text-[#FF6B6B]">{errors.phone1}</p>}
-                </div>
-                <div>
-                  <label className={labelCls}>{t.phone2Label}</label>
-                  <input value={phone2} onChange={e => setPhone2(e.target.value)} placeholder={t.phone2Optional} inputMode="tel" className={inputCls} />
-                  {errors.phone2 && <p className="mt-1 text-[12px] font-medium text-[#FF6B6B]">{errors.phone2}</p>}
-                </div>
-              </div>
-
-              <div>
-                <label className={labelCls}>{t.noteLabel}</label>
-                <textarea value={note} onChange={e => setNote(e.target.value)} rows={2}
-                  placeholder={t.notePlaceholder} className={`${inputCls} resize-none`} />
+                })}
               </div>
             </div>
+          </div>
 
-            {submitError && (
-              <p className="mt-4 rounded-lg bg-[#FF6B6B]/10 px-3.5 py-2.5 text-[13px] font-medium text-[#FF6B6B]">{submitError}</p>
-            )}
-          </form>
-        )}
-      </div>
+          {/* Products below */}
+          <div className="mx-auto max-w-2xl px-4 pt-5 sm:px-6">
+            {!activeCats.size ? (
+              <div className="grid place-items-center py-20 text-center">
+                <p className="text-[40px]">👆</p>
+                <p className="mt-3 max-w-[14rem] text-[15px] font-semibold text-[#8C857B]">{t.pickCategoryFirst}</p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4 flex items-baseline justify-between gap-3">
+                  <h2 className="text-[13px] font-extrabold uppercase tracking-wide text-[#A29A8E]">{t.step2}</h2>
+                  <p className="text-[12px] font-medium text-[#A29A8E]">{t.step2Sub}</p>
+                </div>
+                <input
+                  type="text" value={productQuery} onChange={e => setProductQuery(e.target.value)}
+                  placeholder={t.itemsSearchPlaceholder}
+                  className={`mb-4 w-full rounded-xl border-2 ${LINE} bg-white px-4 py-3 text-[15px] ${INK} placeholder:text-[#B5ADA1] outline-none focus:border-[#1C1A17]`}
+                />
 
-      {/* ── Sticky bottom nav ── */}
-      <div className={`fixed inset-x-0 bottom-0 z-30 border-t ${border} ${bg}/95 px-4 py-3 backdrop-blur sm:px-6`}>
-        <div className="mx-auto flex max-w-2xl items-center gap-3">
-          {step !== 'lang' && stepIdx > 1 && (
-            <button type="button" onClick={() => go(STEPS[stepIdx - 1])}
-              className={`rounded-lg border ${border} px-4 py-3.5 text-[13.5px] font-semibold text-white/60 hover:bg-white/5`}>
-              ←
-            </button>
-          )}
-
-          {(step === 'cats' || step === 'items' || step === 'cart') && (
-            <>
-              <div className="min-w-0 flex-1 sm:hidden">
-                {lines.length > 0 && (
-                  <>
-                    <p className="text-[10px] font-semibold text-white/35">{itemCount} item{itemCount !== 1 ? 's' : ''}</p>
-                    <p className="truncate text-[15px] font-bold text-white">{LKR(total)}</p>
-                  </>
+                {visibleProducts.length === 0 ? (
+                  <p className={`rounded-2xl border-2 border-dashed ${LINE} px-4 py-10 text-center text-[14px] font-medium text-[#A29A8E]`}>
+                    {t.itemsNoMatch}
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {visibleProducts.map(m => m.variants.map(v => {
+                      const selected = isSelected(v.id);
+                      const vLabel = v.name && v.name !== 'Default' ? v.name : t.standard;
+                      return (
+                        <button key={v.id} type="button" onClick={() => toggleLine(m, v)} disabled={!v.inStock}
+                          className={`relative overflow-hidden rounded-2xl border-2 bg-white text-left transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
+                            selected ? 'border-[#1C1A17] shadow-md' : `${LINE}`
+                          }`}>
+                          <div className="relative aspect-square w-full bg-[#F4F0E9]">
+                            {m.image ? (
+                              <Image src={m.image} alt={m.name} fill sizes="200px"
+                                className={`object-cover transition-all duration-300 ${selected ? '' : 'grayscale'}`} />
+                            ) : (
+                              <div className={`grid h-full w-full place-items-center text-[#C4BCB0] ${selected ? '' : 'grayscale'}`}>
+                                <svg viewBox="0 0 24 24" className="h-9 w-9" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                  <rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="8.5" cy="10" r="1.5" fill="currentColor" stroke="none" />
+                                  <path d="m3 16 5-4 4 3 3-2 6 5" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </div>
+                            )}
+                            {selected && (
+                              <span className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-[#1C1A17] text-[13px] font-bold text-white shadow">✓</span>
+                            )}
+                            {!v.inStock && (
+                              <span className="absolute inset-x-0 bottom-0 bg-[#1C1A17]/80 py-1.5 text-center text-[10.5px] font-bold text-white">{t.outOfStock}</span>
+                            )}
+                          </div>
+                          <div className="p-3">
+                            <p className={`line-clamp-2 text-[13px] font-bold leading-snug ${selected ? INK : 'text-[#6B645B]'}`}>{m.name}</p>
+                            {vLabel !== t.standard && <p className="mt-0.5 text-[11px] text-[#A29A8E]">{vLabel}</p>}
+                            <p className={`mt-1.5 text-[15px] font-extrabold ${selected ? INK : 'text-[#8C857B]'}`}>{LKR(v.price)}</p>
+                          </div>
+                        </button>
+                      );
+                    }))}
+                  </div>
                 )}
-              </div>
-              <button type="button"
-                disabled={step === 'cats' ? !activeCats.size : !lines.length}
-                onClick={() => go(step === 'cats' ? 'items' : step === 'items' ? 'cart' : 'details')}
-                className="ml-auto flex-1 rounded-lg bg-accent py-3.5 text-[14.5px] font-bold text-[#111318] disabled:opacity-30 sm:flex-none sm:px-10">
-                {step === 'cart' ? t.step3 : '→'}
-              </button>
-            </>
-          )}
+              </>
+            )}
 
-          {step === 'details' && (
-            <>
-              <div className="min-w-0 flex-1">
-                <p className="text-[10.5px] font-semibold text-white/35">{t.total}</p>
-                <p className="truncate text-[17px] font-bold text-white">{LKR(total)}</p>
+            {/* Selected items summary, right on the same page */}
+            {lines.length > 0 && (
+              <div className="mt-8">
+                <h2 className="mb-3 text-[13px] font-extrabold uppercase tracking-wide text-[#A29A8E]">{t.selectedLabel}</h2>
+                <ul className="space-y-2.5">
+                  {lines.map(l => (
+                    <li key={l.key} className={`flex items-center gap-3 rounded-2xl border-2 ${LINE} bg-white px-3 py-3`}>
+                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#F4F0E9]">
+                        {l.image && <Image src={l.image} alt="" fill sizes="56px" className="object-cover" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[14px] font-bold">{l.label}</p>
+                        <p className="text-[12.5px] font-medium text-[#8C857B]">{LKR(l.price)} {t.each}</p>
+                      </div>
+                      <div className={`flex shrink-0 items-center gap-0.5 rounded-xl border-2 ${LINE} px-1 py-1`}>
+                        <button type="button" onClick={() => updateQty(l.key, l.qty - 1)}
+                          className="grid h-8 w-8 place-items-center rounded-lg text-[17px] font-bold text-[#6B645B] hover:bg-[#F4F0E9]">−</button>
+                        <span className="w-6 text-center text-[14px] font-extrabold">{l.qty}</span>
+                        <button type="button" onClick={() => updateQty(l.key, l.qty + 1)}
+                          className="grid h-8 w-8 place-items-center rounded-lg text-[17px] font-bold text-[#6B645B] hover:bg-[#F4F0E9]">+</button>
+                      </div>
+                      <button type="button" onClick={() => removeLine(l.key)} aria-label="Remove"
+                        className="shrink-0 px-1 text-[18px] leading-none text-[#C4BCB0] hover:text-[#D14343]">✕</button>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <button type="submit" onClick={handleSubmit} disabled={pending}
-                className="flex-1 rounded-lg bg-accent py-3.5 text-[14.5px] font-bold text-[#111318] disabled:opacity-50 sm:flex-none sm:px-10">
-                {pending ? t.submitting : t.submit}
-              </button>
-            </>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ══════ STEP 2: DETAILS ══════ */}
+      {step === 'details' && (
+        <form onSubmit={handleSubmit} noValidate className="mx-auto max-w-md px-4 pt-8 sm:px-6">
+          <h1 className="mb-1 text-[1.7rem] font-extrabold tracking-tight">{t.step3}</h1>
+          <p className="mb-7 text-[14px] text-[#8C857B]">{t.subtitle}</p>
+
+          <div className="space-y-6">
+            <div>
+              <label className={labelCls}>{t.nameLabel}</label>
+              <input value={name} onChange={e => setName(e.target.value)} placeholder={t.namePlaceholder} className={inputCls} />
+              {errors.name && <p className="mt-1.5 text-[13px] font-bold text-[#D14343]">{errors.name}</p>}
+            </div>
+
+            <div>
+              <label className={labelCls}>{t.addressLabel}</label>
+              <textarea value={address} onChange={e => setAddress(e.target.value)} rows={3}
+                placeholder={t.addressPlaceholder} className={`${inputCls} resize-none`} />
+              {errors.address && <p className="mt-1.5 text-[13px] font-bold text-[#D14343]">{errors.address}</p>}
+            </div>
+
+            <div className="relative">
+              <label className={labelCls}>{t.cityLabel}</label>
+              <input
+                value={city}
+                onFocus={() => setShowCityList(true)}
+                onChange={e => { setCity(e.target.value); setShowCityList(true); }}
+                placeholder={t.cityPlaceholder} className={inputCls} />
+              {showCityList && filteredCities.length > 0 && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowCityList(false)} />
+                  <div className={`absolute z-20 mt-2 max-h-60 w-full overflow-y-auto rounded-xl border-2 ${LINE} bg-white shadow-lg`}>
+                    {filteredCities.map(c => (
+                      <button key={c} type="button"
+                        onClick={() => { setCity(c); setShowCityList(false); }}
+                        className="block w-full border-b border-[#F0EBE2] px-4 py-3 text-left text-[15px] font-medium last:border-0 hover:bg-[#FBF8F3]">
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+              {errors.city && <p className="mt-1.5 text-[13px] font-bold text-[#D14343]">{errors.city}</p>}
+            </div>
+
+            <div>
+              <label className={labelCls}>{t.phone1Label}</label>
+              <input value={phone1} onChange={e => setPhone1(e.target.value)} placeholder="07XXXXXXXX" inputMode="tel" className={inputCls} />
+              {errors.phone1 && <p className="mt-1.5 text-[13px] font-bold text-[#D14343]">{errors.phone1}</p>}
+            </div>
+
+            <div>
+              <label className={labelCls}>{t.phone2Label}</label>
+              <input value={phone2} onChange={e => setPhone2(e.target.value)} placeholder={t.phone2Optional} inputMode="tel" className={inputCls} />
+              {errors.phone2 && <p className="mt-1.5 text-[13px] font-bold text-[#D14343]">{errors.phone2}</p>}
+            </div>
+
+            <div>
+              <label className={labelCls}>{t.noteLabel}</label>
+              <textarea value={note} onChange={e => setNote(e.target.value)} rows={3}
+                placeholder={t.notePlaceholder} className={`${inputCls} resize-none`} />
+            </div>
+          </div>
+
+          {submitError && (
+            <p className="mt-5 rounded-xl bg-[#D14343]/10 px-4 py-3 text-[14px] font-bold text-[#D14343]">{submitError}</p>
           )}
+        </form>
+      )}
+
+      {/* ══════ Sticky bottom bar ══════ */}
+      {step !== 'lang' && (
+        <div className={`fixed inset-x-0 bottom-0 z-40 border-t-2 ${LINE} bg-white/95 px-4 py-3 backdrop-blur sm:px-6`}>
+          <div className="mx-auto flex max-w-2xl items-center gap-3">
+            {step === 'details' && (
+              <button type="button" onClick={() => go('shop')}
+                className={`rounded-xl border-2 ${LINE} px-5 py-4 text-[16px] font-extrabold text-[#6B645B] hover:bg-[#FBF8F3]`}>
+                ←
+              </button>
+            )}
+
+            <div className="min-w-0 flex-1">
+              {lines.length > 0 ? (
+                <>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-[#A29A8E]">
+                    {itemCount} item{itemCount !== 1 ? 's' : ''}
+                  </p>
+                  <p className="truncate text-[19px] font-extrabold leading-tight">{LKR(total)}</p>
+                </>
+              ) : (
+                <p className="text-[13px] font-semibold text-[#A29A8E]">{t.errItems}</p>
+              )}
+            </div>
+
+            <button
+              type={step === 'details' ? 'submit' : 'button'}
+              disabled={step === 'details' ? pending : !lines.length}
+              onClick={step === 'details' ? handleSubmit : () => go('details')}
+              className="shrink-0 rounded-xl bg-[#1C1A17] px-8 py-4 text-[16px] font-extrabold text-white transition-opacity disabled:opacity-25">
+              {step === 'details' ? (pending ? t.submitting : t.submit) : '→'}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </main>
-  );
-}
-
-function StepHeading({ n, title, sub }: { n: number; title: string; sub?: string }) {
-  return (
-    <div className="mb-4 flex items-center gap-2.5">
-      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent text-[13px] font-bold text-[#111318]">{n}</span>
-      <div>
-        <h2 className="text-[15px] font-bold text-white">{title}</h2>
-        {sub && <p className="text-[11.5px] text-white/35">{sub}</p>}
-      </div>
-    </div>
   );
 }
