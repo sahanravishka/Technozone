@@ -38,7 +38,7 @@ export async function sendNewOrderTelegram(order: NewOrderTelegramInput) {
     const text = [
       `🛒 *New order ${escapeMd(order.orderNumber)}*`,
       ``,
-      `👤 ${escapeMd(order.customerName)} (${escapeMd(order.customerPhone)})`,
+      `👤 ${escapeMd(order.customerName)} \\(${escapeMd(order.customerPhone)}\\)`,
       order.city ? `📍 ${escapeMd(order.city)}` : null,
       `💳 ${escapeMd(PAY_LABEL[order.paymentMethod] ?? order.paymentMethod)} · ${escapeMd(order.fulfillment)}`,
       ``,
