@@ -17,6 +17,7 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const channel = url.searchParams.get('channel'); // 'web' | 'facebook' | null (= all)
+  const status = url.searchParams.get('status');    // e.g. 'dispatched' | null (= all)
   const from = url.searchParams.get('from');        // YYYY-MM-DD
   const to = url.searchParams.get('to');             // YYYY-MM-DD
 
@@ -29,6 +30,7 @@ export async function GET(req: Request) {
     .order('created_at', { ascending: false });
 
   if (channel) q = q.eq('channel', channel);
+  if (status) q = q.eq('status', status);
   if (from) q = q.gte('created_at', `${from}T00:00:00`);
   if (to) q = q.lte('created_at', `${to}T23:59:59`);
 
@@ -55,7 +57,7 @@ export async function GET(req: Request) {
     ].map(csvCell).join(','));
   }
 
-  const label = channel ? `${channel}-orders` : 'all-orders';
+  const label = status ?? (channel ? `${channel}-orders` : 'all-orders');
   const range = from || to ? `_${from ?? 'start'}_to_${to ?? 'now'}` : '';
   const filename = `${label}${range}.csv`;
 

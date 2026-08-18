@@ -20,6 +20,8 @@ export default function OrderBoard({
 }: { orders: AdminOrder[]; waLinks: Record<string, string> }) {
   const [filter, setFilter]   = useState<string>('all');
   const [channelFilter, setChannelFilter] = useState<'all' | 'web' | 'facebook'>('all');
+  const [dayFilter, setDayFilter] = useState<'all' | 'today' | 'yesterday' | 'week' | 'custom'>('all');
+  const [customDay, setCustomDay] = useState('');
   const [exportFrom, setExportFrom] = useState('');
   const [exportTo, setExportTo] = useState('');
   const [sel, setSel]         = useState<Set<string>>(new Set());
@@ -31,15 +33,44 @@ export default function OrderBoard({
     setSel(prev => { const n = new Set(prev); on ? n.add(id) : n.delete(id); return n; });
 
   const channelOrders = channelFilter === 'all' ? orders : orders.filter(o => (o.channel ?? 'web') === channelFilter);
-  const shown = filter === 'all' ? channelOrders : channelOrders.filter(o => o.status === filter);
+
+  const dateOrders = (() => {
+    if (dayFilter === 'all') return channelOrders;
+    const now = new Date();
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    if (dayFilter === 'today') {
+      const start = startOfDay(now);
+      return channelOrders.filter(o => new Date(o.created_at) >= start);
+    }
+    if (dayFilter === 'yesterday') {
+      const start = startOfDay(new Date(now.getTime() - 86400000));
+      const end = startOfDay(now);
+      return channelOrders.filter(o => { const d = new Date(o.created_at); return d >= start && d < end; });
+    }
+    if (dayFilter === 'week') {
+      const start = startOfDay(new Date(now.getTime() - 6 * 86400000));
+      return channelOrders.filter(o => new Date(o.created_at) >= start);
+    }
+    if (dayFilter === 'custom' && customDay) {
+      const start = new Date(customDay + 'T00:00:00');
+      const end = new Date(start.getTime() + 86400000);
+      return channelOrders.filter(o => { const d = new Date(o.created_at); return d >= start && d < end; });
+    }
+    return channelOrders;
+  })();
+
+  // "All Active" must exclude cancelled orders — this previously showed everything,
+  // including cancelled, because it fell through to the unfiltered list.
+  const activeDateOrders = dateOrders.filter(o => o.status !== 'cancelled');
+  const shown = filter === 'all' ? activeDateOrders : dateOrders.filter(o => o.status === filter);
 
   const webCount = orders.filter(o => (o.channel ?? 'web') === 'web').length;
   const fbCount = orders.filter(o => o.channel === 'facebook').length;
   const fbTotal = orders.filter(o => o.channel === 'facebook' && o.status !== 'cancelled').reduce((n, o) => n + o.total, 0);
   const fbActiveCount = orders.filter(o => o.channel === 'facebook' && o.status !== 'cancelled').length;
 
-  const urgent = channelOrders.filter(o => o.status === 'pending' || o.status === 'paid').length;
-  const activeOrders = channelOrders.filter(o => o.status !== 'cancelled');
+  const urgent = activeDateOrders.filter(o => o.status === 'pending' || o.status === 'paid').length;
+  const activeOrders = activeDateOrders;
 
   const exportHref = (() => {
     const p = new URLSearchParams();
@@ -87,6 +118,28 @@ export default function OrderBoard({
         })}
       </div>
 
+      {/* ── Day filter ── */}
+      <div className="mb-3 flex flex-wrap items-center gap-1.5">
+        {([
+          { key: 'all' as const,       label: 'All Days' },
+          { key: 'today' as const,     label: 'Today' },
+          { key: 'yesterday' as const, label: 'Yesterday' },
+          { key: 'week' as const,      label: 'Last 7 Days' },
+        ]).map(({ key, label }) => (
+          <button key={key} onClick={() => setDayFilter(key)}
+            className={`pressable rounded-full px-3.5 py-1.5 text-[12.5px] font-semibold transition-colors ${
+              dayFilter === key ? 'bg-ink text-white' : 'border border-line bg-card text-muted hover:bg-paper'
+            }`}>
+            {label}
+          </button>
+        ))}
+        <input type="date" value={customDay}
+          onChange={e => { setCustomDay(e.target.value); setDayFilter(e.target.value ? 'custom' : 'all'); }}
+          className={`rounded-full border px-3.5 py-1.5 text-[12.5px] font-semibold outline-none ${
+            dayFilter === 'custom' ? 'border-ink bg-ink text-white' : 'border-line bg-card text-muted'
+          }`} />
+      </div>
+
       {/* ── Facebook orders report + CSV export ── */}
       {channelFilter === 'facebook' && (
         <div className="admin-card mb-4 flex flex-wrap items-end gap-4 p-4">
@@ -120,7 +173,7 @@ export default function OrderBoard({
       {/* ── Status filter tabs ── */}
       <div className="mb-4 flex flex-wrap gap-1.5">
         {STATUS_TABS.map(({ key, label, dot }) => {
-          const count = key === 'all' ? channelOrders.length : channelOrders.filter(o => o.status === key).length;
+          const count = key === 'all' ? activeDateOrders.length : dateOrders.filter(o => o.status === key).length;
           if (key !== 'all' && count === 0) return null;
           return (
             <button key={key} onClick={() => setFilter(key)}
