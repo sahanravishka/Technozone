@@ -36,7 +36,9 @@ const en = {
     device: 'Device (brand & model)', type: 'Service needed', issue: 'Describe the issue',
     submit: 'Request repair', submitted: 'Repair request received!', submittedSub: 'We\'ll message you on WhatsApp shortly with the next steps. Save your reference number:',
     trackTitle: 'Track your repair', trackSub: 'Enter your job number and the last 4 digits of your phone.',
-    jobNo: 'Job number (SRV-…)', last4: 'Last 4 digits of phone', track: 'Track', notFound: 'No repair found with those details.'
+    jobNo: 'Job number (SRV-…)', last4: 'Last 4 digits of phone', track: 'Track', notFound: 'No repair found with those details.',
+    metaTitle: 'Phone Repairs & Services in Sri Lanka | Techno Zone Lanka',
+    metaDescription: 'Book a mobile phone or device repair at Techno Zone Lanka. Screen replacements, battery swaps, charging port fixes and software help. WhatsApp updates at every step.'
   },
   pay: {
     method: 'How would you like to pay?',
@@ -147,7 +149,9 @@ const si: typeof en = {
     device: 'Device එක (Brand සහ Model)', type: 'අවශ්‍ය සේවාව', issue: 'ගැටලුව විස්තර කරන්න',
     submit: 'Repair එක ඉල්ලන්න', submitted: 'ඉල්ලීම ලැබුණා!', submittedSub: 'ඊළඟ පියවර පිළිබඳව අපි ඉක්මනින් WhatsApp හරහා ඔබට දැනුම් දෙන්නෙමු. කරුණාකර ඔබගේ reference number එක සුරකින්න:',
     trackTitle: 'ඔබගේ Repair එක Track කරන්න', trackSub: 'ඔබගේ Job number එක සහ phone නම්බර් එකේ අවසන් අංක 4 ඇතුළත් කරන්න.',
-    jobNo: 'Job number එක (SRV-…)', last4: 'Phone එකේ අවසන් අංක 4', track: 'Track කරන්න', notFound: 'එම විස්තර සහිත repair එකක් හමු නොවීය.'
+    jobNo: 'Job number එක (SRV-…)', last4: 'Phone එකේ අවසන් අංක 4', track: 'Track කරන්න', notFound: 'එම විස්තර සහිත repair එකක් හමු නොවීය.',
+    metaTitle: 'දුරකථන අලුත්වැඩියා සේවා ශ්‍රී ලංකාව | Techno Zone Lanka',
+    metaDescription: 'Techno Zone Lanka හි ඔබේ ජංගම දුරකථනය හෝ උපාංගය අලුත්වැඩියා කරවා ගන්න. Screen replacement, battery swap, charging port fix සහ software support. සෑම පියවරකදීම WhatsApp හරහා update ලබා දෙනු ලැබේ.'
   },
   pay: {
     method: 'ඔබ ගෙවීම කරන්නේ කෙසේද?',
@@ -258,7 +262,9 @@ const ta: typeof en = {
     device: 'Device (Brand & Model)', type: 'தேவையான சேவை', issue: 'சிக்கலை விவரிக்கவும்',
     submit: 'Repair கோரிக்கை', submitted: 'கோரிக்கை பெறப்பட்டது!', submittedSub: 'அடுத்த படிகள் குறித்து விரைவில் WhatsApp-ல் தெரிவிப்போம். உங்கள் reference எண்ணைச் சேமிக்கவும்:',
     trackTitle: 'உங்கள் Repair-ஐ Track செய்', trackSub: 'Job எண் மற்றும் தொலைபேசியின் கடைசி 4 இலக்கங்களை உள்ளிடவும்.',
-    jobNo: 'Job எண் (SRV-…)', last4: 'தொலைபேசியின் கடைசி 4 இலக்கம்', track: 'Track செய்', notFound: 'அந்த விவரங்களுடன் repair எதுவும் கிடைக்கவில்லை.'
+    jobNo: 'Job எண் (SRV-…)', last4: 'தொலைபேசியின் கடைசி 4 இலக்கம்', track: 'Track செய்', notFound: 'அந்த விவரங்களுடன் repair எதுவும் கிடைக்கவில்லை.',
+    metaTitle: 'மொபைல் ஃபோன் ரிப்பேர் சேவைகள் இலங்கை | Techno Zone Lanka',
+    metaDescription: 'Techno Zone Lanka-வில் உங்கள் மொபைல் ஃபோன் அல்லது சாதனத்தை பழுது பார்க்கவும். Screen replacement, battery swap, charging port fix மற்றும் software உதவி. ஒவ்வொரு படியிலும் WhatsApp மூலம் தகவல்.'
   },
   pay: {
     method: 'எப்படி பணம் செலுத்த விரும்புகிறீர்கள்?',

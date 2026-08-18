@@ -7,9 +7,10 @@ import RepairForm from '@/components/RepairForm';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: Locale }> }): Promise<Metadata> {
   const { locale } = await params;
+  const dict = getDict(locale);
   return {
-    title: 'Phone Repairs & Services in Sri Lanka',
-    description: 'Book a mobile phone or device repair at Techno Zone Lanka. Screen replacements, battery swaps, charging port fixes and software help. WhatsApp updates at every step.',
+    title: dict.services.metaTitle,
+    description: dict.services.metaDescription,
     alternates: {
       canonical: `/${locale}/services`,
       languages: {

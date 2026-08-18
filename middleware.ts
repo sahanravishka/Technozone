@@ -5,6 +5,19 @@ import { locales, defaultLocale } from './lib/i18n/config';
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Consolidate to the apex domain. Without this, www.technozonelanka.com
+  // served the entire site independently (its own self-referencing
+  // canonical, its own hreflang) — full duplicate content, and the direct
+  // cause of the hreflang conflict/mismatch errors: hreflang tags always
+  // point at the apex domain, so pages actually served on www looked
+  // inconsistent with their own alternates to every crawler.
+  const host = req.headers.get('host') || '';
+  if (host.startsWith('www.')) {
+    const url = req.nextUrl.clone();
+    url.host = host.slice(4);
+    return NextResponse.redirect(url, 308);
+  }
+
   // /admin and /order-form (Facebook lead form) live outside locale routing
   const needsLocale =
     !pathname.startsWith('/admin') &&
@@ -13,7 +26,10 @@ export async function middleware(req: NextRequest) {
   if (needsLocale) {
     const url = req.nextUrl.clone();
     url.pathname = `/${defaultLocale}${pathname === '/' ? '' : pathname}`;
-    return NextResponse.redirect(url);
+    // 308 (permanent) rather than the default 307 — this redirect is always
+    // the same for a given path (no content negotiation happening), so a
+    // temporary redirect just confuses crawlers and dilutes link equity.
+    return NextResponse.redirect(url, 308);
   }
 
   // Keep the Supabase session cookie fresh — but only when there's actually a
