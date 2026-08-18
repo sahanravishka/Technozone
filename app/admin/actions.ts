@@ -879,6 +879,69 @@ export async function dispatchScanSerial(orderId: string, serial: string, varian
 }
 
 // ---- Returns / RMA ----
+export type ReturnLookupResult = {
+  order_id: string; order_number: string; status: string;
+  customer_name: string; customer_phone: string;
+  items: { order_item_id: string; variant_id: string | null; product_name: string; qty: number; already_returned: number }[];
+};
+
+/** Staff-side order lookup for starting a return manually — no phone-match
+ *  gate (that's only needed for the public self-service form). */
+export async function lookupOrderForReturn(orderNumber: string): Promise<ReturnLookupResult | null> {
+  await requireStaff();
+  const supabase = (await getServerSupabase())!;
+  const { data: order } = await supabase.from('orders')
+    .select('id, order_number, status, shipping_address, customer_phone, order_items(id, variant_id, product_name, qty)')
+    .eq('order_number', orderNumber.trim()).maybeSingle();
+  if (!order) return null;
+
+  const itemIds = (order.order_items ?? []).map(i => i.id);
+  const { data: existing } = itemIds.length
+    ? await supabase.from('return_items').select('order_item_id, qty').in('order_item_id', itemIds)
+    : { data: [] as { order_item_id: string | null; qty: number }[] };
+  const returnedMap = new Map<string, number>();
+  (existing ?? []).forEach(r => { if (r.order_item_id) returnedMap.set(r.order_item_id, (returnedMap.get(r.order_item_id) ?? 0) + r.qty); });
+
+  return {
+    order_id: order.id, order_number: order.order_number, status: order.status,
+    customer_name: (order.shipping_address as { name?: string } | null)?.name ?? 'Customer',
+    customer_phone: order.customer_phone,
+    items: (order.order_items ?? []).map(i => ({
+      order_item_id: i.id, variant_id: i.variant_id, product_name: i.product_name, qty: i.qty,
+      already_returned: returnedMap.get(i.id) ?? 0,
+    })),
+  };
+}
+
+/** Creates a return + its line items directly, bypassing the public RPC's
+ *  phone-verification (staff already have access). Starts at 'requested'
+ *  so it flows through the same Approve → Received → Refunded board. */
+export async function createManualReturn(input: {
+  orderId: string; customerName: string; customerPhone: string; reason: string;
+  items: { order_item_id: string; variant_id: string | null; product_name: string; qty: number }[];
+}): Promise<string> {
+  await requireStaff();
+  if (!input.items.length) throw new Error('Select at least one item to return.');
+  const supabase = (await getServerSupabase())!;
+
+  const { data: ret, error: retErr } = await supabase.from('returns').insert({
+    order_id: input.orderId, customer_name: input.customerName.trim() || 'Customer',
+    customer_phone: input.customerPhone.trim(), reason: input.reason.trim() || null,
+  }).select('id, rma_number').single();
+  if (retErr || !ret) throw new Error(retErr?.message ?? 'Could not create return');
+
+  const { error: itemsErr } = await supabase.from('return_items').insert(
+    input.items.map(i => ({
+      return_id: ret.id, order_item_id: i.order_item_id, variant_id: i.variant_id,
+      product_name: i.product_name, qty: i.qty,
+    }))
+  );
+  if (itemsErr) throw new Error(itemsErr.message);
+
+  revalidatePath('/admin/returns');
+  return ret.rma_number;
+}
+
 export async function advanceReturn(id: string, status: string, refundAmount?: number) {
   await requireStaff();
   const supabase = (await getServerSupabase())!;
