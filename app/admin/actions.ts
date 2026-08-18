@@ -5,6 +5,19 @@ import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { getAdminSupabase } from '@/lib/supabase-clients/admin';
 import { getStaff } from '@/lib/admin-auth';
 
+// Turns a product name into a short, URL/filename-safe slug for use in
+// uploaded image filenames — e.g. "USB to Type-C Cable — Celebrat CB-32"
+// becomes "usb-to-type-c-cable-celebrat-cb32". Google Images and other
+// crawlers use the filename itself as a (minor but real) ranking signal,
+// so "1786626266434-30wjpeg.jpeg" is worse than a descriptive name even
+// though alt text already carries the full product name.
+function slugifyFilename(s: string): string {
+  const slug = s.toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return (slug.slice(0, 60) || 'product');
+}
+
 async function requireStaff(roles?: string[]) {
   const staff = await getStaff();
   if (!staff) throw new Error('forbidden');
@@ -315,7 +328,7 @@ export async function upsertProduct(form: FormData) {
     if (!ALLOWED.includes(file.type)) throw new Error('image must be JPEG, PNG, WebP, AVIF or GIF');
     if (file.size > MAX_BYTES) throw new Error('image must be 5 MB or smaller');
     const admin = getAdminSupabase()!;
-    const path = `${productId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const path = `${productId}/${slugifyFilename(row.slug || row.name)}-${Date.now()}.${(file.name.split('.').pop() || 'jpg').toLowerCase()}`;
     const { error: upErr } = await admin.storage.from('product-images')
       .upload(path, Buffer.from(await file.arrayBuffer()), { contentType: file.type });
     if (!upErr) {
@@ -410,7 +423,7 @@ async function processVariantPayload(
         contentType = 'image/webp';
       } catch { /* keep original buffer */ ext = (file.name.split('.').pop() || 'webp').toLowerCase(); }
     }
-    const path = `${productId}/colors/${Date.now()}-${c.colorIndex}.${ext}`;
+    const path = `${productId}/colors/${slugifyFilename(productName)}-color-${c.colorIndex + 1}-${Date.now()}.${ext}`;
     const { error: upErr } = await admin.storage.from('product-images')
       .upload(path, buf, { contentType, upsert: true });
     if (upErr) uploadErrors.push(`colour #${c.colorIndex + 1}: ${upErr.message}`);
@@ -523,6 +536,9 @@ export async function uploadProductImage(form: FormData) {
   const file = form.get('file') as File;
   if (!productId || !file || file.size === 0) throw new Error('Invalid file');
 
+  const { data: prod } = await supabase.from('products').select('name, slug').eq('id', productId).single();
+  const filenameBase = slugifyFilename(prod?.slug || prod?.name || 'product');
+
   let buf = new Uint8Array(await file.arrayBuffer());
   let contentType = file.type || 'image/webp';
   let ext = 'webp';
@@ -542,7 +558,7 @@ export async function uploadProductImage(form: FormData) {
     }
   }
 
-  const path = `${productId}/colors/${Date.now()}-ext.${ext}`;
+  const path = `${productId}/colors/${filenameBase}-${Date.now()}.${ext}`;
   const { error: upErr } = await admin.storage.from('product-images')
     .upload(path, buf, { contentType, upsert: true });
   
