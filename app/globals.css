@@ -39,7 +39,7 @@
   --volt-rgb:  27 111 216;
   --sale-rgb:  229 72 77;
 
-  --font-body: 'Manrope', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-body: var(--font-manrope), var(--font-plus-jakarta), system-ui, -apple-system, sans-serif;
 
   /* glow color for cards */
   --glow-color: rgba(27, 111, 216, 0.15);
@@ -77,8 +77,8 @@ html[data-theme='dark'] {
 }
 
 /* Sinhala / Tamil get proper script coverage before the Latin face */
-html[lang='si'] { --font-body: 'Noto Sans Sinhala', 'Manrope', system-ui, sans-serif; }
-html[lang='ta'] { --font-body: 'Noto Sans Tamil', 'Manrope', system-ui, sans-serif; }
+html[lang='si'] { --font-body: var(--font-noto-sinhala), var(--font-manrope), system-ui, sans-serif; }
+html[lang='ta'] { --font-body: var(--font-noto-tamil), var(--font-manrope), system-ui, sans-serif; }
 
 /* smooth the theme flip */
 html.theme-ready body, html.theme-ready body * { transition: background-color .3s ease, border-color .3s ease, color .25s ease; }

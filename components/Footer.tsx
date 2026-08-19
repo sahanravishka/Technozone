@@ -67,7 +67,7 @@ export default function Footer({ dict, categories, locale }:
           <div className="grid grid-cols-3 gap-x-4 gap-y-8 sm:gap-x-8">
           {/* shop */}
           <nav aria-label="Shop categories">
-            <h5 className="mb-4 text-[12px] font-bold uppercase tracking-[0.06em] text-white/40">{dict.nav.categories}</h5>
+            <p className="mb-4 text-[12px] font-bold uppercase tracking-[0.06em] text-white/65">{dict.nav.categories}</p>
             <ul className="flex flex-col gap-3 text-sm font-semibold">
               {categories.map(c => (
                 <li key={c.id}><Link href={`/${locale}/category/${c.slug}`} className={linkCls}>{c.name}</Link></li>
@@ -77,7 +77,7 @@ export default function Footer({ dict, categories, locale }:
 
           {/* support */}
           <nav aria-label="Support links">
-            <h5 className="mb-4 text-[12px] font-bold uppercase tracking-[0.06em] text-white/40">{dict.nav.services}</h5>
+            <p className="mb-4 text-[12px] font-bold uppercase tracking-[0.06em] text-white/65">{dict.nav.services}</p>
             <ul className="flex flex-col gap-3 text-sm font-semibold">
               <li><Link href={`/${locale}/services`} className={linkCls}>{dict.services.bookCta}</Link></li>
               <li><Link href={`/${locale}/track`} className={linkCls}>{dict.nav.trackRepair}</Link></li>
@@ -88,7 +88,7 @@ export default function Footer({ dict, categories, locale }:
 
           {/* account */}
           <nav aria-label="Account links">
-            <h5 className="mb-4 text-[12px] font-bold uppercase tracking-[0.06em] text-white/40">{dict.nav.account}</h5>
+            <p className="mb-4 text-[12px] font-bold uppercase tracking-[0.06em] text-white/65">{dict.nav.account}</p>
             <ul className="flex flex-col gap-3 text-sm font-semibold">
               <li><Link href={`/${locale}/account`} className={linkCls}>{dict.account.orders}</Link></li>
               <li><Link href={`/${locale}/login`} className={linkCls}>{dict.account.signIn}</Link></li>

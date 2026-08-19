@@ -26,11 +26,11 @@ export const BrandMark = ({ className = 'h-8 w-8 rounded-[10px]' }: { className?
   />
 );
 
-export const Wordmark = ({ className = 'text-[14px]', mark = false }: { className?: string; mark?: boolean }) => (
+export const Wordmark = ({ className = 'text-[14px]', mark = false, accentClassName = 'text-accent' }: { className?: string; mark?: boolean; accentClassName?: string }) => (
   <span className="inline-flex items-center gap-2">
     {mark && <BrandMark className="h-8 w-8" />}
     <span className={`font-extrabold leading-none tracking-[0.05em] ${className}`}>
-      {SITE.wordmark[0]}&nbsp;<span className="text-accent">{SITE.wordmark[1]}</span>
+      {SITE.wordmark[0]}&nbsp;<span className={accentClassName}>{SITE.wordmark[1]}</span>
     </span>
   </span>
 );
@@ -84,7 +84,7 @@ export default function Header({ locale, dict, categories }:
         </button>
 
         <Link href={`/${locale}`} className="px-1">
-          <Wordmark mark />
+          <Wordmark mark accentClassName="text-volt-deep" />
         </Link>
 
         <nav className="ml-5 hidden items-center gap-0.5 md:flex" aria-label="Main navigation">
@@ -160,13 +160,13 @@ export default function Header({ locale, dict, categories }:
       </div>
 
       {/* mobile drawer — sibling of the blurred bar, topmost layer */}
-      <div className={`fixed inset-0 z-[90] md:hidden ${open ? '' : 'pointer-events-none'}`} aria-hidden={!open}>
+      <div className={`fixed inset-0 z-[90] md:hidden ${open ? '' : 'pointer-events-none'}`} aria-hidden={!open} inert={!open}>
         <div onClick={() => setOpen(false)}
           className={`absolute inset-0 bg-deep/60 transition-opacity duration-300 ${open ? 'opacity-100' : 'opacity-0'}`} />
         <aside className={`absolute left-0 top-0 flex h-full w-[82%] max-w-xs flex-col bg-card shadow-panel transition-transform duration-300 ease-[cubic-bezier(.22,.8,.3,1)] ${open ? 'translate-x-0' : '-translate-x-full'}`}
           style={{ borderRadius: '0 28px 28px 0' }}>
           <div className="flex h-16 items-center justify-between px-5">
-            <Wordmark mark className="text-[13px]" />
+            <Wordmark mark className="text-[13px]" accentClassName="text-volt-deep" />
             <button onClick={() => setOpen(false)} aria-label="Close"
               className="pressable grid h-9 w-9 place-items-center rounded-full bg-paper">
               <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg>

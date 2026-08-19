@@ -1,12 +1,16 @@
 import './globals.css';
 import type { ReactNode } from 'react';
+import { Manrope, Plus_Jakarta_Sans, Noto_Sans_Sinhala, Noto_Sans_Tamil } from 'next/font/google';
 
-const FONTS =
-  'https://fonts.googleapis.com/css2?' +
-  'family=Manrope:wght@400;500;600;700;800&' +
-  'family=Plus+Jakarta+Sans:wght@400;500;600;700&' +
-  'family=Noto+Sans+Sinhala:wght@400;500;600;700&' +
-  'family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap';
+// Self-hosted at build time by Next.js — no external request to
+// fonts.googleapis.com/fonts.gstatic.com, no render-blocking stylesheet,
+// and font-display: swap is applied automatically. This alone was the
+// single biggest render-blocking cost on the site (~750ms).
+const manrope = Manrope({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'], variable: '--font-manrope', display: 'swap' });
+const plusJakarta = Plus_Jakarta_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-plus-jakarta', display: 'swap' });
+const notoSinhala = Noto_Sans_Sinhala({ subsets: ['sinhala'], weight: ['400', '500', '600', '700'], variable: '--font-noto-sinhala', display: 'swap' });
+const notoTamil = Noto_Sans_Tamil({ subsets: ['tamil'], weight: ['400', '500', '600', '700'], variable: '--font-noto-tamil', display: 'swap' });
+const fontVars = `${manrope.variable} ${plusJakarta.variable} ${notoSinhala.variable} ${notoTamil.variable}`;
 
 // runs before paint: applies the saved theme so there is no light/dark flash
 const THEME_INIT =
@@ -17,24 +21,15 @@ const THEME_INIT =
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" data-theme="light" suppressHydrationWarning>
+    <html lang="en" data-theme="light" suppressHydrationWarning className={fontVars}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
-        {/* Preconnect for faster font loading */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Preload critical font (Manrope) for LCP improvement */}
-        <link rel="preload" as="style" href={FONTS} />
-        <link rel="stylesheet" href={FONTS} />
         <meta name="theme-color" content="#0B1526" />
         {/* Favicons — explicit declarations for browser + Google search result icon */}
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
         <link rel="icon" href="/icon.png" type="image/png" sizes="512x512" />
         <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-icon.png" />
-        {/* DNS prefetch for external resources */}
-        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-        <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
         {/* Viewport meta for better mobile rendering */}
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         {/* Additional SEO meta tags */}
