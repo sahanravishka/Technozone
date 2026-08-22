@@ -347,7 +347,11 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
         )}
 
         {product.description && (
-          <p className="text-[14px] leading-relaxed text-muted">{product.description}</p>
+          <div className="space-y-3">
+            {product.description.split(/\n\s*\n/).map((para, i) => (
+              <p key={i} className="text-[14px] leading-relaxed text-muted">{para}</p>
+            ))}
+          </div>
         )}
       </div>
 
