@@ -12,7 +12,7 @@ const en = {
     askWhatsApp: 'Ask on WhatsApp'
   },
   home: {
-    announce: 'Free islandwide delivery & official warranties — order online or on WhatsApp.',
+    announce: 'Islandwide delivery & official warranties — order online or on WhatsApp.',
     catTitle: 'Shop by category', catSub: 'Everything you need, sorted the way you actually think.',
     trendTitle: 'Trending now', trendSub: "What everyone's adding to cart this week.",
     seeAll: 'View all', allCats: 'All categories',
@@ -125,7 +125,7 @@ const si: typeof en = {
     askWhatsApp: 'WhatsApp හරහා අහන්න'
   },
   home: {
-    announce: 'දිවයින පුරා නොමිලේ Delivery සහ නිල වගකීම් — online හෝ WhatsApp හරහා order කරන්න.',
+    announce: 'දිවයින පුරා Delivery සහ නිල වගකීම් — online හෝ WhatsApp හරහා order කරන්න.',
     catTitle: 'Category අනුව බලන්න', catSub: 'ඔබට අවශ්‍ය සියල්ල, ඔබට අවශ්‍ය ලෙසම.',
     trendTitle: 'දැන් ජනප්‍රිය', trendSub: 'මේ සතියේ වැඩිපුරම අලෙවි වන උපාංග.',
     seeAll: 'සියල්ල බලන්න', allCats: 'සියලුම Categories',
@@ -238,7 +238,7 @@ const ta: typeof en = {
     askWhatsApp: 'WhatsApp-ல் கேளுங்கள்'
   },
   home: {
-    announce: 'நாடு முழுவதும் இலவச Delivery மற்றும் அதிகாரப்பூர்வ Warranty — online அல்லது WhatsApp-ல் order செய்யுங்கள்.',
+    announce: 'நாடு முழுவதும் Delivery மற்றும் அதிகாரப்பூர்வ Warranty — online அல்லது WhatsApp-ல் order செய்யுங்கள்.',
     catTitle: 'Category வாரியாக பாருங்கள்', catSub: 'உங்களுக்குத் தேவையான அனைத்தும், உங்களுக்கு வேண்டியபடியே.',
     trendTitle: 'இப்போது பிரபலம்', trendSub: 'இந்த வாரம் அனைவரும் Cart-ல் சேர்ப்பது.',
     seeAll: 'அனைத்தையும் காண்க', allCats: 'அனைத்து Categories',
