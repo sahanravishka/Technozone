@@ -8,7 +8,7 @@ import { upsertCategory, toggleCategoryActive, moveCategory, deleteCategory } fr
 
 type Category = {
   id: string; name: string; slug: string; parent_id: string | null;
-  sort_order: number; is_active: boolean; image_path: string | null;
+  sort_order: number; is_active: boolean; image_path: string | null; description: string | null;
 };
 
 const inp = 'h-10 w-full rounded-lg bg-paper px-3 text-[12.5px] font-medium outline-none focus:ring-2 focus:ring-volt';
@@ -69,6 +69,12 @@ export default function CategoryRow({
             <label className={lbl} htmlFor={`cat-image-${category.id}`}>Tile / banner image</label>
             <input id={`cat-image-${category.id}`} name="image" type="file" accept="image/*" className={`${inp} pt-1.5`} />
           </div>
+        </div>
+        <div className="mt-3">
+          <label className={lbl} htmlFor={`cat-desc-${category.id}`}>Description (shown on the category page, helps SEO)</label>
+          <textarea id={`cat-desc-${category.id}`} name="description" defaultValue={category.description ?? ''} rows={3}
+            placeholder="2–3 sentences about what's in this category — shown as body text on the page and used as the search snippet."
+            className="w-full resize-none rounded-lg bg-paper px-3 py-2.5 text-[12.5px] font-medium outline-none focus:ring-2 focus:ring-volt" />
         </div>
         <label className="mt-3 flex items-center gap-2 text-[12.5px] font-medium">
           <input type="checkbox" name="is_active" defaultChecked={category.is_active} className="h-4 w-4 rounded accent-volt" />

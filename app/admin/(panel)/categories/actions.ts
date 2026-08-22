@@ -25,11 +25,12 @@ export async function upsertCategory(form: FormData) {
   const parentId = String(form.get('parent_id') || '') || null;
   const sortOrder = Math.max(0, Number(form.get('sort_order') || 0));
   const isActive = form.get('is_active') === 'on';
+  const description = String(form.get('description') || '').trim() || null;
 
   if (!name || !slug) throw new Error('Name is required');
   if (parentId && parentId === id) throw new Error('A category cannot be its own parent');
 
-  const row = { name, slug, parent_id: parentId, sort_order: sortOrder, is_active: isActive };
+  const row = { name, slug, parent_id: parentId, sort_order: sortOrder, is_active: isActive, description };
 
   let categoryId = id;
   if (id) {

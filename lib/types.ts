@@ -21,7 +21,7 @@ export type Product = {
   rating_count?: number;
 };
 
-export type Category = { id: string; slug: string; name: string; sort_order: number; image_path?: string | null };
+export type Category = { id: string; slug: string; name: string; sort_order: number; image_path?: string | null; description?: string | null };
 export type Discount = {
   id: string; scope: 'product' | 'category' | 'all';
   product_id: string | null; category_id: string | null;

@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const cat = (await getCategories()).find(c => c.slug === slug);
   const name = cat?.name ?? 'Gadgets';
   const title = `${name} Price List in Sri Lanka`;
-  const desc = `Buy ${name} online in Sri Lanka at ${SITE.name}. Latest prices, genuine stock, official warranty and islandwide cash on delivery.`.slice(0, 160);
+  const desc = (cat?.description ?? `Buy ${name} online in Sri Lanka at ${SITE.name}. Latest prices, genuine stock, official warranty and islandwide cash on delivery.`).slice(0, 160);
   return {
     title,
     description: desc,
@@ -95,6 +95,11 @@ export default async function CategoryPage({ params }: Props) {
         <div className="absolute -right-12 -top-12 h-40 w-40 bg-gradient-to-br from-volt/15 to-accent/15 blur-2xl" style={{ borderRadius: '40% 60% 60% 40%' }} aria-hidden />
         <h1 className={`relative z-10 text-2xl font-extrabold tracking-[-0.02em] md:text-3xl ${cat.image_path ? 'text-white' : ''}`}>{cat.name}</h1>
         <p className={`relative z-10 mt-2 text-[14px] ${cat.image_path ? 'text-white/85' : 'text-muted'}`}>{products.length} items available</p>
+        {cat.description && (
+          <p className={`relative z-10 mt-3 max-w-2xl text-[14.5px] leading-relaxed ${cat.image_path ? 'text-white/90' : 'text-ink/80'}`}>
+            {cat.description}
+          </p>
+        )}
 
         {/* Category quick-filter chips */}
         {categories.length > 1 && (

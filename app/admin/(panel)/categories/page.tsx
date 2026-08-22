@@ -12,7 +12,7 @@ export default async function AdminCategories() {
   const supabase = (await getServerSupabase())!;
   const [{ data: categories }, { data: counts }] = await Promise.all([
     supabase.from('categories')
-      .select('id, name, slug, parent_id, sort_order, is_active, image_path')
+      .select('id, name, slug, parent_id, sort_order, is_active, image_path, description')
       .order('sort_order'),
     supabase.from('products').select('category_id').is('deleted_at', null),
   ]);
@@ -52,6 +52,12 @@ export default async function AdminCategories() {
               <label className={lbl} htmlFor="cat-image">Tile / banner image</label>
               <input id="cat-image" name="image" type="file" accept="image/*" className={`${inp} pt-2`} />
             </div>
+          </div>
+          <div className="mt-3">
+            <label className={lbl} htmlFor="cat-desc">Description (shown on the category page, helps SEO)</label>
+            <textarea id="cat-desc" name="description" rows={3}
+              placeholder="2–3 sentences about what's in this category — shown as body text on the page and used as the search snippet."
+              className="w-full resize-none rounded-lg bg-paper px-3 py-2.5 text-[12.5px] font-medium outline-none focus:ring-2 focus:ring-volt" />
           </div>
           <label className="mt-3 flex items-center gap-2 text-[12.5px] font-medium">
             <input type="checkbox" name="is_active" defaultChecked className="h-4 w-4 rounded accent-volt" />

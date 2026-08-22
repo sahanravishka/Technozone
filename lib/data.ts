@@ -28,7 +28,7 @@ export async function getCategories(): Promise<Category[]> {
   const sb = getSupabase();
   if (!sb) return demoCategories;
   const { data } = await sb.from('categories')
-    .select('id, slug, name, sort_order, image_path').eq('is_active', true).order('sort_order');
+    .select('id, slug, name, sort_order, image_path, description').eq('is_active', true).order('sort_order');
   return data?.length ? data : demoCategories;
 }
 

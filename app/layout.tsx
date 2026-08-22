@@ -1,5 +1,6 @@
 import './globals.css';
 import type { ReactNode } from 'react';
+import Script from 'next/script';
 import { Manrope, Plus_Jakarta_Sans, Noto_Sans_Sinhala, Noto_Sans_Tamil } from 'next/font/google';
 
 // Self-hosted at build time by Next.js — no external request to
@@ -38,7 +39,21 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body>{children}</body>
+      <body>
+        {/* Google tag (gtag.js) — afterInteractive loads it once the page is
+            interactive, so it never delays first paint/LCP the way a plain
+            <script> in <head> would. */}
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-7K3XRE3054" strategy="afterInteractive" />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-7K3XRE3054');
+          `}
+        </Script>
+        {children}
+      </body>
     </html>
   );
 }
