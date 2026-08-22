@@ -92,7 +92,7 @@ export default async function ProductPage({ params }: Props) {
       itemCondition: 'https://schema.org/NewCondition',
       priceValidUntil: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10),
       availability: pricing.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      seller: { '@type': 'Organization', name: SITE.name },
+      seller: { '@id': `${SITE.url}/#organization` },
       shippingDetails: {
         '@type': 'OfferShippingDetails',
         shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'LK' },

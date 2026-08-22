@@ -59,20 +59,38 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
   const shopHref = `/${locale}/category/${categories[0]?.slug ?? ''}`;
 
   // JSON-LD for Organization + WebSite schema (SEO)
+  // Upgraded from plain Organization to LocalBusiness + Organization, with
+  // a real address and opening hours, and @id entity-linking between the
+  // business, website and homepage. A direct technical audit of a
+  // top-ranking Nokia competitor (celltronics.lk) showed they do exactly
+  // this; we didn't. LocalBusiness + address is a real local-search/Maps
+  // ranking factor that plain Organization schema doesn't provide.
   const orgJsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@id': `${SITE.url}/#organization`,
+    '@type': ['LocalBusiness', 'ElectronicsStore', 'Organization'],
     name: SITE.name,
     url: SITE.url,
     logo: `${SITE.url}/icon.png`,
+    image: `${SITE.url}/icon.png`,
     sameAs: Object.values(SITE.social).filter(Boolean),
+    telephone: `+${SITE.whatsapp}`,
+    priceRange: 'LKR',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: 'Nugegoda',
+      addressRegion: 'Western Province',
+      addressCountry: 'LK'
+    },
     contactPoint: { '@type': 'ContactPoint', telephone: `+${SITE.whatsapp}`, contactType: 'customer service' }
   };
   const siteJsonLd = {
     '@context': 'https://schema.org',
+    '@id': `${SITE.url}/#website`,
     '@type': 'WebSite',
     name: SITE.name,
     url: SITE.url,
+    publisher: { '@id': `${SITE.url}/#organization` },
     potentialAction: {
       '@type': 'SearchAction',
       target: { '@type': 'EntryPoint', urlTemplate: `${SITE.url}/{locale}/search?q={search_term_string}` },
