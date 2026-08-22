@@ -8,6 +8,7 @@ import { imageUrl } from '@/lib/supabase';
 import { formatLKR } from '@/lib/site';
 import WishlistButton from './WishlistButton';
 import FastChargeBadge from './FastChargeBadge';
+import WarrantyBadge from './WarrantyBadge';
 
 export default function ProductCard({ product, discounts, locale, dict, priority = false }:
   { product: Product; discounts: Discount[]; locale: Locale; dict: Dict; priority?: boolean }) {
@@ -66,8 +67,11 @@ export default function ProductCard({ product, discounts, locale, dict, priority
           <span className="text-[11px] font-bold uppercase tracking-[0.05em] text-muted">{product.brand}</span>
         )}
         <h3 className="line-clamp-2 text-[15px] font-bold leading-snug tracking-[-0.01em]">{product.name}</h3>
-        {!!product.specs?.['Fast Charging'] && (
-          <div><FastChargeBadge /></div>
+        {(!!product.specs?.['Fast Charging'] || !!product.warranty_months) && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {!!product.specs?.['Fast Charging'] && <FastChargeBadge />}
+            <WarrantyBadge months={product.warranty_months} />
+          </div>
         )}
         {!!product.rating_count && (
           <span className="flex items-center gap-1.5 text-[12.5px] font-semibold text-muted">
