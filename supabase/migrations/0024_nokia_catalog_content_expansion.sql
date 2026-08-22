@@ -1,0 +1,14 @@
+-- ============================================================
+-- 0024_nokia_catalog_content_expansion.sql
+-- Expands every Nokia product's description from a single thin paragraph
+-- (200-340 chars) into structured, multi-paragraph, benefit-driven copy
+-- (450-950 chars), matching the depth found on top-ranking competitor
+-- pages (celltronics.lk, xmobile.lk) researched via Apify. Nokia 1100 and
+-- 1110 previously had no specs/description/meta at all — now fully
+-- populated using real specs (Wikipedia, GSMArena, PhoneArena, iFixit).
+-- Nokia 5130 XpressMusic given the strongest treatment since it's already
+-- gaining organic traction.
+--
+-- Full content lives in this file's Supabase migration history; see
+-- migration "nokia_catalog_content_expansion" applied 2026-08-22.
+-- ============================================================
