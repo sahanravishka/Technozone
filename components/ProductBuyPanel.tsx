@@ -14,6 +14,7 @@ import { WhatsAppIcon } from './WhatsAppButton';
 import WishlistButton from './WishlistButton';
 import NotifyMeForm from './NotifyMeForm';
 import FastChargeBadge from './FastChargeBadge';
+import ProductFaq from './ProductFaq';
 
 export default function ProductBuyPanel({ product, discounts, dict, productUrl }:
   { product: Product; discounts: Discount[]; dict: Dict; productUrl: string }) {
@@ -353,6 +354,8 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
             ))}
           </div>
         )}
+
+        {!!product.faqs?.length && <ProductFaq faqs={product.faqs} />}
       </div>
 
       {/* ---------- sticky mobile CTA ---------- */}

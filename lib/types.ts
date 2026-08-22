@@ -19,6 +19,7 @@ export type Product = {
   product_translations?: { locale: string; name: string; description: string | null }[];
   rating_avg?: number;
   rating_count?: number;
+  faqs?: { q: string; a: string }[];
 };
 
 export type Category = { id: string; slug: string; name: string; sort_order: number; image_path?: string | null; description?: string | null };

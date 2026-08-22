@@ -14,6 +14,7 @@ import Reviews from '@/components/Reviews';
 import Reveal from '@/components/Reveal';
 import { safeJsonLd } from '@/lib/jsonld';
 import RecentlyViewed, { RecentlyViewedTracker } from '@/components/RecentlyViewed';
+import ProductFaq from '@/components/ProductFaq';
 
 export const revalidate = 0;
 
@@ -123,10 +124,26 @@ export default async function ProductPage({ params }: Props) {
     ]
   };
 
+  // JSON-LD FAQPage — mirrors the visible accordion below exactly. Google
+  // requires FAQ structured data to match visible on-page content; an
+  // accordion (collapsed by default, expandable on click) is fine, but
+  // content that's invisible even when interacted with is a policy
+  // violation that can trigger a manual penalty rather than help rankings.
+  const faqJsonLd = product.faqs?.length ? {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: product.faqs.map(f => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a }
+    }))
+  } : null;
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbJsonLd) }} />
+      {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }} />}
 
       {/* Breadcrumbs */}
       <nav className="breadcrumb mb-6" aria-label="Breadcrumb">
