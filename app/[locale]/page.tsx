@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { locales, type Locale } from '@/lib/i18n/config';
 import { getDict } from '@/lib/i18n/dictionaries';
-import { getActiveDiscounts, getCategories, getHomepageBanners, getProducts, localized } from '@/lib/data';
+import { getActiveDiscounts, getCategories, getHomepageBanners, getBusinessProfile, getProducts, localized } from '@/lib/data';
 import { priceProduct } from '@/lib/pricing';
 import { imageUrl } from '@/lib/supabase';
 import { formatLKR, waLink, SITE } from '@/lib/site';
@@ -47,8 +47,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
 export default async function HomePage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
   const dict = getDict(locale);
-  const [categories, discounts, productsRaw, banners] = await Promise.all([
-    getCategories(), getActiveDiscounts(), getProducts({ limit: 12 }), getHomepageBanners()
+  const [categories, discounts, productsRaw, banners, businessProfile] = await Promise.all([
+    getCategories(), getActiveDiscounts(), getProducts({ limit: 12 }), getHomepageBanners(), getBusinessProfile()
   ]);
   const products = productsRaw.map(p => localized(p, locale));
 
@@ -68,21 +68,29 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
   const orgJsonLd = {
     '@context': 'https://schema.org',
     '@id': `${SITE.url}/#organization`,
-    '@type': ['LocalBusiness', 'ElectronicsStore', 'Organization'],
+    '@type': ['LocalBusiness', businessProfile?.category || 'ElectronicsStore', 'Organization'],
     name: SITE.name,
     url: SITE.url,
     logo: `${SITE.url}/icon.png`,
     image: `${SITE.url}/icon.png`,
     sameAs: Object.values(SITE.social).filter(Boolean),
-    telephone: `+${SITE.whatsapp}`,
+    telephone: businessProfile?.phone || `+${SITE.whatsapp}`,
     priceRange: 'LKR',
     address: {
       '@type': 'PostalAddress',
-      addressLocality: 'Nugegoda',
-      addressRegion: 'Western Province',
+      ...(businessProfile?.street ? { streetAddress: businessProfile.street } : {}),
+      addressLocality: businessProfile?.locality || 'Nugegoda',
+      addressRegion: businessProfile?.region || 'Western Province',
       addressCountry: 'LK'
     },
-    contactPoint: { '@type': 'ContactPoint', telephone: `+${SITE.whatsapp}`, contactType: 'customer service' }
+    ...(businessProfile?.ratingValue && businessProfile?.reviewCount ? {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: businessProfile.ratingValue,
+        reviewCount: businessProfile.reviewCount
+      }
+    } : {}),
+    contactPoint: { '@type': 'ContactPoint', telephone: businessProfile?.phone || `+${SITE.whatsapp}`, contactType: 'customer service' }
   };
   const siteJsonLd = {
     '@context': 'https://schema.org',

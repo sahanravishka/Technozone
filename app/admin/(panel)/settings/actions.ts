@@ -26,6 +26,27 @@ export async function updateShipping(form: FormData) {
   revalidatePath('/admin/settings');
 }
 
+// Real business details (address/phone/Google rating), used in the
+// LocalBusiness structured data on the homepage. Editable here so the
+// rating/review count can be kept in sync with the actual Google Business
+// Profile without needing a code change every time it grows.
+export async function updateBusinessProfile(form: FormData) {
+  await requireStaff(['owner', 'manager']);
+  const supabase = (await getServerSupabase())!;
+  const { data: existing } = await supabase.from('site_settings').select('value').eq('key', 'business_profile').maybeSingle();
+  await setSetting('business_profile', {
+    ...(existing?.value as Record<string, unknown> ?? {}),
+    street: String(form.get('street') || '').trim() || undefined,
+    locality: String(form.get('locality') || '').trim() || undefined,
+    region: String(form.get('region') || '').trim() || undefined,
+    phone: String(form.get('phone') || '').trim() || undefined,
+    ratingValue: Number(form.get('rating_value') || 0) || undefined,
+    reviewCount: Math.max(0, Number(form.get('review_count') || 0)) || undefined,
+  });
+  revalidatePath('/admin/settings');
+  revalidatePath('/');
+}
+
 export type TestNotifyResult = {
   email: { attempted: boolean; ok: boolean; detail: string };
   telegram: { attempted: boolean; ok: boolean; detail: string };

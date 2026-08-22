@@ -52,6 +52,23 @@ export async function getHomepageBanners(): Promise<HomepageBanner[]> {
   return data ?? [];
 }
 
+export type BusinessProfile = {
+  street?: string; locality?: string; region?: string; phone?: string;
+  category?: string; ratingValue?: number; reviewCount?: number;
+  openingHours?: string[];
+};
+
+/** Real, admin-editable business details (address/phone/Google rating) for
+ *  LocalBusiness structured data — kept in sync with the actual Google
+ *  Business Profile rather than hardcoded, so it stays accurate as reviews
+ *  grow and doesn't need a code change to update. */
+export async function getBusinessProfile(): Promise<BusinessProfile | null> {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data } = await sb.from('site_settings').select('value').eq('key', 'business_profile').maybeSingle();
+  return (data?.value as BusinessProfile) ?? null;
+}
+
 export async function getActiveDiscounts(): Promise<Discount[]> {
   const sb = getSupabase();
   if (!sb) return demoDiscounts;
