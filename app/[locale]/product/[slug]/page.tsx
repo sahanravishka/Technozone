@@ -73,6 +73,14 @@ export default async function ProductPage({ params }: Props) {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
+    // alternateName/keywords: how search engines learn a product is also
+    // known by local/colloquial terms (e.g. "button phone", "original
+    // nokia") without changing a single word of the visible page. This is
+    // the legitimate, Google-documented mechanism for this — unlike
+    // hidden on-page text (which is a policy violation), structured
+    // metadata like this is explicitly designed to be machine-read.
+    alternateName: product.search_keywords?.[0] ? `${product.name} ${product.search_keywords[0]}` : undefined,
+    keywords: product.search_keywords?.length ? product.search_keywords.join(', ') : undefined,
     description: product.description ?? undefined,
     sku: pricing.sku,
     brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,

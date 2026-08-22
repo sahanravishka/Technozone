@@ -20,6 +20,7 @@ export type Product = {
   rating_avg?: number;
   rating_count?: number;
   faqs?: { q: string; a: string }[];
+  search_keywords?: string[];
 };
 
 export type Category = { id: string; slug: string; name: string; sort_order: number; image_path?: string | null; description?: string | null };
