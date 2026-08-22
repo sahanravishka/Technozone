@@ -177,7 +177,7 @@ export default function OrderCard({
                     className="pressable rounded-xl border border-line bg-card px-4 py-2 text-[12.5px] font-bold text-muted hover:bg-paper">
                     💬 WhatsApp
                   </a>
-                  {order.status === 'pending' && (
+                  {(order.status === 'pending' || order.status === 'paid') && (
                     <div className="ml-auto flex items-center gap-2">
                       {cancelStep === 0 && (
                         <button onClick={() => setCancelStep(1)} disabled={pending}
