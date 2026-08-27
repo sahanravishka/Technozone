@@ -390,8 +390,8 @@ async function processVariantPayload(
   const photos = form.getAll('variant_photos').filter((f): f is File => f instanceof File);
 
   // sharp is bundled with Next; optimize colour photos to <=1600px WebP q90.
-  let sharp: typeof import('sharp') | null = null;
-  try { sharp = (await import('sharp')).default as unknown as typeof import('sharp'); } catch { sharp = null; }
+  let sharp: typeof import('sharp').default | null = null;
+  try { sharp = (await import('sharp')).default; } catch { sharp = null; }
 
   // Upload each distinct colour photo once → map colorKey → { path, hex }.
   const colorMap = new Map<string, { path: string | null; hex: string | null }>();
@@ -543,8 +543,8 @@ export async function uploadProductImage(form: FormData) {
   let contentType = file.type || 'image/webp';
   let ext = 'webp';
 
-  let sharp: typeof import('sharp') | null = null;
-  try { sharp = (await import('sharp')).default as unknown as typeof import('sharp'); } catch { sharp = null; }
+  let sharp: typeof import('sharp').default | null = null;
+  try { sharp = (await import('sharp')).default; } catch { sharp = null; }
 
   if (sharp) {
     try {
