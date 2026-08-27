@@ -32,7 +32,7 @@ const STATUS_BAR: Record<string, string> = {
   pending: '#F59E0B', paid: '#3B82F6', packed: '#0EA5E9', dispatched: '#10B981', cancelled: '#9CA3AF',
 };
 const PAY_LABEL: Record<string, string> = {
-  cod: 'Cash on delivery', whatsapp: 'WhatsApp pay', payhere: 'Online payment',
+  cod: 'Cash on delivery', whatsapp: 'WhatsApp pay', payhere: 'Online payment', koko: 'Koko (3 installments)',
 };
 
 export default function OrderCard({
@@ -64,7 +64,7 @@ export default function OrderCard({
   const barColor = STATUS_BAR[order.status] ?? '#9CA3AF';
 
   const needScan = (order.requiredSerials ?? 0) > 0;
-  const needsPayConfirm = (order.payment_method === 'whatsapp' || isCod) && order.status === 'pending';
+  const needsPayConfirm = (order.payment_method === 'whatsapp' || order.payment_method === 'koko' || isCod) && order.status === 'pending';
   const isCancelled     = order.status === 'cancelled';
 
   const totalQty  = order.order_items.reduce((n, i) => n + i.qty, 0);

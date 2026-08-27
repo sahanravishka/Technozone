@@ -11,11 +11,11 @@ import { sendNewOrderTelegram } from '@/lib/telegram';
 import type { Discount, Product } from '@/lib/types';
 
 type CartLine = { variantId: string; qty: number };
-type PaymentMethod = 'payhere' | 'cod' | 'whatsapp';
+type PaymentMethod = 'payhere' | 'cod' | 'whatsapp' | 'koko';
 
 type Result =
   | { ok: true; method: 'payhere'; gateway: string; fields: Record<string, string> }
-  | { ok: true; method: 'cod' | 'whatsapp'; orderNumber: string; total: number;
+  | { ok: true; method: 'cod' | 'whatsapp' | 'koko'; orderNumber: string; total: number;
       items: { name: string; qty: number; line: number }[] }
   | { ok: false; error: 'auth' | 'stock' | 'config' | 'invalid' | 'cod_blocked' | 'cod_limit' | 'rate' };
 
@@ -107,7 +107,14 @@ export async function createOrder(input: {
         : Math.min(Number(c[0].value), subtotal);
     }
   }
-  const total = subtotal - couponDiscount + zoneFee;
+  const preKokoTotal = subtotal - couponDiscount + zoneFee;
+  // Koko (BNPL) service fee — 12% on the real order total, computed here
+  // server-side only, never trusted from the client. Koko's own consumer
+  // marketing is "always interest-free" — this fee is Techno Zone Lanka's
+  // own merchant-service surcharge being passed through, not interest, so
+  // it must never be labelled "interest" anywhere in the UI or messaging.
+  const kokoFee = method === 'koko' ? Math.round(preKokoTotal * 0.12) : 0;
+  const total = preKokoTotal + kokoFee;
 
   // COD gate now that the true total is known
   if (method === 'cod') {
@@ -123,7 +130,7 @@ export async function createOrder(input: {
     channel: 'web',
     payment_method: method,
     subtotal, discount_total: couponDiscount,
-    delivery_fee: zoneFee, total,
+    delivery_fee: zoneFee, koko_fee: kokoFee, total,
     fulfillment: isPickup ? 'pickup' : 'delivery',
     coupon_id: coupon?.id ?? null, coupon_code: coupon?.code ?? null,
     delivery_zone_id: zoneId, delivery_zone_name: zoneName,
@@ -185,7 +192,11 @@ export async function createOrder(input: {
     return { ok: true, method, gateway: payhereGateway(), fields };
   }
 
-  // COD or WhatsApp: order sits pending/unpaid until staff confirm collection.
+  // COD, WhatsApp, or Koko: order sits pending/unpaid until staff confirm
+  // collection. No Koko merchant API is connected yet — this just tags the
+  // order and shows the right installment breakdown; actual Koko payment
+  // collection happens the same way COD does today, until real merchant
+  // credentials are available for a proper redirect/webhook integration.
   return {
     ok: true, method, orderNumber: order.order_number, total,
     items: items.map(i => ({ name: i.product_name, qty: i.qty, line: i.line_total }))

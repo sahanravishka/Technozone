@@ -12,6 +12,7 @@ import { formatLKR, SITE, waLink } from '@/lib/site';
 import { priceProduct } from '@/lib/pricing';
 import { imageUrl } from '@/lib/supabase';
 import { createOrder, saveAbandonedCart } from '@/app/[locale]/checkout/actions';
+import KokoBadge from './KokoBadge';
 
 const inputCls = 'h-12 w-full rounded-btn bg-card px-3.5 text-[14px] font-medium outline-none focus:ring-2 focus:ring-volt';
 const label = 'mb-1.5 block text-[13px] font-semibold text-muted';
@@ -29,12 +30,15 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
   const [f, setF] = useState({ name: '', phone: '', email: '', address: '', city: '', postalCode: '', zoneId: zones[0]?.id ?? '', coupon: '' });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
-  const [pay, setPay] = useState<'payhere' | 'cod' | 'whatsapp'>(payhereOn ? 'payhere' : 'cod');
+  const [pay, setPay] = useState<'payhere' | 'cod' | 'whatsapp' | 'koko'>(payhereOn ? 'payhere' : 'cod');
   const [placed, setPlaced] = useState<string | null>(null);
   const [fulfillment, setFulfillment] = useState<'delivery' | 'pickup'>('delivery');
 
   const zone = zones.find(z => z.id === f.zoneId) ?? zones[0];
   const delivery = (items.length && fulfillment === 'delivery') ? Number(zone?.fee ?? 0) : 0;
+  const kokoFee = pay === 'koko' ? Math.round((subtotal + delivery) * 0.12) : 0;
+  const grandTotal = subtotal + delivery + kokoFee;
+  const kokoInstallment = Math.ceil(grandTotal / 3);
   const inCartIds = useMemo(() => new Set(items.map(i => i.productId)), [items]);
   const suggList = suggestions.filter(s => !inCartIds.has(s.id)).slice(0, 6);
 
@@ -242,9 +246,21 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
         <dl className="mt-4 space-y-2 border-t border-[#EEF1F6] pt-3 text-[14px]">
           <div className="flex justify-between text-muted"><dt>{dict.cart.subtotal}</dt><dd>{formatLKR(subtotal)}</dd></div>
           <div className="flex justify-between text-muted"><dt>{dict.cart.delivery}</dt><dd>{formatLKR(delivery)}</dd></div>
+          {pay === 'koko' && (
+            <div className="flex justify-between text-muted">
+              <dt className="flex items-center gap-1.5">Koko service fee (12%)</dt>
+              <dd>{formatLKR(kokoFee)}</dd>
+            </div>
+          )}
           <div className="flex justify-between border-t border-[#EEF1F6] pt-3 text-[17px] font-bold">
-            <dt>{dict.cart.total}</dt><dd>{formatLKR(subtotal + delivery)}</dd>
+            <dt>{dict.cart.total}</dt><dd>{formatLKR(grandTotal)}</dd>
           </div>
+          {pay === 'koko' && (
+            <div className="rounded-xl bg-[#7C3AED]/[0.06] p-3 text-[12.5px] text-[#7C3AED]">
+              <p className="font-bold">3 installments of {formatLKR(kokoInstallment)}</p>
+              <p className="mt-0.5 text-[11.5px] opacity-80">Pay 1/3 today, the rest over the next 2 months via Koko.</p>
+            </div>
+          )}
         </dl>
         {/* payment method */}
         <p className="mb-2 mt-5 text-[12.5px] font-bold text-muted">{dict.pay.method}</p>
@@ -252,11 +268,12 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
           {([
             payhereOn ? ['payhere', dict.pay.online, dict.pay.onlineSub, '💳'] : null,
             ['cod', fulfillment === 'pickup' ? dict.pay.payAtStore : dict.pay.cod, fulfillment === 'pickup' ? dict.pay.pickupSub : dict.pay.codSub, '💵'],
-            ['whatsapp', dict.pay.whatsapp, dict.pay.whatsappSub, '🟢']
+            ['whatsapp', dict.pay.whatsapp, dict.pay.whatsappSub, '🟢'],
+            ['koko', 'Koko', `3 x ${formatLKR(Math.ceil((subtotal + delivery) * 1.12 / 3))} — pay later`, '🟣']
           ].filter(Boolean) as [string, string, string, string][]).map(([m, label, sub, icon]) => (
             <button key={m} onClick={() => setPay(m as typeof pay)}
               className={`flex w-full items-center gap-3 rounded-2xl border-2 p-3 text-left transition-colors ${pay === m ? 'border-volt bg-volt-soft' : 'border-transparent bg-paper'}`}>
-              <span className="text-lg">{icon}</span>
+              {m === 'koko' ? <KokoBadge /> : <span className="text-lg">{icon}</span>}
               <span className="flex-1">
                 <span className="block text-[13.5px] font-semibold">{label}</span>
                 <span className="block text-[11.5px] text-muted">{sub}</span>
@@ -277,7 +294,10 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
             : dict.pay.placeOrder}
         </button>
         <p className="mt-3 text-center text-[11.5px] text-muted">
-          {pay === 'payhere' ? `🔒 ${dict.form.secure}` : pay === 'cod' ? `💵 ${dict.pay.codSub}` : `🟢 ${dict.pay.whatsappSub}`}
+          {pay === 'payhere' ? `🔒 ${dict.form.secure}`
+            : pay === 'cod' ? `💵 ${dict.pay.codSub}`
+            : pay === 'koko' ? `🟣 Pay ${formatLKR(kokoInstallment)} now, rest over 2 months`
+            : `🟢 ${dict.pay.whatsappSub}`}
         </p>
       </aside>
     </div>

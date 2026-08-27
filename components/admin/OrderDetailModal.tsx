@@ -9,7 +9,7 @@ const STATUS_LABEL: Record<string, string> = {
   pending: 'Pending', paid: 'Paid', packed: 'Packed', dispatched: 'Dispatched', cancelled: 'Cancelled', refunded: 'Refunded',
 };
 const PAY_LABEL: Record<string, string> = {
-  cod: 'Cash on delivery', whatsapp: 'WhatsApp pay', payhere: 'Online payment (PayHere)',
+  cod: 'Cash on delivery', whatsapp: 'WhatsApp pay', payhere: 'Online payment (PayHere)', koko: 'Koko (3 installments)',
 };
 
 export default function OrderDetailModal({ orderId, onClose }: { orderId: string; onClose: () => void }) {

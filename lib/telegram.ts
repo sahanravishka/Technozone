@@ -16,7 +16,7 @@ type NewOrderTelegramInput = {
 };
 
 const PAY_LABEL: Record<string, string> = {
-  cod: 'Cash on delivery', whatsapp: 'WhatsApp pay', payhere: 'Online payment',
+  cod: 'Cash on delivery', whatsapp: 'WhatsApp pay', payhere: 'Online payment', koko: 'Koko (3 installments)',
 };
 
 /**
