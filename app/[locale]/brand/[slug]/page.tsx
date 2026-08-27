@@ -52,6 +52,18 @@ export default async function BrandPage({ params }: Props) {
     .map(p => ({ p, pricing: priceProduct(p, discounts) }))
     .filter(x => x.pricing.price > 0);
 
+  // Genuine "last updated" — the most recent updated_at among priced
+  // products, not just today's date. Always showing the current month
+  // regardless of whether anything actually changed is a soft
+  // trust/accuracy problem (the plan we're working from explicitly flags
+  // this: "only change the date when the information was actually
+  // reviewed"), not a real freshness signal.
+  const lastUpdated = priced.reduce<Date | null>((latest, { p }) => {
+    if (!p.updated_at) return latest;
+    const d = new Date(p.updated_at);
+    return !latest || d > latest ? d : latest;
+  }, null);
+
   const breadcrumbJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -120,7 +132,8 @@ export default async function BrandPage({ params }: Props) {
       {priced.length > 0 && (
         <section className="mt-12 hidden md:block">
           <h2 className="text-lg font-extrabold tracking-[-0.01em]">
-            {res.brand} Price List in Sri Lanka ({new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })})
+            {res.brand} Price List in Sri Lanka
+            {lastUpdated && ` (Updated ${lastUpdated.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })})`}
           </h2>
           <div className="mt-4 overflow-hidden rounded-2xl border border-line">
             <table className="w-full text-[13px]">

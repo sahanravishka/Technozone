@@ -14,7 +14,7 @@ import {
 // ------------------------------------------------------------------
 
 const PRODUCT_SELECT = `
-  id, slug, name, brand, description, specs, base_price, category_id, rating_avg, rating_count, meta_title, meta_description, faqs, warranty_months, search_keywords,
+  id, slug, name, brand, description, specs, base_price, category_id, rating_avg, rating_count, meta_title, meta_description, faqs, warranty_months, search_keywords, updated_at,
   product_variants ( id, sku, name, attributes, price, stock_qty, reserved_qty, is_default, is_active ),
   product_images ( id, storage_path, alt, sort_order, color_hex, variant_id ),
   product_translations ( locale, name, description )
