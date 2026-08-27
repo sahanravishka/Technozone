@@ -256,7 +256,7 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
             <dt>{dict.cart.total}</dt><dd>{formatLKR(grandTotal)}</dd>
           </div>
           {pay === 'koko' && (
-            <div className="rounded-xl bg-[#7C3AED]/[0.06] p-3 text-[12.5px] text-[#7C3AED]">
+            <div className="rounded-xl bg-[#6D28D9]/[0.06] p-3 text-[12.5px] text-[#6D28D9]">
               <p className="font-bold">3 installments of {formatLKR(kokoInstallment)}</p>
               <p className="mt-0.5 text-[11.5px] opacity-80">Pay 1/3 today, the rest over the next 2 months via Koko.</p>
             </div>

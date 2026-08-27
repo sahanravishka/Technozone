@@ -104,7 +104,7 @@ export default function ProductCard({ product, discounts, locale, dict, priority
           </div>
           {!oos && (
             <p className="mt-1 text-[11px] font-medium text-muted">
-              or 3 x {formatLKR(Math.ceil(pricing.price * 1.12 / 3))} with <span className="font-extrabold italic text-[#7C3AED]">koko</span>
+              or 3 x {formatLKR(Math.ceil(pricing.price * 1.12 / 3))} with <span className="font-extrabold italic text-[#6D28D9]">koko</span>
             </p>
           )}
         </div>
