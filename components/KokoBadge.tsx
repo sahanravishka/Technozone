@@ -1,14 +1,12 @@
-/** Koko (BNPL) payment badge. A custom wordmark using their real brand
- *  purple (visually matched from their app/site — swap for the exact
- *  brand-kit hex or their official logo file if we get it). */
+import Image from 'next/image';
+
+/** Koko (BNPL) payment badge — their real logo (confirmed from an actual
+ *  Koko promotional graphic, not a guess). */
 export default function KokoBadge({ size = 'sm' }: { size?: 'sm' | 'md' }) {
-  const isSm = size === 'sm';
+  const h = size === 'sm' ? 18 : 24;
+  const w = Math.round(h * (215 / 98));
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full bg-[#6D28D9] font-extrabold italic text-white ${
-        isSm ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-[13px]'
-      }`}>
-      koko
-    </span>
+    <Image src="/payments/koko-logo.png" alt="Koko" width={w} height={h}
+      className="inline-block object-contain" />
   );
 }
