@@ -81,24 +81,31 @@ export default function ProductCard({ product, discounts, locale, dict, priority
             {product.rating_avg?.toFixed(1)} · {product.rating_count}
           </span>
         )}
-        <div className="mt-auto flex items-center justify-between pt-2.5">
-          <div className="flex items-baseline gap-1.5">
-            <span className={`text-[17px] font-extrabold tracking-[-0.02em] ${oos ? 'text-muted line-through' : ''}`}>{formatLKR(pricing.price)}</span>
-            {pricing.compareAt && !oos && <s className="text-[12.5px] font-semibold text-muted">{formatLKR(pricing.compareAt)}</s>}
+        <div className="mt-auto pt-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline gap-1.5">
+              <span className={`text-[17px] font-extrabold tracking-[-0.02em] ${oos ? 'text-muted line-through' : ''}`}>{formatLKR(pricing.price)}</span>
+              {pricing.compareAt && !oos && <s className="text-[12.5px] font-semibold text-muted">{formatLKR(pricing.compareAt)}</s>}
+            </div>
+            {/* Action button — organic shape */}
+            {oos ? (
+              <span className="btn-organic grid h-9 w-9 place-items-center bg-deep/10 text-muted" aria-hidden>
+                <svg viewBox="0 0 24 24" className="h-[16px] w-[16px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </span>
+            ) : (
+              <span className="btn-organic grid h-9 w-9 place-items-center bg-deep text-white transition-all group-hover:scale-110 group-hover:bg-volt group-hover:shadow-lg" aria-hidden>
+                <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </span>
+            )}
           </div>
-          {/* Action button — organic shape */}
-          {oos ? (
-            <span className="btn-organic grid h-9 w-9 place-items-center bg-deep/10 text-muted" aria-hidden>
-              <svg viewBox="0 0 24 24" className="h-[16px] w-[16px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                <path d="M18 6 6 18M6 6l12 12" />
-              </svg>
-            </span>
-          ) : (
-            <span className="btn-organic grid h-9 w-9 place-items-center bg-deep text-white transition-all group-hover:scale-110 group-hover:bg-volt group-hover:shadow-lg" aria-hidden>
-              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-            </span>
+          {!oos && (
+            <p className="mt-1 text-[11px] font-medium text-muted">
+              or 3 x {formatLKR(Math.ceil(pricing.price * 1.12 / 3))} with <span className="font-extrabold italic text-[#7C3AED]">koko</span>
+            </p>
           )}
         </div>
       </div>
