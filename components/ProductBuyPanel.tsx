@@ -7,7 +7,7 @@ import type { Dict } from '@/lib/i18n/dictionaries';
 import { priceVariant } from '@/lib/pricing';
 import { imageUrl } from '@/lib/supabase';
 import { useCart } from '@/lib/cart-store';
-import { SITE, formatLKR, waLink } from '@/lib/site';
+import { SITE, formatLKR, waLink, KOKO_ENABLED } from '@/lib/site';
 import PriceTag from './PriceTag';
 import StockBadge from './StockBadge';
 import { WhatsAppIcon } from './WhatsAppButton';
@@ -202,7 +202,7 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
             <PriceTag price={price} compareAt={compareAt} size="lg" />
             <StockBadge stock={stock} dict={dict} />
           </div>
-          {stock > 0 && (
+          {stock > 0 && KOKO_ENABLED && (
             <p className="mt-1.5 text-[12.5px] font-medium text-muted">
               or 3 x {formatLKR(Math.ceil(price * 1.12 / 3))} with <KokoBadge />
             </p>

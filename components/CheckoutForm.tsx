@@ -8,7 +8,7 @@ import { useCart } from '@/lib/cart-store';
 import type { Dict } from '@/lib/i18n/dictionaries';
 import type { DeliveryZone, Discount, Product } from '@/lib/types';
 import type { Locale } from '@/lib/i18n/config';
-import { formatLKR, SITE, waLink } from '@/lib/site';
+import { formatLKR, SITE, waLink, KOKO_ENABLED } from '@/lib/site';
 import { priceProduct } from '@/lib/pricing';
 import { imageUrl } from '@/lib/supabase';
 import { createOrder, saveAbandonedCart } from '@/app/[locale]/checkout/actions';
@@ -269,7 +269,7 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
             payhereOn ? ['payhere', dict.pay.online, dict.pay.onlineSub, '💳'] : null,
             ['cod', fulfillment === 'pickup' ? dict.pay.payAtStore : dict.pay.cod, fulfillment === 'pickup' ? dict.pay.pickupSub : dict.pay.codSub, '💵'],
             ['whatsapp', dict.pay.whatsapp, dict.pay.whatsappSub, '🟢'],
-            ['koko', 'Koko', `3 x ${formatLKR(Math.ceil((subtotal + delivery) * 1.12 / 3))} — pay later`, '🟣']
+            KOKO_ENABLED ? ['koko', 'Koko', `3 x ${formatLKR(Math.ceil((subtotal + delivery) * 1.12 / 3))} — pay later`, '🟣'] : null
           ].filter(Boolean) as [string, string, string, string][]).map(([m, label, sub, icon]) => (
             <button key={m} onClick={() => setPay(m as typeof pay)}
               className={`flex w-full items-center gap-3 rounded-2xl border-2 p-3 text-left transition-colors ${pay === m ? 'border-volt bg-volt-soft' : 'border-transparent bg-paper'}`}>

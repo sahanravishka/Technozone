@@ -5,7 +5,7 @@ import type { Dict } from '@/lib/i18n/dictionaries';
 import type { Locale } from '@/lib/i18n/config';
 import { priceProduct } from '@/lib/pricing';
 import { imageUrl } from '@/lib/supabase';
-import { formatLKR } from '@/lib/site';
+import { formatLKR, KOKO_ENABLED } from '@/lib/site';
 import WishlistButton from './WishlistButton';
 import FastChargeBadge from './FastChargeBadge';
 import WarrantyBadge from './WarrantyBadge';
@@ -103,7 +103,7 @@ export default function ProductCard({ product, discounts, locale, dict, priority
               </span>
             )}
           </div>
-          {!oos && (
+          {!oos && KOKO_ENABLED && (
             <p className="mt-1 text-[11px] font-medium text-muted">
               or 3 x {formatLKR(Math.ceil(pricing.price * 1.12 / 3))} with <KokoBadge />
             </p>

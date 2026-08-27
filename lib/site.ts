@@ -1,4 +1,10 @@
 // One place to rebrand the whole shop.
+
+// Koko (BNPL) is built (pricing math, UI, order tagging) but not shown
+// yet — no real merchant API is connected, so it can't actually process
+// payment. Flip to true once real integration is wired up.
+export const KOKO_ENABLED = false;
+
 export const SITE = {
   name: 'Techno Zone Lanka',
   wordmark: ['TECHNO ZONE', 'LANKA'] as const,   // second part renders in logo cya
