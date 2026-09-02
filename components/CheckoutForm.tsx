@@ -56,10 +56,13 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
         <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-line border-t-volt"></div>
         <p className="text-[17px] font-bold">Redirecting to secure payment...</p>
         <p className="mt-2 text-[13.5px] text-muted">Please do not close this window.</p>
-        <form id="payment-redirect-form" method="POST" action={redirecting.url} className="hidden">
+        <form id="payment-redirect-form" method="POST" action={redirecting.url} className="mt-6">
           {Object.entries(redirecting.fields).map(([k, v]) => (
             <input key={k} type="hidden" name={k} value={v} />
           ))}
+          <button type="submit" className="rounded-btn bg-volt px-4 py-2 text-[13px] font-bold text-black hover:bg-volt-hover">
+            Click here if not redirected automatically →
+          </button>
         </form>
       </div>
     );
