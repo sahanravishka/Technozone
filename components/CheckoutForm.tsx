@@ -21,9 +21,9 @@ function Field({ text, children }: { text: string; children: React.ReactNode }) 
   return <label className="block"><span className={label}>{text}</span>{children}</label>;
 }
 
-export default function CheckoutForm({ dict, zones, locale, signedIn, suggestions, discounts, payhereOn }:
+export default function CheckoutForm({ dict, zones, locale, signedIn, suggestions, discounts, payhereOn, kokoOn }:
   { dict: Dict; zones: DeliveryZone[]; locale: Locale; signedIn: boolean;
-    suggestions: Product[]; discounts: Discount[]; payhereOn: boolean }) {
+    suggestions: Product[]; discounts: Discount[]; payhereOn: boolean; kokoOn: boolean }) {
   const { items, subtotal, clear, add } = useCart();
   const router = useRouter();
   const [mode, setMode] = useState<'guest' | 'signin'>(signedIn ? 'signin' : 'guest');
@@ -98,8 +98,8 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
       return;
     }
 
-    // Online: POST the signed PayHere form and redirect to the gateway.
-    if (res.method === 'payhere') {
+    // Online: POST the signed PayHere/Koko form and redirect to the gateway.
+    if (res.method === 'payhere' || res.method === 'koko') {
       clear();
       const form = document.createElement('form');
       form.method = 'POST'; form.action = res.gateway;
@@ -269,7 +269,7 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
             payhereOn ? ['payhere', dict.pay.online, dict.pay.onlineSub, '💳'] : null,
             ['cod', fulfillment === 'pickup' ? dict.pay.payAtStore : dict.pay.cod, fulfillment === 'pickup' ? dict.pay.pickupSub : dict.pay.codSub, '💵'],
             ['whatsapp', dict.pay.whatsapp, dict.pay.whatsappSub, '🟢'],
-            KOKO_ENABLED ? ['koko', 'Koko', `3 x ${formatLKR(Math.ceil((subtotal + delivery) * 1.12 / 3))} — pay later`, '🟣'] : null
+            (KOKO_ENABLED && kokoOn) ? ['koko', 'Koko', `3 x ${formatLKR(Math.ceil((subtotal + delivery) * 1.12 / 3))} — pay later`, '🟣'] : null
           ].filter(Boolean) as [string, string, string, string][]).map(([m, label, sub, icon]) => (
             <button key={m} onClick={() => setPay(m as typeof pay)}
               className={`flex w-full items-center gap-3 rounded-2xl border-2 p-3 text-left transition-colors ${pay === m ? 'border-volt bg-volt-soft' : 'border-transparent bg-paper'}`}>

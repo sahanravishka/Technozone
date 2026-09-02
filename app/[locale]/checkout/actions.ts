@@ -4,6 +4,7 @@ import { after } from 'next/server';
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { getAdminSupabase } from '@/lib/supabase-clients/admin';
 import { buildCheckoutFields, payhereConfigured, payhereGateway } from '@/lib/payhere';
+import { buildKokoOrderFields, kokoConfigured, kokoBaseUrl, newKokoOrderId } from '@/lib/koko';
 import { priceVariant } from '@/lib/pricing';
 import { rateLimitByIp } from '@/lib/rate-limit';
 import { sendNewOrderEmail } from '@/lib/email';
@@ -14,8 +15,8 @@ type CartLine = { variantId: string; qty: number };
 type PaymentMethod = 'payhere' | 'cod' | 'whatsapp' | 'koko';
 
 type Result =
-  | { ok: true; method: 'payhere'; gateway: string; fields: Record<string, string> }
-  | { ok: true; method: 'cod' | 'whatsapp' | 'koko'; orderNumber: string; total: number;
+  | { ok: true; method: 'payhere' | 'koko'; gateway: string; fields: Record<string, string> }
+  | { ok: true; method: 'cod' | 'whatsapp'; orderNumber: string; total: number;
       items: { name: string; qty: number; line: number }[] }
   | { ok: false; error: 'auth' | 'stock' | 'config' | 'invalid' | 'cod_blocked' | 'cod_limit' | 'rate' };
 
@@ -33,13 +34,14 @@ export async function createOrder(input: {
   const supabase = await getServerSupabase();
   const admin = getAdminSupabase();
   if (!supabase || !admin) return { ok: false, error: 'config' };
-  // Online card payment needs PayHere; COD & WhatsApp do not.
+  // Online card payment needs PayHere; Koko needs its own credentials; COD & WhatsApp need neither.
   if (method === 'payhere' && !payhereConfigured()) return { ok: false, error: 'config' };
+  if (method === 'koko' && !kokoConfigured()) return { ok: false, error: 'config' };
 
   const { data: { user } } = await supabase.auth.getUser();
   const buyerEmail = user?.email ?? input.email?.trim();
   // email is required for online (receipt) but optional for COD/WhatsApp
-  if (method === 'payhere' && !buyerEmail) return { ok: false, error: 'auth' };
+  if ((method === 'payhere' || method === 'koko') && !buyerEmail) return { ok: false, error: 'auth' };
   const isPickup = input.fulfillment === 'pickup';
   if (!input.lines.length || !input.name || !input.phone) return { ok: false, error: 'invalid' };
   if (!isPickup && (!input.address || !input.city)) return { ok: false, error: 'invalid' };
@@ -192,11 +194,24 @@ export async function createOrder(input: {
     return { ok: true, method, gateway: payhereGateway(), fields };
   }
 
-  // COD, WhatsApp, or Koko: order sits pending/unpaid until staff confirm
-  // collection. No Koko merchant API is connected yet — this just tags the
-  // order and shows the right installment breakdown; actual Koko payment
-  // collection happens the same way COD does today, until real merchant
-  // credentials are available for a proper redirect/webhook integration.
+  if (method === 'koko') {
+    const [firstName, ...rest] = input.name.trim().split(/\s+/);
+    const kokoOrderId = newKokoOrderId(order.order_number);
+    // Store before returning — the response webhook only gets this custom
+    // id back from Koko, not our own order uuid, so it must be saved now.
+    await admin.from('orders').update({ koko_order_id: kokoOrderId }).eq('id', order.id);
+    const fields = buildKokoOrderFields({
+      kokoOrderId, amount: total,
+      firstName, lastName: rest.join(' '),
+      email: buyerEmail!,
+      description: items.map(i => i.product_name).join(', '),
+      reference: order.order_number,
+      locale: input.locale
+    });
+    return { ok: true, method, gateway: `${kokoBaseUrl()}/api/merchants/orderCreate`, fields };
+  }
+
+  // COD or WhatsApp: order sits pending/unpaid until staff confirm collection.
   return {
     ok: true, method, orderNumber: order.order_number, total,
     items: items.map(i => ({ name: i.product_name, qty: i.qty, line: i.line_total }))

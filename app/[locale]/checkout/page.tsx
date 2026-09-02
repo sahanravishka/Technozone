@@ -4,6 +4,7 @@ import { getDict } from '@/lib/i18n/dictionaries';
 import { getDeliveryZones, getActiveDiscounts, getProducts, localized } from '@/lib/data';
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { payhereConfigured } from '@/lib/payhere';
+import { kokoConfigured } from '@/lib/koko';
 import CheckoutForm from '@/components/CheckoutForm';
 import CheckoutStub from '@/components/CheckoutStub';
 
@@ -36,7 +37,7 @@ export default async function CheckoutPage({ params }: { params: Promise<{ local
     <div className="mx-auto max-w-5xl px-4 py-8 md:px-6 md:py-12">
       <h1 className="mb-6 text-2xl font-bold md:text-3xl">{dict.checkout.title}</h1>
       <CheckoutForm dict={dict} zones={zones} locale={locale} signedIn={!!user}
-        suggestions={suggestions} discounts={discounts} payhereOn={payhereConfigured()} />
+        suggestions={suggestions} discounts={discounts} payhereOn={payhereConfigured()} kokoOn={kokoConfigured()} />
     </div>
   );
 }
