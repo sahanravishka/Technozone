@@ -87,22 +87,34 @@ export function buildKokoOrderFields(o: {
   const cancelUrl = `${SITE.url}/${o.locale}/checkout?cancelled=1`;
   const responseUrl = `${SITE.url}/api/koko/response`;
 
-  // Truncate description BEFORE building dataString — Koko re-computes the
-  // signature on their end using the _description value they receive, so the
-  // value signed here must be byte-for-byte identical to what gets posted.
-  // We also replace smart quotes/dashes with ASCII and strip non-ASCII to
-  // prevent encoding mismatches between Node.js utf8 and Koko's Java backend.
-  const description = o.description
-    .replace(/[–—]/g, '-')
-    .replace(/[‘’“”]/g, "'")
+  // Smart quotes/dashes -> ASCII equivalents. Every signed field needs this,
+  // not just description: Koko re-computes the signature on their end from
+  // the raw POSTed values, so anything we sign must be byte-for-byte
+  // identical to what their Java backend reconstructs. A curly apostrophe or
+  // em dash (iOS/Android autocorrect loves both, and they're common in real
+  // customer names, e.g. "O'Brien") is exactly the kind of character that
+  // silently differs across a Node.js utf8 <-> Java charset boundary and
+  // would make a legitimate customer's payment fail signature verification
+  // on Koko's side for no visible reason.
+  const asciiSafe = (s: string) => s.replace(/[–—]/g, '-').replace(/[‘’“”]/g, "'");
+
+  // Description is our own store-generated text (product names), always
+  // plain ASCII already, so stripping any stray non-ASCII byte here is safe.
+  // firstName/lastName are real customer names — Sri Lankan customers may
+  // enter these in Sinhala/Tamil script, so we normalize punctuation only
+  // and never strip non-ASCII there (that would silently blank out a
+  // genuine name instead of just risking a signature mismatch).
+  const description = asciiSafe(o.description)
     .replace(/[^\x20-\x7E]/g, '')
     .slice(0, 250);
+  const firstName = asciiSafe(o.firstName);
+  const lastName = asciiSafe(o.lastName);
 
   // Exact concatenation order per Koko's spec — confirmed against their
   // own sample-koko-order-create.php, NOT alphabetical, do not reorder.
   const dataString =
     mId + amount + currency + pluginName + pluginVersion + returnUrl +
-    cancelUrl + o.kokoOrderId + o.reference + o.firstName + o.lastName +
+    cancelUrl + o.kokoOrderId + o.reference + firstName + lastName +
     o.email + description + apiKey + responseUrl;
 
   return {
@@ -118,8 +130,8 @@ export function buildKokoOrderFields(o: {
     _pluginName: pluginName,
     _pluginVersion: pluginVersion,
     _description: description,
-    _firstName: o.firstName,
-    _lastName: o.lastName,
+    _firstName: firstName,
+    _lastName: lastName,
     _email: o.email,
     _mobileNo: o.phone,
     dataString,
