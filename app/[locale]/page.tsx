@@ -6,7 +6,8 @@ import { getDict } from '@/lib/i18n/dictionaries';
 import { getActiveDiscounts, getCategories, getHomepageBanners, getBusinessProfile, getProducts, localized } from '@/lib/data';
 import { priceProduct } from '@/lib/pricing';
 import { imageUrl } from '@/lib/supabase';
-import { formatLKR, waLink, SITE } from '@/lib/site';
+import { formatLKR, waLink, SITE, KOKO_ENABLED } from '@/lib/site';
+import { kokoConfigured } from '@/lib/koko';
 import Reveal from '@/components/Reveal';
 import ProductGrid from '@/components/ProductGrid';
 import RecentlyViewed from '@/components/RecentlyViewed';
@@ -51,6 +52,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
     getCategories(), getActiveDiscounts(), getProducts({ limit: 12 }), getHomepageBanners(), getBusinessProfile()
   ]);
   const products = productsRaw.map(p => localized(p, locale));
+  const kokoOn = KOKO_ENABLED && kokoConfigured();
 
   const hero = products[0];
   const heroImg = hero?.product_images?.[0];
@@ -134,6 +136,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
           },
           {
             '@type': 'Question',
+            name: 'Can I buy a Nokia phone in installments with Koko?',
+            acceptedAnswer: { '@type': 'Answer', text: `Yes. ${SITE.name} accepts Koko — split any Nokia phone or accessory into 3 interest-free installments, pay the first third at checkout and the rest over the next 2 months.` }
+          },
+          {
+            '@type': 'Question',
             name: 'Where is the shop located?',
             acceptedAnswer: { '@type': 'Answer', text: `${SITE.name} is located in Nugegoda, Sri Lanka. You can order online for delivery or choose store pickup at checkout.` }
           }
@@ -185,6 +192,20 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
           </div>
         </div>
       </section>
+
+      {/* ===================== KOKO PROMO STRIP — BNPL awareness for Nokia buyers ===================== */}
+      {kokoOn && (
+        <Reveal>
+          <section className="pt-6 md:pt-8" aria-label="Now accepting Koko">
+            <Link href={`/${locale}/search?q=nokia`}
+              className="pressable group block overflow-hidden shadow-soft transition-transform hover:-translate-y-0.5"
+              style={{ borderRadius: '26px' }}>
+              <Image src="/banners/koko-promo-wide.jpg" alt="Now accepting Koko — pay for your Nokia phone in 3 easy, interest-free installments"
+                width={2062} height={496} className="h-auto w-full object-cover" priority={false} />
+            </Link>
+          </section>
+        </Reveal>
+      )}
 
       {/* ===================== CATEGORIES — organic tile shapes ===================== */}
       <Reveal>

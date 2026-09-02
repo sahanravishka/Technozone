@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
@@ -8,7 +9,8 @@ import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { getAdminSupabase } from '@/lib/supabase-clients/admin';
 import { getCouriers } from '@/lib/data';
 import { SHIPMENT_LABEL, trackUrl } from '@/lib/courier';
-import { formatLKR, SITE, waLink } from '@/lib/site';
+import { formatLKR, SITE, waLink, KOKO_ENABLED } from '@/lib/site';
+import { kokoConfigured } from '@/lib/koko';
 import StatusTimeline from '@/components/StatusTimeline';
 import ClearCart from '@/components/ClearCart';
 import { KokoBadge } from '@/components/KokoBadge';
@@ -113,6 +115,11 @@ export default async function OrderPage({ params, searchParams }:
   const paid = order.payment_status === 'paid';
   const failed = isGateway && order.payment_status === 'failed';
   const confirming = isGateway && !paid && !failed;
+  // Cross-sell Koko to a customer who paid another way — only once the
+  // order is genuinely settled (paid, or a final non-gateway method), never
+  // while still confirming/failed, so it never competes with the "try
+  // again" retry flow above.
+  const showKokoCrossSell = !isKoko && (paid || !isGateway) && KOKO_ENABLED && kokoConfigured();
 
   const heroBg = paid
     ? 'bg-gradient-to-b from-tint-mint via-tint-mint/40 to-paper'
@@ -257,6 +264,35 @@ export default async function OrderPage({ params, searchParams }:
             </div>
           </div>
         </div>
+
+        {/* ---------- reassurance strip — same visual language as the homepage's value strip ---------- */}
+        <div className="mt-10 grid gap-4 border-t border-line pt-8 sm:grid-cols-3">
+          {[
+            { t: dict.trust.warranty, s: dict.trust.warrantysub, i: <><path d="M12 2 4 5v6c0 5 3.5 8 8 11 4.5-3 8-6 8-11V5z" /><path d="m9 12 2 2 4-4" /></> },
+            { t: dict.trust.courier, s: dict.trust.couriersub, i: <><rect x="1" y="6" width="14" height="11" rx="2" /><path d="M15 9h4l3 3v5h-7" /><circle cx="6" cy="18" r="1.6" /><circle cx="17" cy="18" r="1.6" /></> },
+            { t: dict.trust.whatsapp, s: dict.trust.whatsappsub, i: <><path d="M3 12a9 9 0 0 1 18 0" /><path d="M21 12v4a3 3 0 0 1-3 3h-3" /><rect x="3" y="11" width="3" height="6" rx="1.5" /><rect x="18" y="11" width="3" height="6" rx="1.5" /></> }
+          ].map((v, i) => (
+            <div key={i} className="card-glass flex items-start gap-3.5 p-4" style={{ borderRadius: '18px' }}>
+              <span className="grid h-11 w-11 shrink-0 place-items-center bg-gradient-to-br from-volt/10 to-accent/10 text-volt" style={{ borderRadius: '14px' }}>
+                <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{v.i}</svg>
+              </span>
+              <div>
+                <h4 className="text-[14.5px] font-bold">{v.t}</h4>
+                <p className="mt-0.5 text-[13px] text-muted">{v.s}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ---------- Koko cross-sell — only for a customer who paid another way ---------- */}
+        {showKokoCrossSell && (
+          <Link href={`/${locale}/checkout`}
+            className="pressable group mt-6 block overflow-hidden shadow-soft transition-transform hover:-translate-y-0.5"
+            style={{ borderRadius: '22px' }}>
+            <Image src="/banners/koko-promo-wide.jpg" alt="Next time, pay in 3 easy installments with Koko"
+              width={2062} height={496} className="h-auto w-full object-cover" />
+          </Link>
+        )}
       </div>
     </div>
   );

@@ -15,7 +15,7 @@ export const SITE = {
   seoTitle: 'Nokia & Mobile Phones in Sri Lanka | Techno Zone Lanka',
   // SEO meta description (aim 150–160 chars)
   description:
-    'Shop Nokia mobile phones, tablets and audio accessories in Sri Lanka. Official warranties, islandwide delivery, networking solutions and trusted device repair.',
+    'Shop Nokia mobile phones in Sri Lanka — pay in 3 interest-free installments with Koko, or cash on delivery. Official warranties and islandwide delivery.',
   whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '94770000000',
   // Production URL — falls back to the live domain so canonical/OG/sitemap are
   // never localhost even if NEXT_PUBLIC_SITE_URL isn't set in the host.

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Locale } from '@/lib/i18n/config';
@@ -6,7 +7,8 @@ import { locales } from '@/lib/i18n/config';
 import { getDict } from '@/lib/i18n/dictionaries';
 import { getActiveDiscounts, getBrandBySlug, getBrands, brandSlug, localized } from '@/lib/data';
 import { priceProduct } from '@/lib/pricing';
-import { formatLKR, SITE } from '@/lib/site';
+import { formatLKR, SITE, KOKO_ENABLED } from '@/lib/site';
+import { kokoConfigured } from '@/lib/koko';
 import ProductGrid from '@/components/ProductGrid';
 import { safeJsonLd } from '@/lib/jsonld';
 
@@ -21,7 +23,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const res = await getBrandBySlug(slug);
   if (!res) return {};
   const title = `${res.brand} Price List in Sri Lanka ${new Date().getFullYear()}`;
-  const desc = `Latest ${res.brand} prices in Sri Lanka at ${SITE.name}. ${res.products.length}+ genuine ${res.brand} products with official warranty, islandwide delivery and cash on delivery.`.slice(0, 160);
+  const kokoLine = KOKO_ENABLED && kokoConfigured() ? ` Pay in 3 with Koko.` : '';
+  const desc = `Latest ${res.brand} prices in Sri Lanka at ${SITE.name}. ${res.products.length}+ genuine ${res.brand} products with official warranty, islandwide delivery and cash on delivery.${kokoLine}`.slice(0, 160);
   return {
     title,
     description: desc,
@@ -45,6 +48,7 @@ export default async function BrandPage({ params }: Props) {
   if (!res) notFound();
   const products = res.products.map(p => localized(p, locale));
   const brandUrl = `${SITE.url}/${locale}/brand/${slug}`;
+  const kokoOn = KOKO_ENABLED && kokoConfigured();
 
   // Price-list table data: this is the content Google features for
   // "<brand> price list in sri lanka" queries.
@@ -120,6 +124,16 @@ export default async function BrandPage({ params }: Props) {
           </div>
         )}
       </div>
+
+      {kokoOn && (
+        <Link href={`/${locale}/checkout`}
+          className="pressable group mb-8 block overflow-hidden shadow-soft transition-transform hover:-translate-y-0.5"
+          style={{ borderRadius: '24px' }}>
+          <Image src="/banners/koko-promo-pastel.jpg"
+            alt={`Now accepting Koko — split any ${res.brand} phone into 3 interest-free installments`}
+            width={2752} height={1536} className="h-auto w-full object-cover" />
+        </Link>
+      )}
 
       {products.length > 0
         ? <ProductGrid products={products} discounts={discounts} locale={locale} dict={dict} />
