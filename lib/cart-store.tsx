@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useReducer, type ReactNode } from 'react';
 
 export type CartItem = {
   productId: string; variantId: string; slug: string;
@@ -63,16 +63,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (state.hydrated) localStorage.setItem(KEY, JSON.stringify(state.items));
   }, [state.items, state.hydrated]);
 
+  // These must stay referentially stable across renders — dispatch itself
+  // never changes (React guarantees that for useReducer), so useCallback
+  // with no other deps gives each function a permanent identity. Defining
+  // them inline inside the `value` useMemo below (keyed on `state`) was the
+  // bug: every dispatch produces a brand-new state object — including
+  // `clear` on an already-empty cart, since the reducer always returns a
+  // fresh `{...state, items: []}` — so `clear` got a new identity on every
+  // call. Anything that calls clear() from a useEffect keyed on it (see
+  // ClearCart) would then loop forever: call clear -> new state -> new
+  // `value` -> new `clear` reference -> effect's deps changed -> fires
+  // again. That's a real infinite-render loop, not just a lint nitpick —
+  // it was silently thrashing the page (and starving other event handlers,
+  // like a click on a nearby link) every time the order confirmation page
+  // rendered with a genuinely paid order.
+  const add = useCallback((item: CartItem) => dispatch({ type: 'add', item }), []);
+  const setQty = useCallback((variantId: string, qty: number) => dispatch({ type: 'qty', variantId, qty }), []);
+  const remove = useCallback((variantId: string) => dispatch({ type: 'remove', variantId }), []);
+  const clear = useCallback(() => dispatch({ type: 'clear' }), []);
+
   const value = useMemo(() => ({
     items: state.items,
     hydrated: state.hydrated,
     count: state.items.reduce((n, i) => n + i.qty, 0),
     subtotal: state.items.reduce((n, i) => n + i.qty * i.price, 0),
-    add: (item: CartItem) => dispatch({ type: 'add', item }),
-    setQty: (variantId: string, qty: number) => dispatch({ type: 'qty', variantId, qty }),
-    remove: (variantId: string) => dispatch({ type: 'remove', variantId }),
-    clear: () => dispatch({ type: 'clear' })
-  }), [state]);
+    add, setQty, remove, clear
+  }), [state, add, setQty, remove, clear]);
 
   return <CartCtx.Provider value={value}>{children}</CartCtx.Provider>;
 }
