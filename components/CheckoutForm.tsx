@@ -12,7 +12,7 @@ import { formatLKR, SITE, waLink, KOKO_ENABLED } from '@/lib/site';
 import { priceProduct } from '@/lib/pricing';
 import { imageUrl } from '@/lib/supabase';
 import { createOrder, saveAbandonedCart } from '@/app/[locale]/checkout/actions';
-import KokoBadge from './KokoBadge';
+import { KokoBadge } from './KokoBadge';
 
 const inputCls = 'h-12 w-full rounded-btn bg-card px-3.5 text-[14px] font-medium outline-none focus:ring-2 focus:ring-volt';
 const label = 'mb-1.5 block text-[13px] font-semibold text-muted';

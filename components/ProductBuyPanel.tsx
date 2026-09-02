@@ -203,9 +203,9 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
             <StockBadge stock={stock} dict={dict} />
           </div>
           {stock > 0 && KOKO_ENABLED && (
-            <p className="mt-1.5 text-[12.5px] font-medium text-muted">
-              or 3 x {formatLKR(Math.ceil(price * 1.12 / 3))} with <KokoBadge />
-            </p>
+            <div className="mt-2">
+              <KokoBadge installment={formatLKR(Math.ceil(price * 1.12 / 3))} size="md" />
+            </div>
           )}
         </div>
 

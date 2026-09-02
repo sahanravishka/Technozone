@@ -104,9 +104,9 @@ export default function ProductCard({ product, discounts, locale, dict, priority
             )}
           </div>
           {!oos && KOKO_ENABLED && (
-            <p className="mt-1 text-[11px] font-medium text-muted">
-              or 3 x {formatLKR(Math.ceil(pricing.price * 1.12 / 3))} with <KokoBadge />
-            </p>
+            <div className="mt-1.5">
+              <KokoBadge installment={formatLKR(Math.ceil(pricing.price * 1.12 / 3))} />
+            </div>
           )}
         </div>
       </div>
