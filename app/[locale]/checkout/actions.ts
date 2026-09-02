@@ -198,7 +198,7 @@ export async function createOrder(input: {
     const fields = buildCheckoutFields({
       orderId: order.id, amount: total,
       firstName, lastName: rest.join(' '),
-      email: buyerEmail, phone: input.phone,
+      email: buyerEmail || 'guest@technozonelanka.com', phone: input.phone,
       address: input.address, city: input.city,
       items: items.map(i => i.product_name).join(', '),
       locale: input.locale
@@ -216,8 +216,7 @@ export async function createOrder(input: {
       const fields = buildKokoOrderFields({
         kokoOrderId, amount: total,
         firstName: firstName || 'Customer', 
-        lastName: rest.join(' ') || '-', // Koko strictly requires a last name
-        email: buyerEmail.includes('@') ? buyerEmail : 'guest@technozonelanka.com',
+        email: buyerEmail && buyerEmail.includes('@') ? buyerEmail : 'guest@technozonelanka.com',
         phone: input.phone,
         description: items.map(i => i.product_name).join(', '),
         reference: order.order_number,
