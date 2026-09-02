@@ -1,7 +1,8 @@
 import type { ReactElement } from 'react';
 import Link from 'next/link';
 import { BrandMark } from './Header';
-import { SITE, waLink } from '@/lib/site';
+import { SITE, waLink, KOKO_ENABLED } from '@/lib/site';
+import { kokoConfigured } from '@/lib/koko';
 import type { Dict } from '@/lib/i18n/dictionaries';
 import type { Category } from '@/lib/types';
 import type { Locale } from '@/lib/i18n/config';
@@ -83,6 +84,9 @@ export default function Footer({ dict, categories, locale }:
               <li><Link href={`/${locale}/track`} className={linkCls}>{dict.nav.trackRepair}</Link></li>
               <li><Link href={`/${locale}/warranty`} className={linkCls}>{dict.warranty.title}</Link></li>
               <li><Link href={`/${locale}/returns`} className={linkCls}>{dict.returns.title}</Link></li>
+              {KOKO_ENABLED && kokoConfigured() && (
+                <li><Link href={`/${locale}/koko`} className={linkCls}>Pay with Koko</Link></li>
+              )}
             </ul>
           </nav>
 

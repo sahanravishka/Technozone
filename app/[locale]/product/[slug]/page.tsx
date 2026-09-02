@@ -7,7 +7,9 @@ import { getDict } from '@/lib/i18n/dictionaries';
 import { getActiveDiscounts, getProductBySlug, getSuggestions, getReviews, getCategories, localized } from '@/lib/data';
 import { priceProduct } from '@/lib/pricing';
 import { imageUrl } from '@/lib/supabase';
-import { SITE } from '@/lib/site';
+import { SITE, KOKO_ENABLED } from '@/lib/site';
+import { kokoConfigured } from '@/lib/koko';
+import { payhereConfigured } from '@/lib/payhere';
 import ProductBuyPanel from '@/components/ProductBuyPanel';
 import ProductGrid from '@/components/ProductGrid';
 import Reviews from '@/components/Reviews';
@@ -101,6 +103,16 @@ export default async function ProductPage({ params }: Props) {
       priceValidUntil: new Date(Date.now() + 30 * 864e5).toISOString().slice(0, 10),
       availability: pricing.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       seller: { '@id': `${SITE.url}/#organization` },
+      // acceptedPaymentMethod takes PaymentMethod OR free Text per the
+      // schema.org spec — there's no dedicated BNPL enum value, so "Koko
+      // (Buy Now, Pay Later)" as text is the correct, valid way to surface
+      // it to search engines, same legitimate machine-readable-metadata
+      // approach already used for search_keywords/alternateName above.
+      acceptedPaymentMethod: [
+        'Cash on Delivery',
+        ...(payhereConfigured() ? ['Credit/Debit Card'] : []),
+        ...(KOKO_ENABLED && kokoConfigured() ? ['Koko (Buy Now, Pay Later)'] : [])
+      ],
       shippingDetails: {
         '@type': 'OfferShippingDetails',
         shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'LK' },
