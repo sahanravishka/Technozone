@@ -216,6 +216,7 @@ export async function createOrder(input: {
       const fields = buildKokoOrderFields({
         kokoOrderId, amount: total,
         firstName: firstName || 'Customer', 
+        lastName: rest.join(' ') || '-',
         email: buyerEmail && buyerEmail.includes('@') ? buyerEmail : 'guest@technozonelanka.com',
         phone: input.phone,
         description: items.map(i => i.product_name).join(', '),
