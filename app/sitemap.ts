@@ -1,7 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { getBrands, getCategories, getProducts, brandSlug } from '@/lib/data';
 import { locales } from '@/lib/i18n/config';
-import { SITE } from '@/lib/site';
+import { SITE, KOKO_ENABLED } from '@/lib/site';
+import { kokoConfigured } from '@/lib/koko';
 
 // Refresh hourly so newly added products appear in the sitemap without a redeploy.
 export const revalidate = 3600;
@@ -58,6 +59,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   out.push({ url: `${SITE.url}/en/warranty`, lastModified: now, changeFrequency: 'monthly', priority: 0.5, alternates: { languages: langAlts('/warranty') } });
   out.push({ url: `${SITE.url}/en/track`, lastModified: now, changeFrequency: 'monthly', priority: 0.5, alternates: { languages: langAlts('/track') } });
   out.push({ url: `${SITE.url}/en/returns`, lastModified: now, changeFrequency: 'monthly', priority: 0.5, alternates: { languages: langAlts('/returns') } });
+
+  // Only list it once it's actually live — no point sending Google a page
+  // that 404s because Koko isn't configured.
+  if (KOKO_ENABLED && kokoConfigured())
+    out.push({ url: `${SITE.url}/en/koko`, lastModified: now, changeFrequency: 'weekly', priority: 0.8, alternates: { languages: langAlts('/koko') } });
 
   return out;
 }

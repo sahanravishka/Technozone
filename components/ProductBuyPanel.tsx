@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import type { Discount, Product } from '@/lib/types';
 import type { Dict } from '@/lib/i18n/dictionaries';
@@ -203,8 +204,11 @@ export default function ProductBuyPanel({ product, discounts, dict, productUrl }
             <StockBadge stock={stock} dict={dict} />
           </div>
           {stock > 0 && KOKO_ENABLED && (
-            <div className="mt-2">
+            <div className="mt-2 flex items-center gap-2">
               <KokoBadge installment={formatLKR(Math.ceil(price * 1.12 / 3))} size="md" />
+              <Link href={`/${new URL(productUrl).pathname.split('/')[1]}/koko`} className="text-[12px] font-semibold text-volt hover:underline">
+                How Koko works →
+              </Link>
             </div>
           )}
         </div>

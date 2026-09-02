@@ -1,8 +1,18 @@
 # New-order Telegram alerts setup
 
-Every new order (COD, WhatsApp, or PayHere) now also sends a Telegram
-message alongside the email — completely free, no per-message cost, no
-business account verification. Takes about 2 minutes to set up.
+Every new order sends a Telegram message alongside the email —
+completely free, no per-message cost, no business account verification.
+Takes about 2 minutes to set up.
+
+Timing differs by payment method, since an online payment isn't real
+until the gateway actually confirms it:
+- **COD / WhatsApp** — sent immediately at order creation (nothing to wait on).
+- **PayHere / Koko** — sent only once the gateway's payment webhook
+  confirms the charge actually succeeded, never at order creation. For
+  Koko specifically, this fires from `app/api/koko/response/route.ts`
+  (their signed response webhook) and, as a fallback if that webhook is
+  ever late/missed, from `lib/koko-reconcile.ts` (the self-healing check
+  on the order confirmation page and the admin "Check Koko status" button).
 
 ## 1. Create your bot
 1. Open Telegram, search for **@BotFather** (the official bot-creation bot).
@@ -35,8 +45,20 @@ TELEGRAM_CHAT_ID=123456789
 Redeploy after saving (env var changes need a redeploy to take effect).
 
 ## 4. Test it
-Place a test order on the live site. You should get a Telegram message
-within a couple seconds, formatted like:
+Place a test COD order on the live site first — it notifies immediately,
+so it's the fastest way to confirm the bot token/chat ID themselves are
+right, independent of any payment gateway. If that doesn't arrive, the
+issue is these env vars (wrong value, or not redeployed after saving) —
+check the Vercel Function Logs for a line starting `[telegram]`, which
+says exactly why it skipped or failed.
+
+Once COD alerts work, a Koko order confirms the rest of the chain: place
+one, complete payment, and the alert should land within a couple seconds
+of Koko's webhook hitting `/api/koko/response` (check Vercel Function
+Logs for that route if it doesn't — look for `[koko]` or
+`[koko-reconcile]` lines).
+
+A COD alert should look like this:
 
 > 🛒 **New order TZ-00123**
 >
@@ -53,4 +75,9 @@ within a couple seconds, formatted like:
 ## Notes
 - Works independently of the email setup — you can use one, both, or neither.
 - Delivery failures are logged server-side only and never block checkout.
-- Code: `lib/telegram.ts`, called from `app/[locale]/checkout/actions.ts`.
+- Code: `lib/telegram.ts` (the send function), called from
+  `app/[locale]/checkout/actions.ts` (COD/WhatsApp, at order creation),
+  `app/api/koko/response/route.ts` (Koko, on webhook SUCCESS), and
+  `lib/koko-reconcile.ts` (Koko, on the reconciliation fallback).
+  PayHere's own webhook (`app/api/payhere/notify/route.ts`) does not
+  send one yet — same gap Koko had until this was added.

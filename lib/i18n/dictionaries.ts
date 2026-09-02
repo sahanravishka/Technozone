@@ -25,7 +25,7 @@ const en = {
     warranty: 'Official warranty', warrantysub: 'Agent-backed, every item',
     courier: 'Islandwide courier', couriersub: 'Colombo & outstation',
     whatsapp: 'WhatsApp support', whatsappsub: 'A real human replies',
-    payment: 'Secure payment', paymentsub: 'Cards · PayHere'
+    payment: 'Secure payment', paymentsub: 'Cards · PayHere · Koko'
   },
   sections: { featured: 'Fresh in stock', browse: 'Browse by category', related: 'Pairs well with', all: 'All products', popular: 'Popular right now.', reviews: 'Customer reviews', writeReview: 'Write a review', goesWith: 'Goes well with your cart', recentlyViewed: 'Recently viewed' },
   services: {
@@ -138,7 +138,7 @@ const si: typeof en = {
     warranty: 'Official warranty', warrantysub: 'Agent-backed, every item',
     courier: 'Islandwide courier', couriersub: 'Colombo & outstation',
     whatsapp: 'WhatsApp support', whatsappsub: 'A real human replies',
-    payment: 'Secure payment', paymentsub: 'Cards · PayHere'
+    payment: 'Secure payment', paymentsub: 'Cards · PayHere · Koko'
   },
   sections: { featured: 'New Arrivals', browse: 'Category අනුව බලන්න', related: 'අදාළ Products', all: 'සියලුම Products', popular: 'දැන් ජනප්‍රියයි', reviews: 'Customer Reviews', writeReview: 'Review එකක් ලියන්න', goesWith: 'ඔබේ කරත්තයට ගැලපේ', recentlyViewed: 'මෑතකදී බැලූ' },
   services: {
@@ -251,7 +251,7 @@ const ta: typeof en = {
     warranty: 'Official warranty', warrantysub: 'Agent-backed, every item',
     courier: 'Islandwide courier', couriersub: 'Colombo & outstation',
     whatsapp: 'WhatsApp support', whatsappsub: 'A real human replies',
-    payment: 'Secure payment', paymentsub: 'Cards · PayHere'
+    payment: 'Secure payment', paymentsub: 'Cards · PayHere · Koko'
   },
   sections: { featured: 'New Arrivals', browse: 'Category வாரியாக பாருங்கள்', related: 'இதனுடன் பொருந்தும்', all: 'அனைத்து Products', popular: 'இப்போது பிரபலம்.', reviews: 'Customer Reviews', writeReview: 'Review எழுதுங்கள்', goesWith: 'உங்கள் Cart-க்கு ஏற்றது', recentlyViewed: 'சமீபத்தில் பார்த்தவை' },
   services: {

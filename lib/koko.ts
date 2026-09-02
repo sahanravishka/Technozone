@@ -87,22 +87,34 @@ export function buildKokoOrderFields(o: {
   const cancelUrl = `${SITE.url}/${o.locale}/checkout?cancelled=1`;
   const responseUrl = `${SITE.url}/api/koko/response`;
 
-  // Truncate description BEFORE building dataString — Koko re-computes the
-  // signature on their end using the _description value they receive, so the
-  // value signed here must be byte-for-byte identical to what gets posted.
-  // We also replace smart quotes/dashes with ASCII and strip non-ASCII to
-  // prevent encoding mismatches between Node.js utf8 and Koko's Java backend.
-  const description = o.description
-    .replace(/[–—]/g, '-')
-    .replace(/[‘’“”]/g, "'")
+  // Smart quotes/dashes -> ASCII equivalents. Every signed field needs this,
+  // not just description: Koko re-computes the signature on their end from
+  // the raw POSTed values, so anything we sign must be byte-for-byte
+  // identical to what their Java backend reconstructs. A curly apostrophe or
+  // em dash (iOS/Android autocorrect loves both, and they're common in real
+  // customer names, e.g. "O'Brien") is exactly the kind of character that
+  // silently differs across a Node.js utf8 <-> Java charset boundary and
+  // would make a legitimate customer's payment fail signature verification
+  // on Koko's side for no visible reason.
+  const asciiSafe = (s: string) => s.replace(/[–—]/g, '-').replace(/[‘’“”]/g, "'");
+
+  // Description is our own store-generated text (product names), always
+  // plain ASCII already, so stripping any stray non-ASCII byte here is safe.
+  // firstName/lastName are real customer names — Sri Lankan customers may
+  // enter these in Sinhala/Tamil script, so we normalize punctuation only
+  // and never strip non-ASCII there (that would silently blank out a
+  // genuine name instead of just risking a signature mismatch).
+  const description = asciiSafe(o.description)
     .replace(/[^\x20-\x7E]/g, '')
     .slice(0, 250);
+  const firstName = asciiSafe(o.firstName);
+  const lastName = asciiSafe(o.lastName);
 
   // Exact concatenation order per Koko's spec — confirmed against their
   // own sample-koko-order-create.php, NOT alphabetical, do not reorder.
   const dataString =
     mId + amount + currency + pluginName + pluginVersion + returnUrl +
-    cancelUrl + o.kokoOrderId + o.reference + o.firstName + o.lastName +
+    cancelUrl + o.kokoOrderId + o.reference + firstName + lastName +
     o.email + description + apiKey + responseUrl;
 
   return {
@@ -118,8 +130,8 @@ export function buildKokoOrderFields(o: {
     _pluginName: pluginName,
     _pluginVersion: pluginVersion,
     _description: description,
-    _firstName: o.firstName,
-    _lastName: o.lastName,
+    _firstName: firstName,
+    _lastName: lastName,
     _email: o.email,
     _mobileNo: o.phone,
     dataString,
@@ -133,4 +145,64 @@ export function buildKokoOrderFields(o: {
 export function verifyKokoResponsePayload(p: { orderId: string; trnId: string; status: string; desc?: string; signature: string }): boolean {
   const dataString = p.orderId + p.trnId + p.status + (p.desc ?? '');
   return verifyKokoSignature(dataString, p.signature);
+}
+
+export type KokoOrderStatus = { orderId: string; trnId: string; status: 'PENDING' | 'SUCCESS' | 'FAILED' | string; desc: string };
+
+/** Actively asks Koko for an order's real status (Merchant Order View API,
+ *  v1.0 — POST /api/merchants/orderView), instead of only ever waiting on
+ *  their response webhook. Koko's own webhook doc admits the limitation
+ *  directly: without a working _responseUrl "eCommerce will not have any
+ *  way to verify if the payment has been successfully done or not from the
+ *  backend" — this is the pull-based fallback for exactly that case (their
+ *  webhook POST to us never arriving, for whatever reason).
+ *
+ *  dataString here is a DIFFERENT concatenation than order-create's — per
+ *  the Merchant Order View spec: mId + pluginName + pluginVersion +
+ *  orderId + apiKey (no amount/currency/urls/names involved at all). */
+export async function queryKokoOrderStatus(kokoOrderId: string): Promise<KokoOrderStatus | null> {
+  if (!kokoConfigured()) return null;
+  const mId = process.env.KOKO_MERCHANT_ID!.trim();
+  const apiKey = process.env.KOKO_API_KEY!.trim();
+  const pluginName = 'customapi';
+  const pluginVersion = process.env.KOKO_PLUGIN_VERSION?.trim() || '1';
+  const dataString = mId + pluginName + pluginVersion + kokoOrderId + apiKey;
+  const fields = {
+    _mId: mId, api_key: apiKey, _orderId: kokoOrderId,
+    _pluginName: pluginName, _pluginVersion: pluginVersion,
+    signature: signWithMerchantKey(dataString)
+  };
+
+  try {
+    const res = await fetch(`${kokoBaseUrl()}/api/merchants/orderView`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(fields).toString(),
+      cache: 'no-store'
+    });
+    if (!res.ok) return null;
+
+    // The spec's response table doesn't nail down a content-type for what
+    // Koko sends BACK to us (only that our request must be form-urlencoded)
+    // — handle either a JSON or a form-urlencoded body rather than guess.
+    const raw = await res.text();
+    let p: Record<string, string>;
+    try {
+      p = JSON.parse(raw);
+    } catch {
+      p = Object.fromEntries(new URLSearchParams(raw));
+    }
+
+    const payload = {
+      orderId: p.orderId ?? '', trnId: p.trnId ?? '',
+      status: p.status ?? '', desc: p.desc ?? '', signature: p.signature ?? ''
+    };
+    // Same signed dataString shape as the response webhook (orderId+trnId+
+    // status+desc) — never trust this response unless it verifies against
+    // Koko's public key, exactly like the webhook.
+    if (!verifyKokoResponsePayload(payload)) return null;
+    return { orderId: payload.orderId, trnId: payload.trnId, status: payload.status, desc: payload.desc };
+  } catch {
+    return null;
+  }
 }
