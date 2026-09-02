@@ -223,7 +223,6 @@ export async function createOrder(input: {
         reference: order.order_number,
         locale: input.locale
       });
-      console.log('KOKO_DEBUG_PAYLOAD:', JSON.stringify(fields));
       return { ok: true, method, gateway: `${kokoBaseUrl()}/api/merchants/orderCreate`, fields };
     } catch (err) {
       // Signing/field-building failed — clean up the order so it doesn't
