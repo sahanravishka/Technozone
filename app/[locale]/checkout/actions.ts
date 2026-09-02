@@ -220,7 +220,6 @@ export async function createOrder(input: {
         phone: input.phone,
         description: items.map(i => i.product_name).join(', '),
         reference: order.order_number,
-        uuid: order.id,
         locale: input.locale
       });
       console.log('KOKO_DEBUG_PAYLOAD:', JSON.stringify(fields));
