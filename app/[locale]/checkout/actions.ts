@@ -172,19 +172,17 @@ export async function createOrder(input: {
   // Order placed — this phone's in-progress checkout (if any) is no longer abandoned.
   await clearAbandonedCart(input.phone);
 
-  // Notify the shop owner. after() keeps this serverless function alive
-  // until these finish, even though the response has already gone back to
-  // the customer — a plain fire-and-forget `void` call here gets killed
-  // mid-flight by Vercel as soon as the response is sent, which is why
-  // notifications were silently never arriving for real orders.
+  // Build notification payload once — used below for COD/WhatsApp only.
+  // For PayHere/Koko, notifications should fire AFTER payment is confirmed
+  // via the webhook (confirm_order_paid / confirm_order_paid_koko), not
+  // at order creation — otherwise a signing failure or abandoned gateway
+  // session sends a ghost notification for an order that never paid.
   const notifyPayload = {
     orderNumber: order.order_number, total, paymentMethod: method,
     fulfillment: isPickup ? 'pickup' : 'delivery',
     customerName: input.name, customerPhone: input.phone, city: input.city,
     items: items.map(i => ({ name: i.product_name, qty: i.qty, line: i.line_total }))
   };
-  after(() => sendNewOrderEmail(notifyPayload));
-  after(() => sendNewOrderTelegram(notifyPayload));
 
   // ---- 4. Branch by payment method ----
   if (method === 'payhere') {
@@ -217,16 +215,20 @@ export async function createOrder(input: {
       });
       return { ok: true, method, gateway: `${kokoBaseUrl()}/api/merchants/orderCreate`, fields };
     } catch (err) {
-      // Surface the real reason on-screen (safe message only — never the
-      // key material itself) instead of a generic "something went wrong"
-      // that gives no way to diagnose without server log access.
+      // Signing/field-building failed — clean up the order so it doesn't
+      // sit as an orphaned pending record with reserved stock.
+      await admin.rpc('release_order_reservations', { p_order_id: order.id });
+      await admin.from('orders').update({ status: 'cancelled', payment_status: 'failed' }).eq('id', order.id);
       const detail = err instanceof Error ? err.message : 'Unknown error building the Koko request';
-      console.error('[koko] order-create failed:', detail);
+      console.error('[koko] order-create failed, order cancelled:', detail);
       return { ok: false, error: 'koko_error', detail };
     }
   }
 
-  // COD or WhatsApp: order sits pending/unpaid until staff confirm collection.
+  // COD or WhatsApp: order is final — notify shop owner now.
+  after(() => sendNewOrderEmail(notifyPayload));
+  after(() => sendNewOrderTelegram(notifyPayload));
+
   return {
     ok: true, method, orderNumber: order.order_number, total,
     items: items.map(i => ({ name: i.product_name, qty: i.qty, line: i.line_total }))

@@ -1,11 +1,21 @@
 import 'server-only';
-import { createSign, createVerify } from 'crypto';
+import { createSign, createVerify, createPrivateKey, createPublicKey } from 'crypto';
 import { SITE } from './site';
 
-// Koko sends PEM keys as env vars with literal \n escape sequences (same
-// convention as most PEM-in-env-var setups) — turn them back into real
-// newlines before handing to Node's crypto module.
-const pem = (v: string | undefined) => v?.replace(/\\n/g, '\n');
+// Robust PEM normalization — handles all the ways a PEM key might be
+// stored in an environment variable on Vercel / other hosts:
+//   • literal \n (backslash + n)  — most common in single-line env vars
+//   • \\n (double-escaped)        — some dashboards double-escape
+//   • actual newlines             — multi-line env var support
+//   • \r\n / \r                   — Windows / old Mac line endings
+function normalizePem(v: string | undefined): string | undefined {
+  if (!v) return v;
+  return v
+    .replace(/\\\\n/g, '\n')
+    .replace(/\\n/g, '\n')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n');
+}
 
 export const kokoConfigured = () =>
   !!(process.env.KOKO_MERCHANT_ID && process.env.KOKO_API_KEY &&
@@ -20,10 +30,16 @@ export const kokoBaseUrl = () => {
 };
 
 /** Sign a dataString with our merchant private key (RSA-SHA256), per
- *  Koko's order-create spec — verified against their own sample PHP. */
+ *  Koko's order-create spec — verified against their own sample PHP.
+ *
+ *  Uses createPrivateKey() for explicit PEM parsing — Vercel runs Node 18+
+ *  with OpenSSL 3.x, which rejects PKCS#1 keys (BEGIN RSA PRIVATE KEY)
+ *  when passed as raw PEM strings to sign(). Parsing through
+ *  createPrivateKey handles both PKCS#1 and PKCS#8 reliably. */
 function signWithMerchantKey(dataString: string): string {
-  const key = pem(process.env.KOKO_PRIVATE_KEY);
-  if (!key) throw new Error('KOKO_PRIVATE_KEY not set');
+  const keyPem = normalizePem(process.env.KOKO_PRIVATE_KEY);
+  if (!keyPem) throw new Error('KOKO_PRIVATE_KEY not set');
+  const key = createPrivateKey({ key: keyPem, format: 'pem' });
   const signer = createSign('RSA-SHA256');
   signer.update(dataString);
   signer.end();
@@ -31,11 +47,13 @@ function signWithMerchantKey(dataString: string): string {
 }
 
 /** Verify a signature Koko sent us (response webhook) using Koko's own
- *  public key — the OTHER key pair from the merchant signing key above. */
+ *  public key — the OTHER key pair from the merchant signing key above.
+ *  Same createPublicKey() approach for OpenSSL 3.x compatibility. */
 export function verifyKokoSignature(dataString: string, signatureB64: string): boolean {
-  const key = pem(process.env.KOKO_PUBLIC_KEY);
-  if (!key) return false;
+  const keyPem = normalizePem(process.env.KOKO_PUBLIC_KEY);
+  if (!keyPem) return false;
   try {
+    const key = createPublicKey({ key: keyPem, format: 'pem' });
     const verifier = createVerify('RSA-SHA256');
     verifier.update(dataString);
     verifier.end();
