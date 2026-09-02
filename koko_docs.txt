@@ -1,0 +1,281 @@
+ 
+ 
+ 
+ 
+DOCUMENTATION  
+Payment Method Integration (Developer Preview)  
+API Documentation  
+V1.06 
+  
+Introduction  
+This is the API reference for Koko's APIs. The checkout API is used to create a payment request 
+for a Koko user.  
+ 
+This is a developer preview of Koko's Platforms APIs. This documentation will be updated as we 
+introduce new features.   
+ 
+How it works  
+The following diagram illustrates how a payment flow works between the Koko and the merchant’s 
+eCommerce site:  
+ 
+ 
+ 
+   
+ 
+
+Authen tication  
+You will receive the following,  
+● Merchant ID  
+● API Key  
+● RSA Public Key for the Koko environment  
+● RSA Private Key for merchant -specific API signing  
+ 
+Note: The API credentials are separate from your Merchant ID, and it is possible to have several 
+API credentials associated with the same Merchant ID but different Cashier accounts.  
+ 
+The credentials should be sent as an authorization header for every reque st with the username 
+and password.  
+ 
+You receive both your live and test credentials by contacting the Koko Merchant Success team for 
+your country.  
+If the credentials are missing or wrong, Koko will respond with 401 Unauthorized .  
+ 
+Note: Below endpoints examples are shown using production urls, Please find  relevant QA and 
+Dev endpoints  
+Dev : devapi.paykoko.com  
+QA : qaapi.paykoko.com  
+PROD : prodapi.paykoko.com  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Initiate Payment Request  
+Use this API to start initiating the payment proces s. The user needs to be redirected to the below 
+URL with the mentioned request parameters.  
+ 
+POST  https://prodapi.paykoko.com/api/merchants/orderCreate  
+ 
+ 
+Parameter  Example  Description  
+_mId  508213dec440c1009d
+d17dd914aaf8ed1  Merchant Id.  
+Note: Encrypted value needs to be passed  
+api_key  zqSYURUTOdf1xoDpga
+F1mNTARXSAqdtU  A string that is associated with your Merchant ID 
+and is used to authorize the use of Koko’s APIs  
+_responseUrl  http://eComm.com/ord
+ers/66/response/3  Response URL on the eCommerce site to do the 
+POST implementation after processing of the 
+payment on Koko’s side  
+ 
+See below for the detailed description  
+_cancelUrl  http://eComm.com/ord
+ers/66/cancel/3  If the Order is Cancelled Here needs to pass the 
+Url of the page that needs to redirect .  
+ 
+See below for the detailed description  
+_returnUrl  http://eComm.com/ord
+ers/66/returned/3  If the Order is Successful/Unsuccessful Here needs 
+to pass the Url of the page that needs to redirect.  
+ 
+See below for the detailed description  
+_amount  300.00  The total amount of the order including tax and 
+any available discounts. The value should be non -
+negative  
+_currency  LKR  The purchased currency of the merchant's store. 
+The format to be used is ISO 4217. Eg: USD, EUR, 
+SEK, GBP, etc. Note: purchase country and 
+currency need to match the defined merchant 
+configuration.  
+_reference  53 Reference id.  
+_orderId  53 Specific order id.  
+_pluginName  customapi  Name of the Plugin  
+_pluginVersion   1.0.1  Plugin Version  
+_description  2 products  Products Description  
+_firstName  John  First name of the Customer  
+_lastName  Doe  Last Name of the Customer  
+_email  john@gmail.com  Email address of the Customer  
+dataString  (Please view the section 
+for dataString creation)  All other Data will Needed to Encode with the 
+signature.  (Please view the section for dataString 
+creation)  
+signature  JnK2CcsQCDvjSCIGkcr
+H1bVsqDIF3hLXlIh3aE
+Y53hLXwsov6Lt/0pvFf
+XHljBhxaXp0iuKNtqtjLI
+9lj9JXSn44gbO93/kAU
+Hj3HvW62KHt/Tw23
+WCDuFuF9cYfKfjl3UPj
+hQYezw4z/v+BddduUS
+RaT745bFja7Pjwgmsga
+2c=  RSA Signing of request parameters  
+ 
+Example  
+ 
+Example request body is given below.  
+ 
+{ 
+  "_mId": "5082323ec440c1009dd17dd914aaf8ed1" , 
+  "api_key": "zqSYURUTOdf1xoDpgaF1mNTARXSAqdtU" , 
+  "_returnUrl": "http://eComm.com/orders/66/returned/3" , 
+  "_cancelUrl": "http://eComm.com/orders/66/cancel/3" , 
+  "_responseUrl": "http://eComm.com/orders/66/response/3" , 
+  "_amount": "300.00" , 
+  "_currency": "LKR", 
+  "_reference": "53", 
+  "_orderId": "53", 
+  "_pluginName": "customapi"  
+  "_pluginVersion": "5.5.1" 
+  "_description": "2 products" , 
+  "_firstName": "John", 
+  "_lastName": "Doe", 
+  "_email": "john@gmail.com" , 
+  "dataString": 
+"5082323ec440c1009dd17dd914aaf8ed1300.00LKRcustomapi5.5.1http://eComm.com/o
+rders/66/returned/3http://eComm.com/orders/66/cancel/35353JohnDoejohn@gmail
+.com2 
+productszqSYURUTOdf1xoDpgaF1mNTARXSAq dtUhttp://eComm.com/orders/66/response
+/3" 
+  "signature": 
+"JnK2CcsQCDvjSCIGkcrH1bVsqDIF3hLXlIh3aEY53hLXwsov6Lt/0pvFfXHljBhxaXp0iuKNtq
+tjLI9lj9JXSn44gbO93/kAUHj3HvW62KHt/Tw23WCDuFuF9cYfKfjl3UPjhQYezw4z/v+BddduU
+SRaT745bFja7Pjwgmsga2c= "  
+} 
+ 
+ 
+ 
+ 
+ 
+Sample curl request is given below  
+ 
+curl --location --request POST 'https://prodapi.paykoko.com/api/merchants/orderCreate' \ 
+--header 'Content -Type: application/x -www -form-urlencoded' \ 
+--header 'Cookie: acw_tc=0bc1a14616605528271427652ee15f2b1523859fdab83 fcf75e7764ce80041' \ 
+--data-urlencode '_mId=08cad12000cefda69d6de20e1abcd36' \ 
+--data-urlencode 'api_key=CEQBfz88LXwGxespepwMYCaOGu0wdoLE' \ 
+--data-urlencode 
+'_returnUrl=http://localhost:3001/returnSuccess?orderId=62esjsjkfkfjsjjse8abcd&signature=xyz' \ 
+--data-urlencode '_cancelUrl=http://localhost:3001/returnCanceled?orderId=62esjsjkfkfjsjjse8abcd' \ 
+--data-urlencode '_responseUrl=http://localhost:3001/returnSuccess?orderId=62esjsjkfkfjsjjse8abcd' \ 
+--data-urlencode '_amount=100' \ 
+--data-urlencode '_curre ncy=LKR' \ 
+--data-urlencode '_reference=62esjsjkfkfjsjjse8abcd' \ 
+--data-urlencode '_orderId=62esjsjkfkfjsjjse8abcd' \ 
+--data-urlencode '_pluginName=customapi' \ 
+--data-urlencode '_pluginVersion=1.0.1' \ 
+--data-urlencode '_description=2 records' \ 
+--data-urlencode '_firstName=firstName' \ 
+--data-urlencode '_lastName=lastname' \ 
+--data-urlencode '_email=example@hotmail.com' \ 
+--data-urlencode 'dataString=testDataString' \ 
+--data-urlencode 'signature=testSignature'  
+ 
+ 
+ 
+ 
+Data String Creation  
+ 
+Note: Please follow the below data string creation order. It is not in alphabetical  order.  
+  
+In Java  
+String dataString = request.getMId() + request.getAmount() + 
+request.getCurrency() + request.getPluginName() + 
+request.getPluginVersion() + request.getReturnUrl() + 
+request.getCancelUrl()+ request.getOrderId() + request.getReference() + 
+request.getFirstNam e() + request.getLastName() + request.getEmail() + 
+request.getDescription() + request.getApiKey() + request.getResponseUrl();  
+ 
+byte[] data = dataString.getBytes();  
+byte[] signature = Base64.decodeBase64(request.getSignature());  
+Bool comply = RsaVerify.veri fy(data, signature, 
+merchantPluginDetail.getMerchantPublicKey());  
+ 
+ 
+ 
+ 
+Return URL (_returnUrl)  
+ 
+If the payment made is successful or fails, the user will be redirected to the eCommerce site 
+using the _returnUrl set when the createOrder api is called.  
+ 
+eg: http://eComm.com/orders/66/returned/3  
+ 
+ 
+Parameter  Example  Description  
+orderId  40070  Specific order id  
+trnId f7ec3q588eq435zfc8c396d3ecd3306
+a Koko transaction id  
+status  SUCCESS | FAILURE  Payment status  
+Cancel Url (_cancelUrl)  
+ 
+If the payment is cancelled, the user will be redirecte d to the ‘_cancelUrl’ which is entered when 
+the ‘createOrder’ api is called.  
+ 
+eg: http://eComm.com/orders/66/cancel/3  
+ 
+Parameter  Example  Description  
+orderId  400702  Specific order id  
+trnId f7ec3q588eq435zfc8c396d3ecd3306
+a Koko transaction id  
+status  CANCELED  Payment status  
+ 
+ 
+Response Url (_responseUrl)  
+ 
+If the payment is successful, Koko backend will send an api request to the url specified in 
+‘_responseUrl’ parameter. Example given below.  
+ 
+It will be a HTTP POST api call. Using the ‘_responseUrl’ parameter. Content type will be 
+"application/x -www -form-urlencoded".  
+ 
+Therefore it is the eCommerce responsibility to set up an endpoint supporting this for the url 
+given in ‘_responseUrl’. Otherwise eCommerce will not have any way to verify if the payment 
+has been successfully done or not from the backend. Else eCommerce will have to rely on front 
+end redirection only, which is not 100% secure.  
+ 
+Parameter  Example  Description  
+orderId  400702  Specific order id  
+trnId f7ec3q588eq435zfc8c396d3ecd3
+306a  Koko transaction id  
+status  SUCCESS  Payment status  
+desc  2 orders  This value is “” as of now. In future it 
+might return the description which sent in 
+‘createOrder’ api  
+signature  NgMKIcu0MEZ5Zkbbc/2aFFz7zH
+w5IE+bjr39HoBu9ehaGKWK5Gv
+8LjzLj4m+9QT11la7t9X8Z211Qb
+wgmq4dCBXKMmRHwpUFAZdZ
+QXlvL++MLiA0Gb0AcsOGERhR
+HSBbMN7Q0qKBV1XrGQ2 HwOd
+++O6s1oXB36NV8xmioT0Oh6s=  String to encrypted - 
+400702f7ec3q588eq435zfc8c396d3ecd
+3306aSUCCESS  
+Above data string will be encrypted using 
+Koko private key, eCommerce need to 
+decrypt and validate it with Koko public 
+key which is already shared.  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 

@@ -21,28 +21,33 @@ export default async function OrderPage({ params }:
   if (!supabase) notFound();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect(`/${locale}/login?next=/${locale}/order/${id}`);
 
-  // RLS guarantees customers only ever see their own orders
-  const { data: order } = await supabase.from('orders')
-    .select('id, order_number, status, payment_status, subtotal, discount_total, delivery_fee, total, created_at, order_items(id, product_name, variant_name, qty, line_total)')
+  const admin = getAdminSupabase();
+  if (!admin) notFound();
+
+  // Fetch using admin so guest orders (no user) can be retrieved by their unguessable UUID
+  const { data: order } = await admin.from('orders')
+    .select('id, customer_id, order_number, status, payment_status, subtotal, discount_total, delivery_fee, total, created_at, order_items(id, product_name, variant_name, qty, line_total)')
     .eq('id', id).maybeSingle();
   if (!order) notFound();
 
-  // ownership already enforced by RLS above; fetch tracking via admin (shipments are staff-RLS)
-  const admin = getAdminSupabase();
-  let shipment: { courier_code: string | null; tracking_number: string | null; status: string } | null = null;
-  let track: string | null = null;
-  if (admin) {
-    const { data: sh } = await admin.from('shipments')
-      .select('courier_code, tracking_number, status').eq('order_id', order.id).maybeSingle();
-    shipment = sh;
-    if (sh?.tracking_number) {
-      const couriers = await getCouriers();
-      track = trackUrl(couriers.find(c => c.code === sh.courier_code), sh.tracking_number);
+  // If this order belongs to a registered customer, enforce authentication
+  if (order.customer_id) {
+    if (!user || user.id !== order.customer_id) {
+      redirect(`/${locale}/login?next=/${locale}/order/${id}`);
     }
   }
 
+  // ownership enforced; fetch tracking via admin
+  let shipment: { courier_code: string | null; tracking_number: string | null; status: string } | null = null;
+  let track: string | null = null;
+  const { data: sh } = await admin.from('shipments')
+    .select('courier_code, tracking_number, status').eq('order_id', order.id).maybeSingle();
+  shipment = sh;
+  if (sh?.tracking_number) {
+      const couriers = await getCouriers();
+      track = trackUrl(couriers.find(c => c.code === sh.courier_code), sh.tracking_number);
+    }
   const confirming = order.status === 'pending' && order.payment_status === 'unpaid';
 
   return (
