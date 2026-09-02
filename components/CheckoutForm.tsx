@@ -33,6 +33,14 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
   const [pay, setPay] = useState<'payhere' | 'cod' | 'whatsapp' | 'koko'>(payhereOn ? 'payhere' : 'cod');
   const [placed, setPlaced] = useState<string | null>(null);
   const [fulfillment, setFulfillment] = useState<'delivery' | 'pickup'>('delivery');
+  const [redirecting, setRedirecting] = useState<{ url: string; fields: Record<string, string> } | null>(null);
+
+  useEffect(() => {
+    if (redirecting) {
+      const f = document.getElementById('payment-redirect-form') as HTMLFormElement;
+      if (f) f.submit();
+    }
+  }, [redirecting]);
 
   const zone = zones.find(z => z.id === f.zoneId) ?? zones[0];
   const delivery = (items.length && fulfillment === 'delivery') ? Number(zone?.fee ?? 0) : 0;
@@ -41,6 +49,21 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
   const kokoInstallment = Math.ceil(grandTotal / 3);
   const inCartIds = useMemo(() => new Set(items.map(i => i.productId)), [items]);
   const suggList = suggestions.filter(s => !inCartIds.has(s.id)).slice(0, 6);
+
+  if (redirecting) {
+    return (
+      <div className="mx-auto max-w-md rounded-3xl bg-card p-8 text-center">
+        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-line border-t-volt"></div>
+        <p className="text-[17px] font-bold">Redirecting to secure payment...</p>
+        <p className="mt-2 text-[13.5px] text-muted">Please do not close this window.</p>
+        <form id="payment-redirect-form" method="POST" action={redirecting.url} className="hidden">
+          {Object.entries(redirecting.fields).map(([k, v]) => (
+            <input key={k} type="hidden" name={k} value={v} />
+          ))}
+        </form>
+      </div>
+    );
+  }
 
   if (placed) {
     return (
@@ -100,16 +123,11 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
       return;
     }
 
-    // Online: POST the signed PayHere/Koko form and redirect to the gateway.
+    // Online: Render the form and auto-submit it so browsers don't block the redirect.
+    // We intentionally DO NOT clear the cart here — we only clear it on the success page,
+    // so if the user cancels the payment and comes back, their cart is still intact.
     if (res.method === 'payhere' || res.method === 'koko') {
-      clear();
-      const form = document.createElement('form');
-      form.method = 'POST'; form.action = res.gateway;
-      Object.entries(res.fields).forEach(([k, v]) => {
-        const i = document.createElement('input');
-        i.type = 'hidden'; i.name = k; i.value = v; form.appendChild(i);
-      });
-      document.body.appendChild(form); form.submit();
+      setRedirecting({ url: res.gateway!, fields: res.fields! });
       return;
     }
 

@@ -10,6 +10,7 @@ import { getCouriers } from '@/lib/data';
 import { SHIPMENT_LABEL, trackUrl } from '@/lib/courier';
 import { formatLKR, SITE, waLink } from '@/lib/site';
 import StatusTimeline from '@/components/StatusTimeline';
+import ClearCart from '@/components/ClearCart';
 
 export const metadata: Metadata = { title: 'Order', robots: { index: false } };
 export const dynamic = 'force-dynamic';
@@ -61,6 +62,7 @@ export default async function OrderPage({ params }:
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 md:px-6 md:py-12">
+      <ClearCart />
       <div className="rounded-3xl bg-card p-6 md:p-8">
         <p className="text-[13px] font-semibold text-muted">{dict.order.number} {order.order_number}</p>
         <h1 className="mt-1 text-2xl font-bold">
