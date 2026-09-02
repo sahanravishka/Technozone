@@ -75,12 +75,12 @@ export function newKokoOrderId(orderNumber: string): string {
  *  shape/usage pattern as lib/payhere.ts's buildCheckoutFields. */
 export function buildKokoOrderFields(o: {
   kokoOrderId: string; amount: number; firstName: string; lastName: string;
-  email: string; description: string; reference: string; locale: string;
+  email: string; phone: string; description: string; reference: string; locale: string;
 }): Record<string, string> {
   const mId = process.env.KOKO_MERCHANT_ID!;
   const apiKey = process.env.KOKO_API_KEY!;
   const pluginName = 'customapi';
-  const pluginVersion = process.env.KOKO_PLUGIN_VERSION || '1.0.0';
+  const pluginVersion = process.env.KOKO_PLUGIN_VERSION || '1';
   const amount = o.amount.toFixed(2);
   const currency = 'LKR';
   const returnUrl = `${SITE.url}/${o.locale}/order/${o.reference}`;
@@ -114,8 +114,9 @@ export function buildKokoOrderFields(o: {
     _pluginVersion: pluginVersion,
     _description: description,
     _firstName: o.firstName,
-    _lastName: o.lastName || '-',
+    _lastName: o.lastName,
     _email: o.email,
+    _mobileNo: o.phone,
     dataString,
     signature: signWithMerchantKey(dataString),
   };

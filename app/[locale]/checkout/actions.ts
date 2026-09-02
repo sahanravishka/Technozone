@@ -207,8 +207,9 @@ export async function createOrder(input: {
       await admin.from('orders').update({ koko_order_id: kokoOrderId }).eq('id', order.id);
       const fields = buildKokoOrderFields({
         kokoOrderId, amount: total,
-        firstName, lastName: rest.join(' '),
+        firstName, lastName: rest.join(' ') || '.', // fallback required by Koko
         email: buyerEmail!,
+        phone: input.phone,
         description: items.map(i => i.product_name).join(', '),
         reference: order.order_number,
         locale: input.locale
