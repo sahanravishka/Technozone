@@ -69,12 +69,18 @@ export function buildKokoOrderFields(o: {
   const cancelUrl = `${SITE.url}/${o.locale}/checkout?cancelled=1`;
   const responseUrl = `${SITE.url}/api/koko/response`;
 
+  // Truncate description BEFORE building dataString — Koko re-computes the
+  // signature on their end using the _description value they receive, so the
+  // value signed here must be byte-for-byte identical to what gets posted.
+  // Signing the full string then sending a truncated copy causes a mismatch.
+  const description = o.description.slice(0, 250);
+
   // Exact concatenation order per Koko's spec — confirmed against their
   // own sample-koko-order-create.php, NOT alphabetical, do not reorder.
   const dataString =
     mId + amount + currency + pluginName + pluginVersion + returnUrl +
     cancelUrl + o.kokoOrderId + o.reference + o.firstName + o.lastName +
-    o.email + o.description + apiKey + responseUrl;
+    o.email + description + apiKey + responseUrl;
 
   return {
     _mId: mId,
@@ -88,7 +94,7 @@ export function buildKokoOrderFields(o: {
     _orderId: o.kokoOrderId,
     _pluginName: pluginName,
     _pluginVersion: pluginVersion,
-    _description: o.description.slice(0, 250),
+    _description: description,
     _firstName: o.firstName,
     _lastName: o.lastName || '-',
     _email: o.email,

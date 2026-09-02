@@ -126,7 +126,10 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
     }
   };
 
-    const emailOk = pay !== 'payhere' || mode === 'signin' || f.email.includes('@');
+    // Both payhere and koko require an email (server enforces this) — ensure
+    // the form validates it for both so guests get a clear prompt rather than
+    // a confusing server-side auth redirect.
+    const emailOk = (pay !== 'payhere' && pay !== 'koko') || mode === 'signin' || f.email.includes('@');
   const addrOk = fulfillment === 'pickup' || (f.address && f.city);
   const canPay = !!(f.name && f.phone && addrOk && emailOk);
 
