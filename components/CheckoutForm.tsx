@@ -112,15 +112,17 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
     }
 
     // WhatsApp: open chat pre-filled with the order; COD: just confirm.
-    if (res.method === 'whatsapp') {
-      const lines = res.items.map(it => `• ${it.name} ×${it.qty} — ${formatLKR(it.line)}`).join('\n');
-      const fline = fulfillment === 'pickup' ? `\n${dict.pay.pickup}` : `\nAddress: ${f.address}, ${f.city}`;
-      const msg = `${dict.pay.waMsgIntro}\n${lines}\n\nTotal: ${formatLKR(res.total)}\nName: ${f.name}\nPhone: ${f.phone}${fline}\nRef: ${res.orderNumber}`;
-      window.open(waLink(msg), '_blank');
+    if (res.method === 'cod' || res.method === 'whatsapp') {
+      if (res.method === 'whatsapp') {
+        const lines = res.items.map(it => `• ${it.name} ×${it.qty} — ${formatLKR(it.line)}`).join('\n');
+        const fline = fulfillment === 'pickup' ? `\n${dict.pay.pickup}` : `\nAddress: ${f.address}, ${f.city}`;
+        const msg = `${dict.pay.waMsgIntro}\n${lines}\n\nTotal: ${formatLKR(res.total)}\nName: ${f.name}\nPhone: ${f.phone}${fline}\nRef: ${res.orderNumber}`;
+        window.open(waLink(msg), '_blank');
+      }
+      clear();
+      setBusy(false);
+      setPlaced(res.orderNumber);
     }
-    clear();
-    setBusy(false);
-    setPlaced(res.orderNumber);
   };
 
     const emailOk = pay !== 'payhere' || mode === 'signin' || f.email.includes('@');
