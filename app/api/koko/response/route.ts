@@ -68,10 +68,13 @@ export async function POST(req: NextRequest) {
     // once the money has actually landed, not at order creation.
     if (matchedOrder) {
       after(async () => {
-        const { data: full } = await admin.from('orders')
+        const { data: full, error: fetchErr } = await admin.from('orders')
           .select('order_number, total, payment_method, fulfillment, customer_phone, shipping_address, order_items(product_name, qty, line_total)')
           .eq('id', matchedOrder.id).maybeSingle();
-        if (!full) return;
+        if (!full) {
+          console.error('[koko] order paid but could not re-fetch it for the Telegram alert', matchedOrder.id, fetchErr?.message);
+          return;
+        }
         const addr = full.shipping_address as { name?: string; city?: string } | null;
         await sendNewOrderTelegram({
           orderNumber: full.order_number, total: full.total,

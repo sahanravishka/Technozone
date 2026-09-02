@@ -28,7 +28,7 @@ export async function reconcileKokoOrder(
     });
     if (error) return 'unknown';
 
-    const { data: full } = await admin.from('orders')
+    const { data: full, error: fetchErr } = await admin.from('orders')
       .select('order_number, total, payment_method, fulfillment, customer_phone, shipping_address, order_items(product_name, qty, line_total)')
       .eq('id', orderId).maybeSingle();
     if (full) {
@@ -40,6 +40,12 @@ export async function reconcileKokoOrder(
         city: addr?.city,
         items: full.order_items.map(i => ({ name: i.product_name, qty: i.qty, line: i.line_total }))
       });
+    } else {
+      // Payment was genuinely confirmed (the RPC above succeeded) — this
+      // only skips the ALERT, never the confirmation itself. Worth a loud
+      // log rather than silently dropping it: if this ever fires, staff
+      // would otherwise have no idea a paid order came in.
+      console.error('[koko-reconcile] order paid but could not re-fetch it for the Telegram alert', orderId, fetchErr?.message);
     }
     return 'paid';
   }
