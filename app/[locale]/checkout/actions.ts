@@ -19,7 +19,8 @@ type Result =
   | { ok: true; method: 'cod' | 'whatsapp'; orderNumber: string; total: number;
       items: { name: string; qty: number; line: number }[] }
   | { ok: false; error: 'auth' | 'stock' | 'config' | 'invalid' | 'cod_blocked' | 'cod_limit' | 'rate' }
-  | { ok: false; error: 'koko_error'; detail: string };
+  | { ok: false; error: 'koko_error'; detail: string }
+  | { ok: false; error: 'server_error'; detail: string };
 
 export async function createOrder(input: {
   lines: CartLine[]; locale: string;
@@ -29,6 +30,7 @@ export async function createOrder(input: {
   paymentMethod?: PaymentMethod;       // defaults to payhere
   fulfillment?: 'delivery' | 'pickup'; // defaults to delivery
 }): Promise<Result> {
+  try {
   const method: PaymentMethod = input.paymentMethod ?? 'payhere';
   // throttle order creation per IP (prevents stock-reservation spam / abuse)
   if (!(await rateLimitByIp('checkout', 10, 60))) return { ok: false, error: 'rate' };
@@ -53,16 +55,18 @@ export async function createOrder(input: {
   const { data: variants, error: vErr } = await admin.from('product_variants')
     .select('id, sku, name, price, product_id, is_active').in('id', variantIds);
   if (vErr || !variants || variants.length !== variantIds.length) {
-    console.error('[checkout] variant lookup failed', { error: vErr?.message, want: variantIds.length, got: variants?.length });
-    return { ok: false, error: 'invalid' };
+    const msg = `variant lookup: ${vErr?.message ?? `want ${variantIds.length} got ${variants?.length ?? 0}`}`;
+    console.error('[checkout]', msg);
+    return { ok: false, error: 'server_error', detail: msg };
   }
 
   const productIds = [...new Set(variants.map(v => v.product_id))];
   const { data: products, error: pErr } = await admin.from('products')
     .select('id, name, category_id, base_price, slug').in('id', productIds);
   if (pErr || !products) {
-    console.error('[checkout] product lookup failed', pErr?.message);
-    return { ok: false, error: 'invalid' };
+    const msg = `product lookup: ${pErr?.message ?? 'null'}`;
+    console.error('[checkout]', msg);
+    return { ok: false, error: 'server_error', detail: msg };
   }
   const { data: discounts } = await admin.from('discounts')
     .select('id, scope, product_id, category_id, type, value')
@@ -141,8 +145,9 @@ export async function createOrder(input: {
     customer_phone: input.phone
   }).select('id, order_number').single();
   if (oErr || !order) {
-    console.error('[checkout] order insert failed', oErr?.message);
-    return { ok: false, error: 'invalid' };
+    const msg = `order insert: ${oErr?.message ?? 'null'}`;
+    console.error('[checkout]', msg);
+    return { ok: false, error: 'server_error', detail: msg };
   }
 
   const { error: oiErr } = await admin.from('order_items').insert(items.map(i => ({ ...i, order_id: order.id })));
@@ -226,6 +231,11 @@ export async function createOrder(input: {
     ok: true, method, orderNumber: order.order_number, total,
     items: items.map(i => ({ name: i.product_name, qty: i.qty, line: i.line_total }))
   };
+  } catch (uncaught) {
+    const msg = uncaught instanceof Error ? uncaught.message : String(uncaught);
+    console.error('[checkout] uncaught exception:', msg);
+    return { ok: false, error: 'server_error', detail: msg };
+  }
 }
 
 const normPhone = (phone: string) => phone.replace(/\D/g, '').replace(/^0/, '94');
