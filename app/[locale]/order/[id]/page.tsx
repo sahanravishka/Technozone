@@ -12,6 +12,11 @@ import { formatLKR, SITE, waLink } from '@/lib/site';
 import StatusTimeline from '@/components/StatusTimeline';
 import ClearCart from '@/components/ClearCart';
 import { KokoBadge } from '@/components/KokoBadge';
+import { reconcileKokoOrder } from '@/lib/koko-reconcile';
+
+const ORDER_SELECT = `id, customer_id, order_number, status, payment_status, payment_method, subtotal,
+      discount_total, delivery_fee, koko_fee, total, created_at, koko_order_id,
+      order_items(id, product_name, variant_name, qty, line_total)`;
 
 export const metadata: Metadata = { title: 'Order', robots: { index: false } };
 export const dynamic = 'force-dynamic';
@@ -32,11 +37,8 @@ export default async function OrderPage({ params }:
   const guestToken = cookieStore.get('guest_order_id')?.value;
 
   // Fetch using admin so guest orders (no user) can be retrieved securely
-  const { data: order } = await admin.from('orders')
-    .select(`id, customer_id, order_number, status, payment_status, payment_method, subtotal,
-      discount_total, delivery_fee, koko_fee, total, created_at,
-      order_items(id, product_name, variant_name, qty, line_total)`)
-    .eq('order_number', id).maybeSingle();
+  let { data: order } = await admin.from('orders')
+    .select(ORDER_SELECT).eq('order_number', id).maybeSingle();
   if (!order) notFound();
 
   // If this order belongs to a registered customer, enforce authentication
@@ -48,6 +50,25 @@ export default async function OrderPage({ params }:
     // Guest order: require the guest token cookie
     if (guestToken !== order.id) {
       redirect(`/${locale}/login?next=/${locale}/order/${id}`);
+    }
+  }
+
+  // Self-healing fallback: Koko's response webhook is the normal source of
+  // truth, but if it never arrives (a brief outage on either side, a
+  // misrouted DNS blip — anything), an order would otherwise sit
+  // "confirming" forever with no way out except a customer support ticket.
+  // This page is exactly where a customer waiting on a Koko payment IS —
+  // the 5s auto-refresh below means they'll hit this. A 15s grace period
+  // gives the real webhook a fair chance to land first, so this only ever
+  // fires as a fallback, not a race against it.
+  if (order.payment_method === 'koko' && order.koko_order_id &&
+      order.status === 'pending' && order.payment_status === 'unpaid' &&
+      Date.now() - new Date(order.created_at).getTime() > 15_000) {
+    const outcome = await reconcileKokoOrder(admin, order.id, order.koko_order_id);
+    if (outcome === 'paid' || outcome === 'failed') {
+      const { data: refreshed } = await admin.from('orders')
+        .select(ORDER_SELECT).eq('id', order.id).maybeSingle();
+      if (refreshed) order = refreshed;
     }
   }
 
@@ -63,9 +84,12 @@ export default async function OrderPage({ params }:
   }
 
   // Koko/PayHere bounce back through this SAME page whether the payment
-  // succeeded or failed (only their signed server-to-server webhook — never
-  // this page load — actually flips payment_status). So three real states,
-  // not two: still waiting on the webhook, confirmed paid, or confirmed
+  // succeeded or failed. payment_status only ever flips via a genuinely
+  // signed source — their response webhook (the normal path) or the
+  // reconciliation fallback above, which itself only trusts a signed
+  // response from Koko's own Order View API — never anything client-
+  // supplied or inferred from this page load itself. So three real states,
+  // not two: still waiting for confirmation, confirmed paid, or confirmed
   // failed/cancelled. Showing "Order received!" for a failed payment would
   // tell a customer they were charged when they weren't.
   const isKoko = order.payment_method === 'koko';

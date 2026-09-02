@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getOrderDetail, type OrderDetail } from '@/app/admin/actions';
+import { getOrderDetail, recheckKokoPayment, type OrderDetail } from '@/app/admin/actions';
 import OrderJourneyModal from './OrderJourneyModal';
 import { formatLKR } from '@/lib/site';
 
@@ -16,6 +16,10 @@ export default function OrderDetailModal({ orderId, onClose }: { orderId: string
   const [data, setData] = useState<OrderDetail | null>(null);
   const [err, setErr] = useState('');
 
+  const load = () => getOrderDetail(orderId)
+    .then(d => setData(d))
+    .catch(e => setErr(e instanceof Error ? e.message : 'Could not load order'));
+
   useEffect(() => {
     let cancelled = false;
     getOrderDetail(orderId)
@@ -25,6 +29,23 @@ export default function OrderDetailModal({ orderId, onClose }: { orderId: string
   }, [orderId]);
 
   const [journeyOpen, setJourneyOpen] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [checkMsg, setCheckMsg] = useState('');
+
+  const checkKokoStatus = async () => {
+    setChecking(true); setCheckMsg('');
+    try {
+      const outcome = await recheckKokoPayment(orderId);
+      if (outcome === 'paid') { setCheckMsg('✅ Koko confirms this order is paid.'); load(); }
+      else if (outcome === 'failed') { setCheckMsg('❌ Koko confirms this payment failed/was cancelled.'); load(); }
+      else if (outcome === 'pending') setCheckMsg('⏳ Still pending on Koko\'s side — nothing to update yet.');
+      else setCheckMsg('⚠️ Could not reach Koko or verify the response — try again shortly.');
+    } catch (e) {
+      setCheckMsg(e instanceof Error ? e.message : 'Check failed');
+    } finally {
+      setChecking(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={onClose}>
@@ -70,6 +91,21 @@ export default function OrderDetailModal({ orderId, onClose }: { orderId: string
               Placed {new Date(data.created_at).toLocaleString('en-GB')}
               {data.updated_at !== data.created_at && ` · updated ${new Date(data.updated_at).toLocaleString('en-GB')}`}
             </p>
+
+            {data.payment_method === 'koko' && data.payment_status !== 'paid' && (
+              <div className="rounded-xl bg-paper px-3 py-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11.5px] text-muted">
+                    Not showing as paid yet? Ask Koko directly instead of only waiting on their webhook.
+                  </p>
+                  <button onClick={checkKokoStatus} disabled={checking}
+                    className="pressable shrink-0 rounded-lg bg-volt px-2.5 py-1.5 text-[11.5px] font-bold text-white hover:bg-volt-deep disabled:opacity-60">
+                    {checking ? 'Checking…' : '🟣 Check Koko status'}
+                  </button>
+                </div>
+                {checkMsg && <p className="mt-1.5 text-[11.5px] font-medium">{checkMsg}</p>}
+              </div>
+            )}
 
             {/* Customer */}
             <div>

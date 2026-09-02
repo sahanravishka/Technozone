@@ -146,3 +146,63 @@ export function verifyKokoResponsePayload(p: { orderId: string; trnId: string; s
   const dataString = p.orderId + p.trnId + p.status + (p.desc ?? '');
   return verifyKokoSignature(dataString, p.signature);
 }
+
+export type KokoOrderStatus = { orderId: string; trnId: string; status: 'PENDING' | 'SUCCESS' | 'FAILED' | string; desc: string };
+
+/** Actively asks Koko for an order's real status (Merchant Order View API,
+ *  v1.0 — POST /api/merchants/orderView), instead of only ever waiting on
+ *  their response webhook. Koko's own webhook doc admits the limitation
+ *  directly: without a working _responseUrl "eCommerce will not have any
+ *  way to verify if the payment has been successfully done or not from the
+ *  backend" — this is the pull-based fallback for exactly that case (their
+ *  webhook POST to us never arriving, for whatever reason).
+ *
+ *  dataString here is a DIFFERENT concatenation than order-create's — per
+ *  the Merchant Order View spec: mId + pluginName + pluginVersion +
+ *  orderId + apiKey (no amount/currency/urls/names involved at all). */
+export async function queryKokoOrderStatus(kokoOrderId: string): Promise<KokoOrderStatus | null> {
+  if (!kokoConfigured()) return null;
+  const mId = process.env.KOKO_MERCHANT_ID!.trim();
+  const apiKey = process.env.KOKO_API_KEY!.trim();
+  const pluginName = 'customapi';
+  const pluginVersion = process.env.KOKO_PLUGIN_VERSION?.trim() || '1';
+  const dataString = mId + pluginName + pluginVersion + kokoOrderId + apiKey;
+  const fields = {
+    _mId: mId, api_key: apiKey, _orderId: kokoOrderId,
+    _pluginName: pluginName, _pluginVersion: pluginVersion,
+    signature: signWithMerchantKey(dataString)
+  };
+
+  try {
+    const res = await fetch(`${kokoBaseUrl()}/api/merchants/orderView`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(fields).toString(),
+      cache: 'no-store'
+    });
+    if (!res.ok) return null;
+
+    // The spec's response table doesn't nail down a content-type for what
+    // Koko sends BACK to us (only that our request must be form-urlencoded)
+    // — handle either a JSON or a form-urlencoded body rather than guess.
+    const raw = await res.text();
+    let p: Record<string, string>;
+    try {
+      p = JSON.parse(raw);
+    } catch {
+      p = Object.fromEntries(new URLSearchParams(raw));
+    }
+
+    const payload = {
+      orderId: p.orderId ?? '', trnId: p.trnId ?? '',
+      status: p.status ?? '', desc: p.desc ?? '', signature: p.signature ?? ''
+    };
+    // Same signed dataString shape as the response webhook (orderId+trnId+
+    // status+desc) — never trust this response unless it verifies against
+    // Koko's public key, exactly like the webhook.
+    if (!verifyKokoResponsePayload(payload)) return null;
+    return { orderId: payload.orderId, trnId: payload.trnId, status: payload.status, desc: payload.desc };
+  } catch {
+    return null;
+  }
+}

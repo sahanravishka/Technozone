@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { getAdminSupabase } from '@/lib/supabase-clients/admin';
 import { getStaff } from '@/lib/admin-auth';
+import { reconcileKokoOrder } from '@/lib/koko-reconcile';
 
 // Turns a product name into a short, URL/filename-safe slug for use in
 // uploaded image filenames — e.g. "USB to Type-C Cable — Celebrat CB-32"
@@ -54,6 +55,7 @@ export type OrderDetail = {
   shipping_address: { name?: string; phone?: string; line1?: string; city?: string; postal_code?: string };
   customer_phone: string; guest_email: string | null; notes: string | null;
   payhere_payment_id: string | null; payhere_method: string | null;
+  koko_order_id: string | null; koko_txn_id: string | null;
   created_at: string; updated_at: string;
   order_items: { qty: number; product_name: string; variant_name?: string | null; sku?: string | null; unit_price: number; discount_each: number; line_total: number }[];
 };
@@ -68,7 +70,7 @@ export async function getOrderDetail(orderId: string): Promise<OrderDetail> {
       id, order_number, status, payment_status, payment_method, fulfillment, channel,
       subtotal, discount_total, delivery_fee, total, coupon_code, delivery_zone_name,
       shipping_address, customer_phone, guest_email, notes,
-      payhere_payment_id, payhere_method, created_at, updated_at,
+      payhere_payment_id, payhere_method, koko_order_id, koko_txn_id, created_at, updated_at,
       order_items(qty, product_name, variant_name, sku, unit_price, discount_each, line_total)
     `)
     .eq('id', orderId).single();
@@ -824,6 +826,25 @@ export async function markOrderCollected(orderId: string) {
   const { error } = await supabase.rpc('mark_order_collected', { p_order_id: orderId });
   if (error) throw new Error(error.message);
   revalidatePath('/admin/orders');
+}
+
+// ---------------- Koko manual status recheck ----------------
+// Normally payment_status only ever flips via Koko's signed response
+// webhook. This lets staff actively ask Koko's Merchant Order View API for
+// an order stuck "pending" — the same reconciliation the order confirmation
+// page runs automatically, just triggerable on demand for a specific order
+// (e.g. a customer says they paid but the order still shows unpaid).
+export async function recheckKokoPayment(orderId: string): Promise<'paid' | 'failed' | 'pending' | 'unknown'> {
+  await requireStaff();
+  const admin = getAdminSupabase();
+  if (!admin) throw new Error('not configured');
+  const { data: order } = await admin.from('orders')
+    .select('payment_method, koko_order_id').eq('id', orderId).single();
+  if (order?.payment_method !== 'koko' || !order.koko_order_id) throw new Error('not a Koko order');
+
+  const outcome = await reconcileKokoOrder(admin, orderId, order.koko_order_id);
+  if (outcome === 'paid' || outcome === 'failed') revalidatePath('/admin/orders');
+  return outcome;
 }
 
 // ============================================================================
