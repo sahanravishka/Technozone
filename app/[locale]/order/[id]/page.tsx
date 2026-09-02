@@ -21,9 +21,10 @@ const ORDER_SELECT = `id, customer_id, order_number, status, payment_status, pay
 export const metadata: Metadata = { title: 'Order', robots: { index: false } };
 export const dynamic = 'force-dynamic';
 
-export default async function OrderPage({ params }:
-  { params: Promise<{ locale: Locale; id: string }> }) {
+export default async function OrderPage({ params, searchParams }:
+  { params: Promise<{ locale: Locale; id: string }>; searchParams: Promise<{ status?: string }> }) {
   const { locale, id } = await params;
+  const { status: gatewayStatus } = await searchParams;
   const dict = getDict(locale);
   const supabase = await getServerSupabase();
   if (!supabase) notFound();
@@ -70,6 +71,20 @@ export default async function OrderPage({ params }:
         .select(ORDER_SELECT).eq('id', order.id).maybeSingle();
       if (refreshed) order = refreshed;
     }
+  }
+
+  // Koko (and PayHere) always bounce the browser back through THIS SAME
+  // _returnUrl on both success and failure — that initial bounce-back is
+  // entirely their server's call, nothing here can suppress or skip it.
+  // What we control is what happens the instant we get the browser back:
+  // only a genuinely paid order gets to show the order/"thank you"
+  // experience. A gateway-reported failure sends the customer straight
+  // back into checkout to retry instead — the query param alone is never
+  // trusted for anything security-relevant (payment_status, above, is the
+  // only thing that ever does that), only to skip an unnecessary few
+  // seconds on the "confirming" spinner when Koko already told us outright.
+  if (gatewayStatus && gatewayStatus.toUpperCase() !== 'SUCCESS' && order.payment_status !== 'paid') {
+    redirect(`/${locale}/checkout?cancelled=1`);
   }
 
   // ownership enforced; fetch tracking via admin

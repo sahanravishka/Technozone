@@ -10,7 +10,10 @@ import { useCart } from '@/lib/cart-store';
 export default function ClearCart({ when = true }: { when?: boolean }) {
   const { clear } = useCart();
   useEffect(() => {
-    if (when) clear();
+    if (when) {
+      clear();
+      try { localStorage.removeItem('voltlane.checkout-draft.v1'); } catch { /* not fatal */ }
+    }
   }, [when, clear]);
   return null;
 }

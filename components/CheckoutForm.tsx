@@ -35,6 +35,38 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
   const [fulfillment, setFulfillment] = useState<'delivery' | 'pickup'>('delivery');
   const [redirecting, setRedirecting] = useState<{ url: string; fields: Record<string, string> } | null>(null);
 
+  // Persist the typed-in details (name/phone/email/address/…) across a
+  // refresh or an accidental tab close — losing a fully-filled checkout
+  // form to a stray refresh is exactly the kind of thing that makes a
+  // customer give up partway through. Same lazy-hydrate-then-persist
+  // pattern as the cart store: load once on mount (after SSR, so there's
+  // no hydration mismatch), then only start writing back once that load
+  // has actually happened — otherwise the very first render's still-empty
+  // state would immediately overwrite a real saved draft with blanks.
+  const DRAFT_KEY = 'voltlane.checkout-draft.v1';
+  // A ref here would NOT work as the "has hydration happened" guard: both
+  // this effect and the persist effect below fire in the SAME commit on
+  // mount (dependency arrays only skip RE-renders, not the initial one),
+  // so a ref flipped inside this effect is already true by the time the
+  // persist effect's body runs in that same pass — but with `f` still
+  // captured from the pre-hydration render's stale closure, silently
+  // overwriting the just-read draft with blanks before it ever reaches the
+  // screen. State forces a real re-render/new-commit boundary instead, so
+  // the persist effect only ever sees `hydrated` and `f` from the SAME,
+  // already-hydrated render.
+  const [draftHydrated, setDraftHydrated] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) setF(prev => ({ ...prev, ...JSON.parse(raw) }));
+    } catch { /* ignore corrupt/blocked storage */ }
+    setDraftHydrated(true);
+  }, []);
+  useEffect(() => {
+    if (!draftHydrated) return;
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify(f)); } catch { /* storage full/blocked — not fatal */ }
+  }, [f, draftHydrated]);
+
   useEffect(() => {
     if (redirecting) {
       const f = document.getElementById('payment-redirect-form') as HTMLFormElement;
@@ -143,6 +175,7 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
         window.open(waLink(msg), '_blank');
       }
       clear();
+      try { localStorage.removeItem(DRAFT_KEY); } catch { /* not fatal */ }
       setBusy(false);
       setPlaced(res.orderNumber);
     }
