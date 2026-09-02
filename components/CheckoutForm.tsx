@@ -180,9 +180,9 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
               }}
               inputMode="tel" placeholder="07X XXX XXXX" />
           </Field>
-          {mode === 'guest' && (
-            <Field text={dict.account.email}>
-              <input className={inputCls} value={f.email} onChange={e => setF({ ...f, email: e.target.value })} inputMode="email" type="email" />
+          {mode === 'guest' && (pay === 'payhere' || pay === 'koko') && (
+            <Field text={`${dict.account.email} *`}>
+              <input className={inputCls} value={f.email} onChange={e => setF({ ...f, email: e.target.value })} inputMode="email" type="email" placeholder="your@email.com" />
             </Field>
           )}
         </div>
