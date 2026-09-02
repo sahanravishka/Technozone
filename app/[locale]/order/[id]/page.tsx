@@ -11,6 +11,7 @@ import { SHIPMENT_LABEL, trackUrl } from '@/lib/courier';
 import { formatLKR, SITE, waLink } from '@/lib/site';
 import StatusTimeline from '@/components/StatusTimeline';
 import ClearCart from '@/components/ClearCart';
+import { KokoBadge } from '@/components/KokoBadge';
 
 export const metadata: Metadata = { title: 'Order', robots: { index: false } };
 export const dynamic = 'force-dynamic';
@@ -32,7 +33,9 @@ export default async function OrderPage({ params }:
 
   // Fetch using admin so guest orders (no user) can be retrieved securely
   const { data: order } = await admin.from('orders')
-    .select('id, customer_id, order_number, status, payment_status, subtotal, discount_total, delivery_fee, total, created_at, order_items(id, product_name, variant_name, qty, line_total)')
+    .select(`id, customer_id, order_number, status, payment_status, payment_method, subtotal,
+      discount_total, delivery_fee, koko_fee, total, created_at,
+      order_items(id, product_name, variant_name, qty, line_total)`)
     .eq('order_number', id).maybeSingle();
   if (!order) notFound();
 
@@ -55,75 +58,152 @@ export default async function OrderPage({ params }:
     .select('courier_code, tracking_number, status').eq('order_id', order.id).maybeSingle();
   shipment = sh;
   if (sh?.tracking_number) {
-      const couriers = await getCouriers();
-      track = trackUrl(couriers.find(c => c.code === sh.courier_code), sh.tracking_number);
-    }
-  const confirming = order.status === 'pending' && order.payment_status === 'unpaid';
+    const couriers = await getCouriers();
+    track = trackUrl(couriers.find(c => c.code === sh.courier_code), sh.tracking_number);
+  }
+
+  // Koko/PayHere bounce back through this SAME page whether the payment
+  // succeeded or failed (only their signed server-to-server webhook — never
+  // this page load — actually flips payment_status). So three real states,
+  // not two: still waiting on the webhook, confirmed paid, or confirmed
+  // failed/cancelled. Showing "Order received!" for a failed payment would
+  // tell a customer they were charged when they weren't.
+  const isKoko = order.payment_method === 'koko';
+  const isGateway = order.payment_method === 'koko' || order.payment_method === 'payhere';
+  const paid = order.payment_status === 'paid';
+  const failed = isGateway && order.payment_status === 'failed';
+  const confirming = isGateway && !paid && !failed;
+
+  const heroBg = paid
+    ? 'bg-gradient-to-b from-tint-mint via-tint-mint/40 to-paper'
+    : failed
+      ? 'bg-gradient-to-b from-[#FDEBEC] via-[#FDEBEC]/40 to-paper'
+      : 'bg-gradient-to-b from-tint-sky via-tint-sky/40 to-paper';
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 md:px-6 md:py-12">
-      <ClearCart />
-      <div className="rounded-3xl bg-card p-6 md:p-8">
-        <p className="text-[13px] font-semibold text-muted">{dict.order.number} {order.order_number}</p>
-        <h1 className="mt-1 text-2xl font-bold">
-          {confirming ? dict.order.confirming : dict.order.thanks}
-        </h1>
-        {confirming && (
-          <meta httpEquiv="refresh" content="5" />
-        )}
+    <div className="page-enter">
+      {/* Cart clears only once the order is genuinely confirmed paid — never
+          on a still-confirming or failed gateway bounce-back. */}
+      <ClearCart when={paid} />
 
-        <div className="mt-7 grid gap-8 md:grid-cols-2">
-          <div>
-            <p className="mb-4 text-[13px] font-semibold text-muted">{dict.order.timeline}</p>
-            <StatusTimeline status={order.status} dict={dict} />
-          </div>
-          <div>
-            <p className="mb-3 text-[13px] font-semibold text-muted">{dict.order.items}</p>
-            <ul className="space-y-2 text-[13.5px]">
-              {order.order_items.map(i => (
-                <li key={i.id} className="flex justify-between gap-3">
-                  <span className="text-muted">
-                    {i.product_name}{i.variant_name && i.variant_name !== 'Default' ? ` · ${i.variant_name}` : ''} ×{i.qty}
-                  </span>
-                  <span className="shrink-0 font-medium">{formatLKR(i.line_total)}</span>
-                </li>
-              ))}
-            </ul>
-            <dl className="mt-4 space-y-1.5 border-t border-[#EEF1F6] pt-3 text-[13.5px]">
-              <div className="flex justify-between text-muted"><dt>{dict.cart.subtotal}</dt><dd>{formatLKR(order.subtotal)}</dd></div>
-              {order.discount_total > 0 && (
-                <div className="flex justify-between text-ok"><dt>{dict.form.coupon}</dt><dd>− {formatLKR(order.discount_total)}</dd></div>
-              )}
-              <div className="flex justify-between text-muted"><dt>{dict.cart.delivery}</dt><dd>{formatLKR(order.delivery_fee)}</dd></div>
-              <div className="flex justify-between pt-1 text-[16px] font-bold"><dt>{dict.order.total}</dt><dd>{formatLKR(order.total)}</dd></div>
-            </dl>
-          </div>
-        </div>
-
-        {shipment && (
-          <div className="mt-6 rounded-2xl bg-volt-soft p-4">
-            <p className="text-[13px] font-semibold text-volt">
-              {shipment.courier_code ? `${shipment.courier_code.toUpperCase()} · ` : ''}{SHIPMENT_LABEL[shipment.status as keyof typeof SHIPMENT_LABEL] ?? shipment.status}
-            </p>
-            {shipment.tracking_number && (
-              <p className="mt-1 text-[12.5px] text-volt">
-                Tracking: <b>{shipment.tracking_number}</b>
-                {track && <> · <a href={track} target="_blank" rel="noopener" className="font-semibold underline">Track parcel ↗</a></>}
-              </p>
+      {/* ---------- full-bleed hero ---------- */}
+      <div className={`relative overflow-hidden px-4 py-14 md:py-20 ${heroBg}`}>
+        <div className="mx-auto max-w-xl text-center">
+          <div className={`mx-auto grid h-20 w-20 place-items-center rounded-full text-[34px] shadow-soft
+            ${paid ? 'bg-ok text-white animate-pulse-glow' : failed ? 'bg-sale text-white' : 'bg-card text-volt'}`}>
+            {paid ? '✓' : failed ? '✕' : (
+              <span className="block h-8 w-8 animate-spin rounded-full border-[3px] border-line border-t-volt" />
             )}
           </div>
-        )}
 
-        <div className="mt-7 grid gap-3 sm:grid-cols-2">
-          <Link href={`/${locale}/order/${order.order_number}/invoice`}
-            className="block rounded-2xl bg-paper p-4 text-center text-[13px] font-semibold hover:bg-line/60">
-            🧾 Download invoice
-          </Link>
-          <a href={waLink(`Hi ${SITE.name}! About my order ${order.order_number}:`)}
-            target="_blank" rel="noopener noreferrer"
-            className="block rounded-2xl bg-paper p-4 text-center text-[13px] font-semibold text-ok hover:bg-tint-mint">
-            {dict.order.help}
-          </a>
+          <h1 className="mt-5 text-[26px] font-black tracking-tight md:text-[32px]">
+            {paid ? dict.order.thanks : failed ? 'Payment didn\'t go through' : dict.order.confirming}
+          </h1>
+          <p className="mx-auto mt-2 max-w-sm text-[14px] text-muted">
+            {paid
+              ? (isKoko ? 'Paid with Koko — approved and confirmed.' : 'Your payment has been confirmed.')
+              : failed
+                ? 'No charge was made. Your cart is still saved, so you can try again or pick another payment method.'
+                : 'This usually takes a few seconds while we confirm the payment with the gateway. This page updates itself automatically.'}
+          </p>
+
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-card px-4 py-2 text-[14px] font-bold shadow-sm">
+              {dict.order.number} {order.order_number}
+            </span>
+            {paid && isKoko && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#6D28D9]/[0.1] px-3.5 py-2 text-[13px] font-bold text-[#6D28D9]">
+                Paid via <KokoBadge size="sm" /> · 3 installments
+              </span>
+            )}
+          </div>
+
+          {confirming && <meta httpEquiv="refresh" content="5" />}
+
+          {failed && (
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+              <Link href={`/${locale}/checkout`}
+                className="pressable rounded-btn bg-volt px-5 py-2.5 text-[13.5px] font-bold text-white hover:bg-volt-deep">
+                Try payment again →
+              </Link>
+              <a href={waLink(`Hi ${SITE.name}! My payment for order ${order.order_number} didn't go through — can you help?`)}
+                target="_blank" rel="noopener noreferrer"
+                className="pressable rounded-btn bg-card px-5 py-2.5 text-[13.5px] font-bold hover:bg-line/60">
+                Ask on WhatsApp
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ---------- body: full-width content ---------- */}
+      <div className="mx-auto max-w-6xl px-4 pb-14 md:px-6 md:pb-20">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
+          {/* left column */}
+          <div className="space-y-6">
+            <div className="rounded-3xl bg-card p-6 md:p-8">
+              <p className="mb-4 text-[13px] font-semibold text-muted">{dict.order.timeline}</p>
+              <StatusTimeline status={order.status} dict={dict} />
+            </div>
+
+            <div className="rounded-3xl bg-card p-6 md:p-8">
+              <p className="mb-3 text-[13px] font-semibold text-muted">{dict.order.items}</p>
+              <ul className="divide-y divide-[#EEF1F6]">
+                {order.order_items.map(i => (
+                  <li key={i.id} className="flex justify-between gap-3 py-2.5 text-[13.5px]">
+                    <span className="text-muted">
+                      {i.product_name}{i.variant_name && i.variant_name !== 'Default' ? ` · ${i.variant_name}` : ''} ×{i.qty}
+                    </span>
+                    <span className="shrink-0 font-medium">{formatLKR(i.line_total)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {shipment && (
+              <div className="rounded-3xl bg-volt-soft p-6">
+                <p className="text-[13.5px] font-semibold text-volt">
+                  {shipment.courier_code ? `${shipment.courier_code.toUpperCase()} · ` : ''}
+                  {SHIPMENT_LABEL[shipment.status as keyof typeof SHIPMENT_LABEL] ?? shipment.status}
+                </p>
+                {shipment.tracking_number && (
+                  <p className="mt-1 text-[12.5px] text-volt">
+                    Tracking: <b>{shipment.tracking_number}</b>
+                    {track && <> · <a href={track} target="_blank" rel="noopener" className="font-semibold underline">Track parcel ↗</a></>}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* right column — sticky summary */}
+          <div className="lg:sticky lg:top-24">
+            <div className="rounded-3xl bg-card p-6 md:p-8">
+              <dl className="space-y-1.5 text-[13.5px]">
+                <div className="flex justify-between text-muted"><dt>{dict.cart.subtotal}</dt><dd>{formatLKR(order.subtotal)}</dd></div>
+                {order.discount_total > 0 && (
+                  <div className="flex justify-between text-ok"><dt>{dict.form.coupon}</dt><dd>− {formatLKR(order.discount_total)}</dd></div>
+                )}
+                <div className="flex justify-between text-muted"><dt>{dict.cart.delivery}</dt><dd>{formatLKR(order.delivery_fee)}</dd></div>
+                {order.koko_fee > 0 && (
+                  <div className="flex justify-between text-muted"><dt>Koko service fee (12%)</dt><dd>{formatLKR(order.koko_fee)}</dd></div>
+                )}
+                <div className="flex justify-between border-t border-[#EEF1F6] pt-2.5 text-[16px] font-bold"><dt>{dict.order.total}</dt><dd>{formatLKR(order.total)}</dd></div>
+              </dl>
+
+              <div className="mt-6 grid gap-2.5">
+                <Link href={`/${locale}/order/${order.order_number}/invoice`}
+                  className="pressable block rounded-2xl bg-paper p-3.5 text-center text-[13px] font-semibold hover:bg-line/60">
+                  🧾 Download invoice
+                </Link>
+                <a href={waLink(`Hi ${SITE.name}! About my order ${order.order_number}:`)}
+                  target="_blank" rel="noopener noreferrer"
+                  className="pressable block rounded-2xl bg-tint-mint p-3.5 text-center text-[13px] font-semibold text-ok hover:brightness-95">
+                  {dict.order.help}
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -10,8 +10,10 @@ import CheckoutStub from '@/components/CheckoutStub';
 
 export const metadata: Metadata = { title: 'Checkout', robots: { index: false } };
 
-export default async function CheckoutPage({ params }: { params: Promise<{ locale: Locale }> }) {
+export default async function CheckoutPage({ params, searchParams }:
+  { params: Promise<{ locale: Locale }>; searchParams: Promise<{ cancelled?: string }> }) {
   const { locale } = await params;
+  const { cancelled } = await searchParams;
   const dict = getDict(locale);
   const supabase = await getServerSupabase();
 
@@ -36,6 +38,15 @@ export default async function CheckoutPage({ params }: { params: Promise<{ local
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 md:px-6 md:py-12">
       <h1 className="mb-6 text-2xl font-bold md:text-3xl">{dict.checkout.title}</h1>
+      {cancelled === '1' && (
+        <div className="mb-6 flex items-start gap-3 rounded-2xl bg-warn-soft p-4 text-warn">
+          <span className="text-[18px]">⚠️</span>
+          <div>
+            <p className="text-[13.5px] font-bold">Payment cancelled</p>
+            <p className="mt-0.5 text-[12.5px]">You weren&apos;t charged. Your cart is still here — try again, or choose a different payment method below.</p>
+          </div>
+        </div>
+      )}
       <CheckoutForm dict={dict} zones={zones} locale={locale} signedIn={!!user}
         suggestions={suggestions} discounts={discounts} payhereOn={payhereConfigured()} kokoOn={kokoConfigured()} />
     </div>

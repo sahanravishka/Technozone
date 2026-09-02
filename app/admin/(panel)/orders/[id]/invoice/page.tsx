@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Order Invoice | Admin', robots: { in
 export const dynamic = 'force-dynamic';
 
 const PAY_LABEL: Record<string, string> = {
-  cod: 'Cash on delivery (COD)', whatsapp: 'WhatsApp order', payhere: 'Online payment (PayHere)',
+  cod: 'Cash on delivery (COD)', whatsapp: 'WhatsApp order', payhere: 'Online payment (PayHere)', koko: 'Koko (3 installments)',
 };
 
 export default async function AdminOrderInvoicePage({ params }:
@@ -19,7 +19,7 @@ export default async function AdminOrderInvoicePage({ params }:
 
   const { data: order } = await admin.from('orders')
     .select(`id, order_number, status, payment_status, payment_method, subtotal, discount_total,
-      delivery_fee, total, created_at, shipping_address, customer_phone,
+      delivery_fee, koko_fee, total, created_at, shipping_address, customer_phone,
       order_items(id, product_name, variant_name, sku, unit_price, qty, line_total)`)
     .eq('id', id).maybeSingle();
   if (!order) notFound();
@@ -125,6 +125,9 @@ export default async function AdminOrderInvoicePage({ params }:
               <div className="flex justify-between text-ok"><dt>Discount</dt><dd>− {formatLKR(order.discount_total)}</dd></div>
             )}
             <div className="flex justify-between text-muted"><dt>Delivery</dt><dd>{formatLKR(order.delivery_fee)}</dd></div>
+            {order.koko_fee > 0 && (
+              <div className="flex justify-between text-muted"><dt>Koko service fee (12%)</dt><dd>{formatLKR(order.koko_fee)}</dd></div>
+            )}
             <div className="flex justify-between border-t border-line pt-2 text-[16px] font-black"><dt>Total Amount</dt><dd>{formatLKR(order.total)}</dd></div>
           </dl>
         </div>

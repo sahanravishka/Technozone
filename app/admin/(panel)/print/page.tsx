@@ -6,7 +6,7 @@ import PrintButton from '@/components/admin/PrintButton';
 export const dynamic = 'force-dynamic';
 
 const PAY_LABEL: Record<string, string> = {
-  cod: 'Cash on delivery', whatsapp: 'WhatsApp pay', payhere: 'Online payment',
+  cod: 'Cash on delivery', whatsapp: 'WhatsApp pay', payhere: 'Online payment', koko: 'Koko (3 installments)',
 };
 
 export default async function PrintSlips({ searchParams }:

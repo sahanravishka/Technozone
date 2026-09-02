@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: 'Invoice', robots: { index: false } }
 export const dynamic = 'force-dynamic';
 
 const PAY_LABEL: Record<string, string> = {
-  cod: 'Cash on delivery', whatsapp: 'WhatsApp order', payhere: 'Online payment (card)',
+  cod: 'Cash on delivery', whatsapp: 'WhatsApp order', payhere: 'Online payment (card)', koko: 'Koko (3 installments)',
 };
 
 export default async function InvoicePage({ params }:
@@ -29,7 +29,7 @@ export default async function InvoicePage({ params }:
   // Fetch using admin so guest orders (no user) can be retrieved securely
   const { data: order } = await admin.from('orders')
     .select(`id, customer_id, order_number, status, payment_status, payment_method, subtotal, discount_total,
-      delivery_fee, total, created_at, shipping_address, customer_phone,
+      delivery_fee, koko_fee, total, created_at, shipping_address, customer_phone,
       order_items(id, product_name, variant_name, sku, unit_price, qty, line_total)`)
     .or(`order_number.eq.${id},id.eq.${id}`).maybeSingle();
   if (!order) notFound();
@@ -137,6 +137,9 @@ export default async function InvoicePage({ params }:
               <div className="flex justify-between text-ok"><dt>Discount</dt><dd>− {formatLKR(order.discount_total)}</dd></div>
             )}
             <div className="flex justify-between text-muted"><dt>Delivery</dt><dd>{formatLKR(order.delivery_fee)}</dd></div>
+            {order.koko_fee > 0 && (
+              <div className="flex justify-between text-muted"><dt>Koko service fee (12%)</dt><dd>{formatLKR(order.koko_fee)}</dd></div>
+            )}
             <div className="flex justify-between border-t border-line pt-2 text-[16px] font-bold"><dt>Total</dt><dd>{formatLKR(order.total)}</dd></div>
           </dl>
         </div>
