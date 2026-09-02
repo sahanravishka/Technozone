@@ -115,7 +115,7 @@ export default async function OrderPage({ params }:
         )}
 
         <div className="mt-7 grid gap-3 sm:grid-cols-2">
-          <Link href={`/${locale}/order/${order.id}/invoice`}
+          <Link href={`/${locale}/order/${order.order_number}/invoice`}
             className="block rounded-2xl bg-paper p-4 text-center text-[13px] font-semibold hover:bg-line/60">
             🧾 Download invoice
           </Link>

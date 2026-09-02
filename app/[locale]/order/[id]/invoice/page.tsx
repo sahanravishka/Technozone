@@ -31,7 +31,7 @@ export default async function InvoicePage({ params }:
     .select(`id, customer_id, order_number, status, payment_status, payment_method, subtotal, discount_total,
       delivery_fee, total, created_at, shipping_address, customer_phone,
       order_items(id, product_name, variant_name, sku, unit_price, qty, line_total)`)
-    .eq('order_number', id).maybeSingle();
+    .or(`order_number.eq.${id},id.eq.${id}`).maybeSingle();
   if (!order) notFound();
 
   // If this order belongs to a registered customer, enforce authentication
