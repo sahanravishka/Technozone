@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import type { Locale } from '@/lib/i18n/config';
 import { getServerSupabase } from '@/lib/supabase-clients/server';
+import { getAdminSupabase } from '@/lib/supabase-clients/admin';
 import { formatLKR, SITE } from '@/lib/site';
 import PrintInvoiceButton from '@/components/PrintInvoiceButton';
 
@@ -17,17 +19,32 @@ export default async function InvoicePage({ params }:
   const { locale, id } = await params;
   const supabase = await getServerSupabase();
   if (!supabase) notFound();
+  const admin = getAdminSupabase();
+  if (!admin) notFound();
 
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect(`/${locale}/login?next=/${locale}/order/${id}/invoice`);
+  const cookieStore = await cookies();
+  const guestToken = cookieStore.get('guest_order_id')?.value;
 
-  // RLS scopes this to the signed-in customer's own orders — no IDOR risk.
-  const { data: order } = await supabase.from('orders')
-    .select(`id, order_number, status, payment_status, payment_method, subtotal, discount_total,
+  // Fetch using admin so guest orders (no user) can be retrieved securely
+  const { data: order } = await admin.from('orders')
+    .select(`id, customer_id, order_number, status, payment_status, payment_method, subtotal, discount_total,
       delivery_fee, total, created_at, shipping_address, customer_phone,
       order_items(id, product_name, variant_name, sku, unit_price, qty, line_total)`)
-    .eq('id', id).maybeSingle();
+    .eq('order_number', id).maybeSingle();
   if (!order) notFound();
+
+  // If this order belongs to a registered customer, enforce authentication
+  if (order.customer_id) {
+    if (!user || user.id !== order.customer_id) {
+      redirect(`/${locale}/login?next=/${locale}/order/${id}/invoice`);
+    }
+  } else {
+    // Guest order: require the guest token cookie
+    if (guestToken !== order.id) {
+      redirect(`/${locale}/login?next=/${locale}/order/${id}/invoice`);
+    }
+  }
 
   const addr = order.shipping_address as {
     name?: string; phone?: string; line1?: string; city?: string; postal_code?: string;

@@ -42,9 +42,10 @@ export async function createOrder(input: {
   if (method === 'koko' && !kokoConfigured()) return { ok: false, error: 'config' };
 
   const { data: { user } } = await supabase.auth.getUser();
-  const buyerEmail = user?.email ?? input.email?.trim();
-  // email is required for online (receipt) but optional for COD/WhatsApp
-  if ((method === 'payhere' || method === 'koko') && !buyerEmail) return { ok: false, error: 'auth' };
+  let buyerEmail = user?.email ?? input.email?.trim();
+  if ((method === 'payhere' || method === 'koko') && !buyerEmail) {
+    buyerEmail = 'guest@technozonelanka.com';
+  }
   const isPickup = input.fulfillment === 'pickup';
   if (!input.lines.length || !input.name || !input.phone) return { ok: false, error: 'invalid' };
   if (!isPickup && (!input.address || !input.city)) return { ok: false, error: 'invalid' };
@@ -197,7 +198,7 @@ export async function createOrder(input: {
     const fields = buildCheckoutFields({
       orderId: order.id, amount: total,
       firstName, lastName: rest.join(' '),
-      email: buyerEmail!, phone: input.phone,
+      email: buyerEmail, phone: input.phone,
       address: input.address, city: input.city,
       items: items.map(i => i.product_name).join(', '),
       locale: input.locale
@@ -216,7 +217,7 @@ export async function createOrder(input: {
         kokoOrderId, amount: total,
         firstName: firstName || 'Customer', 
         lastName: rest.join(' ') || '-', // Koko strictly requires a last name
-        email: buyerEmail && buyerEmail.includes('@') ? buyerEmail : 'guest@technozonelanka.com',
+        email: buyerEmail.includes('@') ? buyerEmail : 'guest@technozonelanka.com',
         phone: input.phone,
         description: items.map(i => i.product_name).join(', '),
         reference: order.order_number,
