@@ -41,7 +41,7 @@ const nextConfig = {
       "frame-ancestors 'none'",
       "object-src 'none'",
       "base-uri 'self'",
-      "form-action 'self' https://www.payhere.lk https://sandbox.payhere.lk",
+      "form-action 'self' https://www.payhere.lk https://sandbox.payhere.lk https://devapi.paykoko.com https://qaapi.paykoko.com https://prodapi.paykoko.com",
       'upgrade-insecure-requests'
     ].join('; ');
 
