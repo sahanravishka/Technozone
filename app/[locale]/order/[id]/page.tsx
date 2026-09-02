@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import type { Locale } from '@/lib/i18n/config';
 import { getDict } from '@/lib/i18n/dictionaries';
 import { getServerSupabase } from '@/lib/supabase-clients/server';
@@ -25,15 +26,23 @@ export default async function OrderPage({ params }:
   const admin = getAdminSupabase();
   if (!admin) notFound();
 
-  // Fetch using admin so guest orders (no user) can be retrieved by their unguessable UUID
+  const cookieStore = await cookies();
+  const guestToken = cookieStore.get('guest_order_id')?.value;
+
+  // Fetch using admin so guest orders (no user) can be retrieved securely
   const { data: order } = await admin.from('orders')
     .select('id, customer_id, order_number, status, payment_status, subtotal, discount_total, delivery_fee, total, created_at, order_items(id, product_name, variant_name, qty, line_total)')
-    .eq('id', id).maybeSingle();
+    .eq('order_number', id).maybeSingle();
   if (!order) notFound();
 
   // If this order belongs to a registered customer, enforce authentication
   if (order.customer_id) {
     if (!user || user.id !== order.customer_id) {
+      redirect(`/${locale}/login?next=/${locale}/order/${id}`);
+    }
+  } else {
+    // Guest order: require the guest token cookie
+    if (guestToken !== order.id) {
       redirect(`/${locale}/login?next=/${locale}/order/${id}`);
     }
   }

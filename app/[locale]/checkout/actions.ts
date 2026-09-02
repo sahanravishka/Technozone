@@ -185,6 +185,13 @@ export async function createOrder(input: {
   };
 
   // ---- 4. Branch by payment method ----
+
+  if (!user) {
+    const { cookies } = await import('next/headers');
+    const cookieStore = await cookies();
+    cookieStore.set('guest_order_id', order.id, { httpOnly: true, maxAge: 60 * 60 * 24 * 7, path: '/' });
+  }
+
   if (method === 'payhere') {
     const [firstName, ...rest] = input.name.trim().split(/\s+/);
     const fields = buildCheckoutFields({
