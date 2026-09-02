@@ -12,6 +12,7 @@ import { formatLKR, SITE, waLink } from '@/lib/site';
 import StatusTimeline from '@/components/StatusTimeline';
 import ClearCart from '@/components/ClearCart';
 import { KokoBadge } from '@/components/KokoBadge';
+import { BrandMark, Wordmark } from '@/components/Header';
 import { reconcileKokoOrder } from '@/lib/koko-reconcile';
 
 const ORDER_SELECT = `id, customer_id, order_number, status, payment_status, payment_method, subtotal,
@@ -127,8 +128,20 @@ export default async function OrderPage({ params, searchParams }:
 
       {/* ---------- full-bleed hero ---------- */}
       <div className={`relative overflow-hidden px-4 py-14 md:py-20 ${heroBg}`}>
+        {/* brand accent — the same volt→accent gradient used on primary buttons site-wide */}
+        <div className="absolute inset-x-0 top-0 h-1.5"
+          style={{ background: 'linear-gradient(135deg, var(--volt), var(--accent))' }} aria-hidden />
+
         <div className="mx-auto max-w-xl text-center">
-          <div className={`mx-auto grid h-20 w-20 place-items-center rounded-full text-[34px] shadow-soft
+          <Link href={`/${locale}`} className="inline-flex flex-col items-center gap-1.5">
+            <span className="inline-flex items-center gap-2.5">
+              <BrandMark className="h-9 w-9 rounded-[11px] shadow-sm" />
+              <Wordmark className="text-[15px]" />
+            </span>
+            <span className="text-[11.5px] font-medium text-muted">{SITE.tagline}</span>
+          </Link>
+
+          <div className={`mx-auto mt-7 grid h-20 w-20 place-items-center rounded-full text-[34px] shadow-soft
             ${paid ? 'bg-ok text-white animate-pulse-glow' : failed ? 'bg-sale text-white' : 'bg-card text-volt'}`}>
             {paid ? '✓' : failed ? '✕' : (
               <span className="block h-8 w-8 animate-spin rounded-full border-[3px] border-line border-t-volt" />
