@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useCart } from '@/lib/cart-store';
 import type { Dict } from '@/lib/i18n/dictionaries';
 import type { DeliveryZone, Discount, Product } from '@/lib/types';
