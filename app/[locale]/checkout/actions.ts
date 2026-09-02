@@ -18,7 +18,8 @@ type Result =
   | { ok: true; method: 'payhere' | 'koko'; gateway: string; fields: Record<string, string> }
   | { ok: true; method: 'cod' | 'whatsapp'; orderNumber: string; total: number;
       items: { name: string; qty: number; line: number }[] }
-  | { ok: false; error: 'auth' | 'stock' | 'config' | 'invalid' | 'cod_blocked' | 'cod_limit' | 'rate' };
+  | { ok: false; error: 'auth' | 'stock' | 'config' | 'invalid' | 'cod_blocked' | 'cod_limit' | 'rate' }
+  | { ok: false; error: 'koko_error'; detail: string };
 
 export async function createOrder(input: {
   lines: CartLine[]; locale: string;
@@ -195,20 +196,29 @@ export async function createOrder(input: {
   }
 
   if (method === 'koko') {
-    const [firstName, ...rest] = input.name.trim().split(/\s+/);
-    const kokoOrderId = newKokoOrderId(order.order_number);
-    // Store before returning — the response webhook only gets this custom
-    // id back from Koko, not our own order uuid, so it must be saved now.
-    await admin.from('orders').update({ koko_order_id: kokoOrderId }).eq('id', order.id);
-    const fields = buildKokoOrderFields({
-      kokoOrderId, amount: total,
-      firstName, lastName: rest.join(' '),
-      email: buyerEmail!,
-      description: items.map(i => i.product_name).join(', '),
-      reference: order.order_number,
-      locale: input.locale
-    });
-    return { ok: true, method, gateway: `${kokoBaseUrl()}/api/merchants/orderCreate`, fields };
+    try {
+      const [firstName, ...rest] = input.name.trim().split(/\s+/);
+      const kokoOrderId = newKokoOrderId(order.order_number);
+      // Store before returning — the response webhook only gets this custom
+      // id back from Koko, not our own order uuid, so it must be saved now.
+      await admin.from('orders').update({ koko_order_id: kokoOrderId }).eq('id', order.id);
+      const fields = buildKokoOrderFields({
+        kokoOrderId, amount: total,
+        firstName, lastName: rest.join(' '),
+        email: buyerEmail!,
+        description: items.map(i => i.product_name).join(', '),
+        reference: order.order_number,
+        locale: input.locale
+      });
+      return { ok: true, method, gateway: `${kokoBaseUrl()}/api/merchants/orderCreate`, fields };
+    } catch (err) {
+      // Surface the real reason on-screen (safe message only — never the
+      // key material itself) instead of a generic "something went wrong"
+      // that gives no way to diagnose without server log access.
+      const detail = err instanceof Error ? err.message : 'Unknown error building the Koko request';
+      console.error('[koko] order-create failed:', detail);
+      return { ok: false, error: 'koko_error', detail };
+    }
   }
 
   // COD or WhatsApp: order sits pending/unpaid until staff confirm collection.

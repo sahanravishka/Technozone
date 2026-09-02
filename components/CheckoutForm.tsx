@@ -94,6 +94,7 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
       else if (res.error === 'cod_blocked') setErr('Cash on delivery is not available for this number. Please pay online or order on WhatsApp.');
       else if (res.error === 'cod_limit') setErr('This order is above the Cash-on-delivery limit. Please pay online or order on WhatsApp.');
       else if (res.error === 'rate') setErr('Too many attempts — please wait a minute and try again.');
+      else if (res.error === 'koko_error') setErr(`Koko error: ${res.detail}`);
       else setErr('Something went wrong. Please check your details.');
       return;
     }
