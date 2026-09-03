@@ -35,8 +35,16 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     { count: pendingOrders }, { count: pendingReturns }, { count: pendingReviews },
     { count: openRepairs }, { count: newCustomers }
   ] = await Promise.all([
+    // "Real" here excludes cancelled orders and abandoned PayHere/Koko
+    // gateway sessions — a customer bounced to the gateway and never paid
+    // still leaves a pending/unpaid row (that's the source of truth the
+    // reconcile fallback needs), but it isn't a real order until it's paid.
+    // COD/WhatsApp orders are final the moment they're placed, so those
+    // always count.
     supabase.from('orders').select('id', { count: 'exact', head: true })
-      .gte('created_at', today.toISOString()),
+      .gte('created_at', today.toISOString())
+      .neq('status', 'cancelled')
+      .or('payment_method.in.(cod,whatsapp),payment_status.eq.paid'),
     supabase.from('orders').select('total')
       .gte('created_at', monthStart.toISOString())
       .in('status', PAID_STATUSES),
