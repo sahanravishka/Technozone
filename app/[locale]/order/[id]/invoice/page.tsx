@@ -26,6 +26,12 @@ export default async function InvoicePage({ params }:
   const cookieStore = await cookies();
   const guestToken = cookieStore.get('guest_order_id')?.value;
 
+  // order_number ("ORD-000001") and our own uuid are both plain
+  // alphanumeric+hyphen — reject anything else before it reaches .or(),
+  // which otherwise takes the raw URL segment as PostgREST filter syntax
+  // (a comma/paren in `id` could inject extra OR conditions).
+  if (!/^[a-zA-Z0-9-]+$/.test(id)) notFound();
+
   // Fetch using admin so guest orders (no user) can be retrieved securely
   const { data: order } = await admin.from('orders')
     .select(`id, customer_id, order_number, status, payment_status, payment_method, subtotal, discount_total,

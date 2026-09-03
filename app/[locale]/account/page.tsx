@@ -49,7 +49,7 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
         <ul className="space-y-2.5">
           {orders.map(o => (
             <li key={o.id}>
-              <Link href={`/${locale}/order/${o.id}`}
+              <Link href={`/${locale}/order/${o.order_number}`}
                 className="card-soft flex items-center gap-3 p-4">
                 <div className="min-w-0 flex-1">
                   <p className="text-[14px] font-bold">{o.order_number}</p>

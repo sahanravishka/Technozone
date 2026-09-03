@@ -226,7 +226,7 @@ export async function createOrder(input: {
   if (method === 'payhere') {
     const [firstName, ...rest] = input.name.trim().split(/\s+/);
     const fields = buildCheckoutFields({
-      orderId: order.id, amount: total,
+      orderId: order.id, orderNumber: order.order_number, amount: total,
       firstName, lastName: rest.join(' '),
       email: buyerEmail || 'guest@technozonelanka.com', phone: input.phone,
       address: input.address, city: input.city,

@@ -2,6 +2,7 @@
 
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { getAdminSupabase } from '@/lib/supabase-clients/admin';
+import { rateLimitByIp } from '@/lib/rate-limit';
 
 export async function requestStockNotify(input: {
   productId: string; variantId: string | null; productName: string; phone: string;
@@ -9,6 +10,7 @@ export async function requestStockNotify(input: {
   const admin = getAdminSupabase();
   const phone = input.phone.trim();
   if (!admin || phone.length < 7) return { ok: false };
+  if (!(await rateLimitByIp('stock-notify', 15, 60))) return { ok: false };
   const { error } = await admin.from('stock_notify_requests').insert({
     product_id: input.productId,
     variant_id: input.variantId,
@@ -23,6 +25,7 @@ export async function submitReview(input: {
 }): Promise<{ ok: boolean; verified?: boolean }> {
   const admin = getAdminSupabase();
   if (!admin) return { ok: false };
+  if (!(await rateLimitByIp('submit-review', 10, 60))) return { ok: false };
   const rating = Math.max(1, Math.min(5, Math.round(input.rating)));
   if (!input.authorName.trim() || !rating) return { ok: false };
 

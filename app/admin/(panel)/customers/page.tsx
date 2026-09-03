@@ -19,11 +19,18 @@ export default async function AdminCustomers({
     .limit(100);
 
   if (q?.trim()) {
-    const term   = q.trim();
+    // Whitelist to letters/numbers/space/hyphen/@ — same fix as
+    // searchProducts() in lib/data.ts: an unfiltered term can inject
+    // PostgREST .or() syntax (commas, parens, dots, colons, asterisks).
+    // '.' stays excluded like the rest of the codebase's or()-filter inputs,
+    // so a full email search loses only the dots (still substring-matches).
+    const term = q.trim().replace(/[^\p{L}\p{N}\s@-]/gu, '').slice(0, 60).trim();
     const digits = term.replace(/\D/g, '');
-    const ors    = [`full_name.ilike.%${term}%`, `email.ilike.%${term}%`, `city.ilike.%${term}%`];
-    if (digits) ors.push(`phone_norm.ilike.%${digits}%`);
-    query = query.or(ors.join(','));
+    if (term) {
+      const ors = [`full_name.ilike.%${term}%`, `email.ilike.%${term}%`, `city.ilike.%${term}%`];
+      if (digits) ors.push(`phone_norm.ilike.%${digits}%`);
+      query = query.or(ors.join(','));
+    }
   }
   const { data: contacts } = await query;
 

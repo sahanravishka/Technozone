@@ -14,7 +14,7 @@ export const payhereGateway = () =>
 
 /** Fields for the browser form POST to PayHere (hash per PayHere docs). */
 export function buildCheckoutFields(o: {
-  orderId: string; amount: number; firstName: string; lastName: string;
+  orderId: string; orderNumber: string; amount: number; firstName: string; lastName: string;
   email: string; phone: string; address: string; city: string; items: string;
   locale: string;
 }) {
@@ -22,10 +22,15 @@ export function buildCheckoutFields(o: {
   const secret = process.env.PAYHERE_MERCHANT_SECRET!;
   const amount = o.amount.toFixed(2);
   const currency = 'LKR';
+  // order_id here is our order's real uuid — the notify webhook and
+  // confirm_order_paid() match on it directly (`where id = p_order_id`), so
+  // it can't be swapped for the customer-facing order_number. The browser
+  // return_url is a different concern: /order/[id] looks orders up by
+  // order_number, not uuid, so it needs the human-facing reference instead.
   const hash = md5u(merchantId + o.orderId + amount + currency + md5u(secret));
   return {
     merchant_id: merchantId,
-    return_url: `${SITE.url}/${o.locale}/order/${o.orderId}`,
+    return_url: `${SITE.url}/${o.locale}/order/${o.orderNumber}`,
     cancel_url: `${SITE.url}/${o.locale}/checkout?cancelled=1`,
     notify_url: `${SITE.url}/api/payhere/notify`,
     order_id: o.orderId,
