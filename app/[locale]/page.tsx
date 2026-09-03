@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { locales, type Locale } from '@/lib/i18n/config';
 import { getDict } from '@/lib/i18n/dictionaries';
-import { getActiveDiscounts, getCategories, getHomepageBanners, getBusinessProfile, getProducts, localized } from '@/lib/data';
+import { getActiveDiscounts, getCategories, getHomepageBanners, getBusinessProfile, getProducts, getBrandTiles, localized } from '@/lib/data';
 import { priceProduct } from '@/lib/pricing';
 import { imageUrl } from '@/lib/supabase';
 import { formatLKR, waLink, SITE, KOKO_ENABLED } from '@/lib/site';
@@ -12,6 +12,7 @@ import Reveal from '@/components/Reveal';
 import ProductGrid from '@/components/ProductGrid';
 import RecentlyViewed from '@/components/RecentlyViewed';
 import FeaturedSpotlight from '@/components/FeaturedSpotlight';
+import SectionHeading from '@/components/SectionHeading';
 import { safeJsonLd } from '@/lib/jsonld';
 
 export const revalidate = 300;
@@ -48,8 +49,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: L
 export default async function HomePage({ params }: { params: Promise<{ locale: Locale }> }) {
   const { locale } = await params;
   const dict = getDict(locale);
-  const [categories, discounts, productsRaw, banners, businessProfile] = await Promise.all([
-    getCategories(), getActiveDiscounts(), getProducts({ limit: 12 }), getHomepageBanners(), getBusinessProfile()
+  const [categories, discounts, productsRaw, banners, businessProfile, brandTiles] = await Promise.all([
+    getCategories(), getActiveDiscounts(), getProducts({ limit: 12 }), getHomepageBanners(), getBusinessProfile(), getBrandTiles()
   ]);
   const products = productsRaw.map(p => localized(p, locale));
   const kokoOn = KOKO_ENABLED && kokoConfigured();
@@ -210,15 +211,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
       {/* ===================== CATEGORIES — organic tile shapes ===================== */}
       <Reveal>
         <section className="py-12 md:py-16" aria-label="Product categories">
-          <div className="mb-7 flex items-end justify-between gap-5">
-            <div>
-              <h2 className="text-[1.6rem] font-extrabold tracking-[-0.025em] md:text-[2.1rem]">{dict.home.catTitle}</h2>
-              <p className="mt-1.5 text-[14px] text-muted md:text-[15px]">{dict.home.catSub}</p>
-            </div>
-            <Link href={`/${locale}/search`} className="hidden shrink-0 items-center gap-1.5 text-[14px] font-bold text-volt hover:underline md:inline-flex">
-              {dict.home.allCats} <ArrowIcon />
-            </Link>
-          </div>
+          <SectionHeading title={dict.home.catTitle} sub={dict.home.catSub}
+            href={`/${locale}/search`} cta={dict.home.allCats} />
           <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-5">
             {categories.slice(0, 5).map((c, i) => (
               <Link key={c.id} href={`/${locale}/category/${c.slug}`}
@@ -242,18 +236,49 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
       {/* ===================== TRENDING PRODUCTS ===================== */}
       <Reveal>
         <section className="pb-12 md:pb-16" aria-label="Trending products">
-          <div className="mb-7 flex items-end justify-between gap-5">
-            <div>
-              <h2 className="text-[1.6rem] font-extrabold tracking-[-0.025em] md:text-[2.1rem]">{dict.home.trendTitle}</h2>
-              <p className="mt-1.5 text-[14px] text-muted md:text-[15px]">{dict.home.trendSub}</p>
-            </div>
-            <Link href={`/${locale}/search`} className="inline-flex shrink-0 items-center gap-1.5 text-[14px] font-bold text-volt hover:underline">
-              {dict.home.seeAll} <ArrowIcon />
-            </Link>
-          </div>
+          <SectionHeading title={dict.home.trendTitle} sub={dict.home.trendSub}
+            href={`/${locale}/search`} cta={dict.home.seeAll} />
           <ProductGrid products={products.slice(0, 8)} discounts={discounts} locale={locale} dict={dict} />
         </section>
       </Reveal>
+
+      {/* ===================== BRAND RAIL — tiles into the brand price lists ===================== */}
+      {brandTiles.length > 0 && (
+        <Reveal>
+          <section className="pb-12 md:pb-16" aria-label="Shop by brand">
+            <SectionHeading title={dict.home.brandTitle} sub={dict.home.brandSub} />
+            <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 md:grid-cols-4">
+              {brandTiles.map(b => (
+                <Link key={b.slug} href={`/${locale}/brand/${b.slug}`}
+                  className="card-soft group relative flex aspect-[4/3] flex-col justify-end overflow-hidden border border-line p-4"
+                  style={{ borderRadius: '20px' }}>
+                  {b.image && (
+                    <Image src={imageUrl(b.image)} alt="" fill sizes="(min-width: 768px) 25vw, 50vw"
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.06]" />
+                  )}
+                  {/* Keeps the label readable whatever the product shot behind it. */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" aria-hidden />
+                  <div className="relative z-10">
+                    <p className="text-[15px] font-extrabold text-white">{b.brand}</p>
+                    <p className="text-[12px] font-semibold text-white/70">
+                      {b.count} {b.count === 1 ? dict.home.brandItem : dict.home.brandItems}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+              {/* The "all" tile that closes the row */}
+              <Link href={`/${locale}/search`}
+                className="card-soft group flex aspect-[4/3] flex-col items-center justify-center gap-2 border border-line bg-paper p-4 text-center"
+                style={{ borderRadius: '20px' }}>
+                <span className="grid h-11 w-11 place-items-center rounded-full bg-volt/10 text-volt transition-transform duration-300 group-hover:scale-110">
+                  <ArrowIcon />
+                </span>
+                <p className="text-[14px] font-bold">{dict.sections.all}</p>
+              </Link>
+            </div>
+          </section>
+        </Reveal>
+      )}
 
       {/* ===================== FEATURE SPOTLIGHT — auto-rotating ===================== */}
       {products.length > 0 && (

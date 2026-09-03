@@ -279,6 +279,34 @@ export async function getBrands(): Promise<string[]> {
   return [...new Set(demoProducts.map(p => p.brand ?? '').filter(Boolean))].sort();
 }
 
+/**
+ * Brands with a representative product shot, for the homepage brand rail.
+ * Ordered by catalogue depth so the brand we actually stock leads.
+ */
+export async function getBrandTiles(): Promise<{ brand: string; slug: string; image: string | null; count: number }[]> {
+  const sb = getSupabase();
+  if (!sb) return [];
+  const { data } = await sb.from('products')
+    .select('brand, product_images ( storage_path, sort_order )')
+    .eq('is_active', true).is('deleted_at', null).not('brand', 'is', null);
+  if (!data) return [];
+
+  const byBrand = new Map<string, { count: number; image: string | null }>();
+  for (const row of data as unknown as { brand: string; product_images: { storage_path: string; sort_order: number }[] }[]) {
+    if (!row.brand) continue;
+    const entry = byBrand.get(row.brand) ?? { count: 0, image: null };
+    entry.count += 1;
+    if (!entry.image) {
+      const first = [...(row.product_images ?? [])].sort((a, b) => a.sort_order - b.sort_order)[0];
+      if (first) entry.image = first.storage_path;
+    }
+    byBrand.set(row.brand, entry);
+  }
+  return [...byBrand.entries()]
+    .map(([brand, v]) => ({ brand, slug: brandSlug(brand), image: v.image, count: v.count }))
+    .sort((a, b) => b.count - a.count);
+}
+
 // ---------------- Brand pages (SEO landing pages) ----------------
 /** URL-safe slug for a brand name ("Anker Soundcore" -> "anker-soundcore"). */
 export function brandSlug(brand: string): string {

@@ -142,6 +142,20 @@ body {
   border-radius: 24px;
 }
 
+/* ---------- Marker-highlight section heading ----------
+   The lead word sits in a solid block, like a highlighter stroke, so
+   section starts read at a glance while scrolling a long merchandised
+   page. Uses the brand blue rather than a borrowed palette. */
+.mark-highlight {
+  display: inline-block;
+  padding: .12em .42em .18em;
+  border-radius: 8px;
+  background: var(--volt);
+  color: #fff;
+  /* Optical: the block adds visual weight, so pull the tracking in a touch. */
+  letter-spacing: -0.015em;
+}
+
 /* ---------- Laminated print finish ----------
    Makes a tinted card read like a laminated card catching the light: a
    diagonal gloss sweep, a crisp lit top edge, and a deeper drop shadow so
