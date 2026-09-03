@@ -39,11 +39,32 @@ export const kokoBaseUrl = () => {
 function signWithMerchantKey(dataString: string): string {
   const keyPem = normalizePem(process.env.KOKO_PRIVATE_KEY);
   if (!keyPem) throw new Error('KOKO_PRIVATE_KEY not set');
-  const key = createPrivateKey({ key: keyPem, format: 'pem' });
-  const signer = createSign('RSA-SHA256');
-  signer.update(dataString);
-  signer.end();
-  return signer.sign(key).toString('base64');
+
+  // TEMP DIAGNOSTIC — remove once live checkout is confirmed working.
+  // Logs only structural facts (never the key body) to find out what's
+  // actually stored in the env var, since a saved value can still differ
+  // from what was intended to be pasted.
+  const lines = keyPem.split('\n').filter(Boolean);
+  console.log('[koko-diag]', JSON.stringify({
+    mode: process.env.KOKO_MODE ?? '(unset)',
+    baseUrl: kokoBaseUrl(),
+    rawLength: process.env.KOKO_PRIVATE_KEY?.length ?? 0,
+    lineCount: lines.length,
+    firstLine: lines[0] ?? '(empty)',
+    lastLine: lines[lines.length - 1] ?? '(empty)'
+  }));
+
+  try {
+    const key = createPrivateKey({ key: keyPem, format: 'pem' });
+    console.log('[koko-diag] key parsed OK:', key.asymmetricKeyType, key.asymmetricKeyDetails?.modulusLength, 'bit');
+    const signer = createSign('RSA-SHA256');
+    signer.update(dataString);
+    signer.end();
+    return signer.sign(key).toString('base64');
+  } catch (err) {
+    console.log('[koko-diag] key parse/sign FAILED:', err instanceof Error ? err.message : err);
+    throw err;
+  }
 }
 
 /** Verify a signature Koko sent us (response webhook) using Koko's own
