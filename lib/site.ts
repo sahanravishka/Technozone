@@ -5,7 +5,7 @@
 // requires kokoConfigured() (env vars present) — this flag is the manual
 // launch switch on top of that, flip to false to pull it without undoing
 // any of the underlying work.
-export const KOKO_ENABLED = true;
+export const KOKO_ENABLED = false;
 
 export const SITE = {
   name: 'Techno Zone Lanka',
