@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { advanceOrder, confirmPendingOrder, recallOrder } from '@/app/admin/actions';
+import { advanceOrder, confirmPendingOrder, recallOrder, recheckKokoPayment } from '@/app/admin/actions';
 import { formatLKR } from '@/lib/site';
 
 /* ── Types ── */
@@ -49,6 +49,8 @@ export default function OrderCard({
   const [cancelStep, setCancelStep] = useState(0); // 0=idle 1=warn 2=confirm
   const [recallStep, setRecallStep] = useState(0); // 0=idle 1=confirm
   const [recallErr, setRecallErr]   = useState('');
+  const [kokoChecking, setKokoChecking] = useState(false);
+  const [kokoMsg, setKokoMsg]           = useState('');
 
   const isCod    = order.payment_method === 'cod';
   const rawPill  = STATUS_PILL[order.status];
@@ -64,8 +66,33 @@ export default function OrderCard({
   const barColor = STATUS_BAR[order.status] ?? '#9CA3AF';
 
   const needScan = (order.requiredSerials ?? 0) > 0;
-  const needsPayConfirm = (order.payment_method === 'whatsapp' || order.payment_method === 'koko' || isCod) && order.status === 'pending';
+  // Koko is a fully automated gateway — its own webhook (or the recheck
+  // below) is the only thing that should ever mark it paid. Grouping it in
+  // with WhatsApp/COD here would offer staff a one-click "confirm payment"
+  // that actually calls mark_order_collected with no real payment check —
+  // an abandoned/unpaid Koko checkout could get shipped for free.
+  const needsPayConfirm = (order.payment_method === 'whatsapp' || isCod) && order.status === 'pending';
+  const isPendingKoko   = order.payment_method === 'koko' && order.status === 'pending';
   const isCancelled     = order.status === 'cancelled';
+
+  const doKokoRecheck = () => {
+    setKokoChecking(true); setKokoMsg('');
+    start(async () => {
+      try {
+        const outcome = await recheckKokoPayment(order.id);
+        setKokoMsg(
+          outcome === 'paid' ? '✅ Koko confirms this is paid.' :
+          outcome === 'failed' ? '❌ Koko confirms this failed/was cancelled.' :
+          outcome === 'pending' ? '⏳ Still pending on Koko\'s side.' :
+          '⚠️ Could not verify — try again shortly.'
+        );
+      } catch (e) {
+        setKokoMsg(e instanceof Error ? e.message : 'Check failed');
+      } finally {
+        setKokoChecking(false);
+      }
+    });
+  };
 
   const totalQty  = order.order_items.reduce((n, i) => n + i.qty, 0);
   const itemsText = order.order_items
@@ -113,6 +140,7 @@ export default function OrderCard({
                 <span className="rounded-md bg-[#E7F0FF] px-1.5 py-0.5 text-[10px] font-bold text-[#1877F2]">FB</span>
               )}
               {needsPayConfirm && <span className="text-[10px] font-bold text-sale">⚠ Confirm</span>}
+              {isPendingKoko && <span className="text-[10px] font-bold text-muted">⏳ Awaiting Koko</span>}
             </div>
             <p className="mt-0.5 truncate text-[12px] text-muted">
               {order.shipping_address?.name ?? 'Customer'}
@@ -172,6 +200,15 @@ export default function OrderCard({
                       className="pressable rounded-xl bg-[#E8F7EE] px-4 py-2 text-[12.5px] font-bold text-ok hover:bg-[#d5f0e2] disabled:opacity-50">
                       {isCod ? '✓ Confirm order' : '💵 Confirm payment'}
                     </button>
+                  )}
+                  {isPendingKoko && (
+                    <div className="flex items-center gap-2">
+                      <button onClick={doKokoRecheck} disabled={kokoChecking || pending}
+                        className="pressable rounded-xl border border-line bg-paper px-4 py-2 text-[12.5px] font-bold text-ink hover:bg-line disabled:opacity-50">
+                        🔄 Recheck with Koko
+                      </button>
+                      {kokoMsg && <span className="text-[11.5px] font-semibold text-muted">{kokoMsg}</span>}
+                    </div>
                   )}
                   <a href={waHref} target="_blank" rel="noopener noreferrer"
                     className="pressable rounded-xl border border-line bg-card px-4 py-2 text-[12.5px] font-bold text-muted hover:bg-paper">

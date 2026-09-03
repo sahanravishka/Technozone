@@ -69,7 +69,13 @@ export default function OrderBoard({
   const fbTotal = orders.filter(o => o.channel === 'facebook' && o.status !== 'cancelled').reduce((n, o) => n + o.total, 0);
   const fbActiveCount = orders.filter(o => o.channel === 'facebook' && o.status !== 'cancelled').length;
 
-  const urgent = activeDateOrders.filter(o => o.status === 'pending' || o.status === 'paid').length;
+  // A 'pending' Koko order with no real action available (its own webhook,
+  // or the "Recheck with Koko" button, is what resolves it — never a staff
+  // click) shouldn't inflate the "needs attention" count the same way an
+  // unconfirmed COD/WhatsApp order does.
+  const urgent = activeDateOrders.filter(o =>
+    o.status === 'paid' || (o.status === 'pending' && o.payment_method !== 'koko')
+  ).length;
   const activeOrders = activeDateOrders;
 
   const exportHref = (() => {
