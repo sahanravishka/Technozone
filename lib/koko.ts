@@ -22,7 +22,11 @@ export const kokoConfigured = () =>
      process.env.KOKO_PRIVATE_KEY && process.env.KOKO_PUBLIC_KEY);
 
 export const kokoBaseUrl = () => {
-  switch (process.env.KOKO_MODE) {
+  // Case-insensitive: a Vercel env var typed as "Live" or "QA" is an easy
+  // mistake, and silently falling through to the dev sandbox on a casing
+  // typo is exactly the kind of thing that looks like a "fixed" deploy
+  // is still broken for no visible reason.
+  switch (process.env.KOKO_MODE?.trim().toLowerCase()) {
     case 'live': return 'https://prodapi.paykoko.com';
     case 'qa':   return 'https://qaapi.paykoko.com';
     default:     return 'https://devapi.paykoko.com';
