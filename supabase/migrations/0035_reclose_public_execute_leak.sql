@@ -1,0 +1,40 @@
+-- ============================================================
+-- 0035_reclose_public_execute_leak.sql
+-- SECURITY FIX — reopened, then reclosed, during this session.
+--
+-- 0028 revoked EXECUTE on confirm_order_paid / confirm_order_paid_koko
+-- from anon/authenticated after finding they were callable directly
+-- with no signature check (mark any pending order paid for free).
+-- This session's audit changed confirm_order_paid_koko's return type
+-- from void to boolean (0031) and confirm_order_paid's the same way
+-- (0034) — both changes required DROP FUNCTION + CREATE FUNCTION,
+-- and dropping a function discards its grants. Both came back
+-- exploitable exactly the same way 0028 first found them, until 0034
+-- re-revoked confirm_order_paid inline.
+--
+-- The first fix attempt in this session tried `revoke ... from public`
+-- for confirm_order_paid_koko, matching 0028's first line — but
+-- proacl inspection showed anon/authenticated had *direct* grants
+-- (not inherited via PUBLIC): Supabase's own default-privileges setup
+-- grants EXECUTE straight to anon/authenticated/service_role on every
+-- newly created function in the public schema, so a PUBLIC-only
+-- revoke doesn't touch it. This is also why redeem_coupon_immediate
+-- (new this session, never covered by 0028) was reachable by anon/
+-- authenticated despite only ever being called via the service-role
+-- admin client.
+--
+-- Lesson encoded here for next time: changing a SECURITY DEFINER
+-- function's signature/return type must REPLACE it in place when
+-- possible, and any DROP+CREATE on one of these must be followed by
+-- `revoke execute ... from anon, authenticated` (not `from public`)
+-- before considering the change complete.
+--
+-- Verified after this migration: anon/authenticated get false on all
+-- three (confirm_order_paid, confirm_order_paid_koko,
+-- redeem_coupon_immediate) via has_function_privilege; service_role
+-- (the only real caller — checkout actions and payment webhooks,
+-- always through getAdminSupabase()) is unaffected.
+-- ============================================================
+
+revoke execute on function public.confirm_order_paid_koko(text,text) from anon, authenticated;
+revoke execute on function public.redeem_coupon_immediate(uuid,uuid,uuid,text) from anon, authenticated;
