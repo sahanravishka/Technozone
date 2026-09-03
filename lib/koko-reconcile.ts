@@ -23,10 +23,16 @@ export async function reconcileKokoOrder(
   if (!result) return 'unknown';
 
   if (result.status === 'SUCCESS') {
-    const { error } = await admin.rpc('confirm_order_paid_koko', {
+    const { data: transitioned, error } = await admin.rpc('confirm_order_paid_koko', {
       p_koko_order_id: kokoOrderId, p_koko_txn_id: result.trnId
     });
     if (error) return 'unknown';
+    // The RPC is idempotent and can be reached concurrently (a customer's
+    // auto-refresh, the admin "Recheck with Koko" button, and the webhook
+    // can all land near-simultaneously) — only alert staff on the call that
+    // actually flipped the order to paid, never on one that found it
+    // already confirmed.
+    if (!transitioned) return 'paid';
 
     const { data: full, error: fetchErr } = await admin.from('orders')
       .select('order_number, total, payment_method, fulfillment, customer_phone, shipping_address, order_items(product_name, qty, line_total)')

@@ -122,7 +122,7 @@ export async function createOrder(input: {
   // own merchant-service surcharge being passed through, not interest, so
   // it must never be labelled "interest" anywhere in the UI or messaging.
   const kokoFee = method === 'koko' ? Math.round(preKokoTotal * 0.12) : 0;
-  const total = preKokoTotal + kokoFee;
+  let total = preKokoTotal + kokoFee;
 
   // COD gate now that the true total is known
   if (method === 'cod') {
@@ -165,9 +165,36 @@ export async function createOrder(input: {
     }
   }
   if (coupon) {
-    await admin.from('coupon_redemptions').insert({
-      coupon_id: coupon.id, customer_id: user?.id ?? null, order_id: order.id
-    });
+    if (method === 'cod' || method === 'whatsapp') {
+      // These are final immediately — there's no later payment-confirm
+      // webhook to increment used_count from, unlike PayHere/Koko. Redeem
+      // atomically now (locks the coupon row, same pattern as reserve_stock)
+      // so max_uses/per_customer_limit actually apply to COD/WhatsApp
+      // orders instead of never counting against the coupon at all.
+      const { data: redeemed } = await admin.rpc('redeem_coupon_immediate', {
+        p_coupon_id: coupon.id, p_order_id: order.id,
+        p_customer_id: user?.id ?? null, p_phone: input.phone
+      });
+      if (!redeemed) {
+        // Lost a race, or the coupon was exhausted between validation and
+        // now — the order already exists with the discount baked in, so
+        // correct it rather than fail a checkout that's otherwise valid.
+        total -= couponDiscount;
+        await admin.from('orders').update({
+          discount_total: 0, total, coupon_id: null, coupon_code: null
+        }).eq('id', order.id);
+        couponDiscount = 0;
+        coupon = null;
+      }
+    } else {
+      // PayHere/Koko: audit row now, used_count only increments on
+      // confirmed payment (inside confirm_order_paid / confirm_order_paid_koko)
+      // so an abandoned gateway session never consumes a real "use".
+      await admin.from('coupon_redemptions').insert({
+        coupon_id: coupon.id, customer_id: user?.id ?? null, order_id: order.id,
+        phone_norm: input.phone.replace(/\D/g, '').replace(/^0/, '94')
+      });
+    }
   }
 
   // Order placed — this phone's in-progress checkout (if any) is no longer abandoned.
@@ -190,7 +217,10 @@ export async function createOrder(input: {
   if (!user) {
     const { cookies } = await import('next/headers');
     const cookieStore = await cookies();
-    cookieStore.set('guest_order_id', order.id, { httpOnly: true, maxAge: 60 * 60 * 24 * 7, path: '/' });
+    cookieStore.set('guest_order_id', order.id, {
+      httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 7, path: '/'
+    });
   }
 
   if (method === 'payhere') {
@@ -262,16 +292,25 @@ export async function saveAbandonedCart(input: {
   items: { name: string; qty: number; price: number }[];
   subtotal: number; locale: string;
 }) {
+  // Unauthenticated and keyed purely by a client-supplied phone number — cap
+  // the hit rate so it can't be used to flood arbitrary numbers with fake
+  // drafts (staff follow up on these over WhatsApp) or bloat the table.
+  if (!(await rateLimitByIp('abandoned-cart', 20, 60))) return;
   const admin = getAdminSupabase();
   const phoneNorm = normPhone(input.phone);
   if (!admin || phoneNorm.length < 9 || !input.items.length) return;
+  const items = input.items.slice(0, 50).map(i => ({
+    name: String(i.name ?? '').slice(0, 160),
+    qty: Number.isFinite(i.qty) ? Math.max(0, Math.min(i.qty, 9999)) : 0,
+    price: Number.isFinite(i.price) ? Math.max(0, Math.min(i.price, 100_000_000)) : 0,
+  }));
   await admin.from('abandoned_checkouts').upsert({
     phone_norm: phoneNorm,
     name: input.name.trim().slice(0, 120) || null,
     phone: input.phone.trim().slice(0, 20),
     email: input.email?.trim().slice(0, 160) || null,
-    items: input.items,
-    subtotal: input.subtotal,
+    items,
+    subtotal: Number.isFinite(input.subtotal) ? Math.max(0, Math.min(input.subtotal, 100_000_000)) : 0,
     locale: input.locale,
     converted: false,
     updated_at: new Date().toISOString(),
@@ -280,6 +319,7 @@ export async function saveAbandonedCart(input: {
 
 /** Marks a phone's in-progress checkout as converted once a real order is placed. */
 export async function clearAbandonedCart(phone: string) {
+  if (!(await rateLimitByIp('abandoned-cart', 20, 60))) return;
   const admin = getAdminSupabase();
   const phoneNorm = normPhone(phone);
   if (!admin || phoneNorm.length < 9) return;

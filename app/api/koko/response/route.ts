@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (p.status === 'SUCCESS') {
-    const { error } = await admin.rpc('confirm_order_paid_koko', {
+    const { data: transitioned, error } = await admin.rpc('confirm_order_paid_koko', {
       p_koko_order_id: p.orderId,
       p_koko_txn_id: p.trnId
     });
@@ -65,8 +65,11 @@ export async function POST(req: NextRequest) {
     // Notify staff on Telegram now that payment is genuinely confirmed —
     // mirrors the COD/WhatsApp notify-at-creation flow in checkout/actions.ts,
     // just fired from the webhook instead since online payments only notify
-    // once the money has actually landed, not at order creation.
-    if (matchedOrder) {
+    // once the money has actually landed, not at order creation. Koko (like
+    // most gateways) retries this webhook on anything but a prompt 200, and
+    // the RPC is idempotent — only send the alert on the call that actually
+    // flipped the order to paid, not on a replay of an already-confirmed one.
+    if (matchedOrder && transitioned) {
       after(async () => {
         const { data: full, error: fetchErr } = await admin.from('orders')
           .select('order_number, total, payment_method, fulfillment, customer_phone, shipping_address, order_items(product_name, qty, line_total)')
