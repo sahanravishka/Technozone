@@ -123,6 +123,12 @@ export function buildKokoOrderFields(o: {
   // on Koko's side for no visible reason.
   const asciiSafe = (s: string) => s.replace(/[–—]/g, '-').replace(/[‘’“”]/g, "'");
 
+  // Koko's own identify/OTP step expects international format (94XXXXXXXXX),
+  // not the local "0XXXXXXXXX" shape customers actually type at checkout.
+  // Not part of the signed dataString, so this is safe to normalize freely —
+  // same conversion already used elsewhere in checkout for phone matching.
+  const mobileNo = o.phone.replace(/\D/g, '').replace(/^0/, '94');
+
   // Description is our own store-generated text (product names), always
   // plain ASCII already, so stripping any stray non-ASCII byte here is safe.
   // firstName/lastName are real customer names — Sri Lankan customers may
@@ -158,7 +164,7 @@ export function buildKokoOrderFields(o: {
     _firstName: firstName,
     _lastName: lastName,
     _email: o.email,
-    _mobileNo: o.phone,
+    _mobileNo: mobileNo,
     dataString,
     signature: signWithMerchantKey(dataString),
   };
