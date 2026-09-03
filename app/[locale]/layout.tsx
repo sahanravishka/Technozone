@@ -9,6 +9,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import PwaRegister from '@/components/PwaRegister';
 import { SITE } from '@/lib/site';
+import { safeJsonLd } from '@/lib/jsonld';
 
 const LOCAL_BUSINESS_JSON_LD = {
   '@context': 'https://schema.org',
@@ -122,14 +123,14 @@ export default async function LocaleLayout({ children, params }:
     <WishlistProvider>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(LOCAL_BUSINESS_JSON_LD) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(LOCAL_BUSINESS_JSON_LD) }}
       />
       {/* WebSite + SearchAction: makes the site eligible for the Google
           sitelinks search box and names the site in results. */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             '@context': 'https://schema.org',
             '@type': 'WebSite',
             name: SITE.name,

@@ -6,7 +6,9 @@ import { getServerSupabase } from '@/lib/supabase-clients/server';
 export const dynamic = 'force-dynamic';
 
 const csvCell = (v: unknown) => {
-  const s = v == null ? '' : String(v);
+  let s = v == null ? '' : String(v);
+  // Formula-injection guard — see the same helper in orders/export/route.ts.
+  if (/^[=+\-@]/.test(s)) s = '\t' + s;
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 

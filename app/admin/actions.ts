@@ -537,27 +537,34 @@ export async function uploadProductImage(form: FormData) {
   const productId = String(form.get('product_id'));
   const file = form.get('file') as File;
   if (!productId || !file || file.size === 0) throw new Error('Invalid file');
+  // Cap upload size and require an image MIME type up front — the sharp
+  // re-encode below is what actually neutralizes file content, so nothing
+  // past this point may fall back to trusting the client-supplied bytes.
+  if (file.size > 10 * 1024 * 1024) throw new Error('Image too large (max 10MB)');
+  if (!file.type.startsWith('image/')) throw new Error('File must be an image');
 
   const { data: prod } = await supabase.from('products').select('name, slug').eq('id', productId).single();
   const filenameBase = slugifyFilename(prod?.slug || prod?.name || 'product');
 
-  let buf = new Uint8Array(await file.arrayBuffer());
-  let contentType = file.type || 'image/webp';
-  let ext = 'webp';
+  const rawBuf = new Uint8Array(await file.arrayBuffer());
+  let buf: Uint8Array;
+  const contentType = 'image/webp';
+  const ext = 'webp';
 
   let sharp: typeof import('sharp').default | null = null;
   try { sharp = (await import('sharp')).default; } catch { sharp = null; }
+  if (!sharp) throw new Error('Image processing unavailable — try again shortly');
 
-  if (sharp) {
-    try {
-      buf = new Uint8Array(await sharp(Buffer.from(buf))
-        .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 90 })
-        .toBuffer());
-      contentType = 'image/webp';
-    } catch { 
-      ext = (file.name.split('.').pop() || 'webp').toLowerCase(); 
-    }
+  try {
+    buf = new Uint8Array(await sharp(Buffer.from(rawBuf))
+      .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 90 })
+      .toBuffer());
+  } catch {
+    // Re-encoding is what proves this is actually a decodable image and
+    // strips anything else riding along in the file — never fall back to
+    // storing the client's raw bytes/type under our own storage domain.
+    throw new Error('Could not process image — file may be corrupted or not a real image');
   }
 
   const path = `${productId}/colors/${filenameBase}-${Date.now()}.${ext}`;
