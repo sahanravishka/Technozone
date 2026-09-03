@@ -2,19 +2,47 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCart } from '@/lib/cart-store';
 import type { Dict } from '@/lib/i18n/dictionaries';
-import type { DeliveryZone } from '@/lib/types';
+import type { DeliveryZone, Discount, Product } from '@/lib/types';
 import type { Locale } from '@/lib/i18n/config';
 import { formatLKR } from '@/lib/site';
+import ProductCard from '@/components/ProductCard';
+import { fetchCartSuggestions } from '@/app/[locale]/cart/actions';
 
-export default function CartView({ dict, zones, locale }:
-  { dict: Dict; zones: DeliveryZone[]; locale: Locale }) {
+const TRUST_ICONS = [
+  <><path key="a" d="M12 2 4 5v6c0 5 3.5 8 8 11 4.5-3 8-6 8-11V5z" /><path key="b" d="m9 12 2 2 4-4" /></>,
+  <><rect key="a" x="1" y="6" width="14" height="11" rx="2" /><path key="b" d="M15 9h4l3 3v5h-7" /><circle key="c" cx="6" cy="18" r="1.6" /><circle key="d" cx="17" cy="18" r="1.6" /></>,
+  <><path key="a" d="M3 12a9 9 0 0 1 18 0" /><path key="b" d="M21 12v4a3 3 0 0 1-3 3h-3" /><rect key="c" x="3" y="11" width="3" height="6" rx="1.5" /><rect key="d" x="18" y="11" width="3" height="6" rx="1.5" /></>
+];
+
+export default function CartView({ dict, zones, locale, discounts }:
+  { dict: Dict; zones: DeliveryZone[]; locale: Locale; discounts: Discount[] }) {
   const { items, subtotal, setQty, remove, hydrated } = useCart();
   const [zoneId, setZoneId] = useState(zones[0]?.id);
   const zone = zones.find(z => z.id === zoneId) ?? zones[0];
   const delivery = items.length ? (zone?.fee ?? 0) : 0;
+
+  // Cross-sell. Keyed on a joined *string* of product ids, never the items
+  // array itself — the array gets a fresh identity on every cart dispatch, so
+  // depending on it here would refetch (and re-render) forever.
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const productKey = [...new Set(items.map(i => i.productId))].sort().join(',');
+  useEffect(() => {
+    if (!productKey) { setSuggestions([]); return; }
+    let cancelled = false;
+    fetchCartSuggestions(productKey.split(','))
+      .then(found => { if (!cancelled) setSuggestions(found); })
+      .catch(() => { if (!cancelled) setSuggestions([]); });
+    return () => { cancelled = true; };
+  }, [productKey]);
+
+  const trust = [
+    { t: dict.trust.warranty, s: dict.trust.warrantysub },
+    { t: dict.trust.courier, s: dict.trust.couriersub },
+    { t: dict.trust.whatsapp, s: dict.trust.whatsappsub }
+  ];
 
   if (!hydrated) {
     return <div className="space-y-3">{[0, 1].map(i => <div key={i} className="skeleton h-24" style={{ borderRadius: '22px' }} />)}</div>;
@@ -34,8 +62,9 @@ export default function CartView({ dict, zones, locale }:
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="min-w-0">
       {/* items */}
-      <ul className="min-w-0 space-y-3">
+      <ul className="space-y-3">
         {items.map(item => (
           <li key={item.variantId} className="card-soft flex gap-3.5 p-3.5" style={{ borderRadius: '22px' }}>
             <Link href={`/${locale}/product/${item.slug}`}
@@ -70,6 +99,37 @@ export default function CartView({ dict, zones, locale }:
           </li>
         ))}
       </ul>
+
+      {/* Cross-sell — fills the dead space beside the summary on desktop, and
+          it's the natural moment to add a charger/case to the order. */}
+      {suggestions.length > 0 && (
+        <section className="mt-7" aria-label={dict.sections.goesWith}>
+          <h2 className="mb-3.5 text-[15.5px] font-bold">{dict.sections.goesWith}</h2>
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
+            {suggestions.map(p => (
+              <ProductCard key={p.id} product={p} discounts={discounts} locale={locale} dict={dict} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Reassurance, right where people hesitate before paying. */}
+      <ul className="mt-7 grid gap-3 sm:grid-cols-3">
+        {trust.map((v, i) => (
+          <li key={v.t} className="card-glass flex items-start gap-3 p-3.5" style={{ borderRadius: '16px' }}>
+            <span className="grid h-9 w-9 shrink-0 place-items-center bg-gradient-to-br from-volt/10 to-accent/10 text-volt"
+              style={{ borderRadius: '12px' }}>
+              <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>{TRUST_ICONS[i]}</svg>
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-[13px] font-bold leading-tight">{v.t}</h3>
+              <p className="mt-0.5 text-[11.5px] leading-snug text-muted">{v.s}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+      </div>
 
       {/* summary — glassmorphism */}
       <aside className="card-glass h-fit p-5 lg:sticky lg:top-24" style={{ borderRadius: '24px' }}>

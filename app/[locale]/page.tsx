@@ -270,7 +270,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
           <section className={`grid gap-4 pb-12 md:pb-16 ${banners.length === 1 ? '' : 'md:grid-cols-2'}`} aria-label="Promotions">
             {banners.map((b, i) => {
               const card = (
-                <div className="relative flex min-h-[240px] flex-col justify-between overflow-hidden p-9" style={{ borderRadius: '26px' }}>
+                <div className="laminated relative flex min-h-[240px] flex-col justify-between overflow-hidden p-9" style={{ borderRadius: '26px' }}>
                   {b.image_path && (
                     <>
                       <Image src={imageUrl(b.image_path)} alt="" fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
@@ -305,7 +305,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
           </section>
         ) : (
           <section className="grid gap-4 pb-12 md:grid-cols-2 md:pb-16" aria-label="Promotions">
-            <div className="relative flex min-h-[240px] flex-col justify-between overflow-hidden bg-tint-lav p-9"
+            <div className="laminated relative flex min-h-[240px] flex-col justify-between overflow-hidden bg-tint-lav p-9"
               style={{ borderRadius: '26px' }}>
               <div className="relative z-10">
                 <h3 className="max-w-[70%] text-[1.5rem] font-extrabold tracking-[-0.025em]">{dict.home.promoTitle}</h3>
@@ -319,7 +319,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
               {/* Decorative blob */}
               <div className="absolute -bottom-12 -right-12 h-56 w-56 bg-gradient-to-br from-volt to-accent opacity-25" style={{ borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%' }} />
             </div>
-            <div className="relative flex min-h-[240px] flex-col justify-between overflow-hidden bg-tint-peach p-9"
+            <div className="laminated relative flex min-h-[240px] flex-col justify-between overflow-hidden bg-tint-peach p-9"
               style={{ borderRadius: '26px' }}>
               <div className="relative z-10">
                 <h3 className="max-w-[70%] text-[1.5rem] font-extrabold tracking-[-0.025em]">{dict.warranty.title}</h3>
