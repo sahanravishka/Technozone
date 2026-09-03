@@ -1,3 +1,7 @@
+// Reads a server secret (TELEGRAM_BOT_TOKEN) — 'server-only' makes an accidental
+// import from a client component a build error instead of silently
+// inlining the secret into the browser bundle.
+import 'server-only';
 import { SITE, formatLKR } from './site';
 
 // Free Telegram Bot API — no per-message cost, no business verification.

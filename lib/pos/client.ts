@@ -14,6 +14,20 @@ export function posEnabled(): boolean {
   return !!API_BASE;
 }
 
+/**
+ * Log a POS call that failed and fell back to Supabase/demo.
+ *
+ * Every POS read is wrapped in a silent `catch { fall through }` so the
+ * storefront never hard-breaks — but silent also meant undiagnosable: a
+ * misconfigured URL, a CORS/firewall block or a changed response shape all
+ * looked identical to "POS is off", with nothing in the logs to say the
+ * integration was even being attempted. Grep the runtime logs for `[pos]`.
+ */
+export function posFallback(where: string, err: unknown): void {
+  const msg = err instanceof Error ? err.message : String(err);
+  console.error(`[pos] ${where} failed, falling back to Supabase — ${msg} (base: ${API_BASE || 'unset'})`);
+}
+
 /** Resolve a POS image path to an absolute URL the browser can load. */
 export function posImageUrl(path: string | null | undefined): string {
   if (!path) return '';

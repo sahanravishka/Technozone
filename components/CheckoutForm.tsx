@@ -149,6 +149,8 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
       if (res.error === 'auth') router.push(`/${locale}/login?next=/${locale}/checkout`);
       else if (res.error === 'stock') setErr(dict.form.stockErr);
       else if (res.error === 'config') setErr('Online payment is not set up yet — try Cash on delivery or WhatsApp.');
+      else if (res.error === 'catalog_unavailable') setErr('We can\'t take this order online right now. Please send us this order on WhatsApp and we\'ll complete it for you.');
+      else if (res.error === 'item_unavailable') setErr('An item in your cart is no longer available. Please remove it and try again — or send us the order on WhatsApp.');
       else if (res.error === 'cod_blocked') setErr('Cash on delivery is not available for this number. Please pay online or order on WhatsApp.');
       else if (res.error === 'cod_limit') setErr('This order is above the Cash-on-delivery limit. Please pay online or order on WhatsApp.');
       else if (res.error === 'rate') setErr('Too many attempts — please wait a minute and try again.');

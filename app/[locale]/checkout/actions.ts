@@ -18,7 +18,8 @@ type Result =
   | { ok: true; method: 'payhere' | 'koko'; gateway: string; fields: Record<string, string> }
   | { ok: true; method: 'cod' | 'whatsapp'; orderNumber: string; total: number;
       items: { name: string; qty: number; line: number }[] }
-  | { ok: false; error: 'auth' | 'stock' | 'config' | 'invalid' | 'cod_blocked' | 'cod_limit' | 'rate' }
+  | { ok: false; error: 'auth' | 'stock' | 'config' | 'invalid' | 'cod_blocked' | 'cod_limit' | 'rate'
+      | 'catalog_unavailable' | 'item_unavailable' }
   | { ok: false; error: 'koko_error'; detail: string }
   | { ok: false; error: 'server_error'; detail: string };
 
@@ -53,21 +54,63 @@ export async function createOrder(input: {
 
   // ---- 1. Re-price server-side ----
   const variantIds = input.lines.map(l => l.variantId);
+
+  // The POS integration (lib/pos/*) is catalog-read-only: it serves products
+  // whose variant ids are Mongo ObjectIds ("68b1..." / "<id>-default"), while
+  // every write path below — this re-price query, reserve_stock(), and
+  // order_items.variant_id — is Supabase-uuid-typed. Handing a POS id to the
+  // query below raises Postgres 22P02 (invalid input syntax for type uuid),
+  // which used to surface to the customer as a bare "Server error: ...".
+  // Fail explicitly and loudly instead: a browsable-but-unbuyable storefront
+  // is a configuration problem the shop needs told about, not a mystery.
+  // (Also catches plain garbage ids from a hand-crafted request, which used
+  // to surface the raw Postgres message to the customer.)
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (variantIds.some(id => !UUID_RE.test(id))) {
+    console.error('[checkout] cart holds non-uuid variant ids — if the POS catalog ' +
+      '(NEXT_PUBLIC_POS_API_URL) is enabled, this is it: POS serves Mongo ids and ' +
+      'the POS purchase path is not implemented, so checkout cannot complete. ' +
+      'Variant ids:', variantIds);
+    return { ok: false, error: 'catalog_unavailable' };
+  }
+
+  // is_active was being selected but never enforced, and the products query
+  // filtered neither is_active nor deleted_at — so a variant the shop had
+  // deactivated, or a product it had hidden or moved to trash, was still
+  // orderable by anyone holding it in their cart (carts live in localStorage
+  // indefinitely). The storefront reads in lib/data.ts filter both; this
+  // write path has to agree with them or staff get orders for stock they
+  // deliberately withdrew from sale.
   const { data: variants, error: vErr } = await admin.from('product_variants')
-    .select('id, sku, name, price, product_id, is_active').in('id', variantIds);
-  if (vErr || !variants || variants.length !== variantIds.length) {
-    const msg = `variant lookup: ${vErr?.message ?? `want ${variantIds.length} got ${variants?.length ?? 0}`}`;
+    .select('id, sku, name, price, product_id, is_active')
+    .in('id', variantIds).eq('is_active', true);
+  if (vErr) {
+    const msg = `variant lookup: ${vErr.message}`;
     console.error('[checkout]', msg);
     return { ok: false, error: 'server_error', detail: msg };
+  }
+  if (!variants || variants.length !== variantIds.length) {
+    // A normal, expected case (item withdrawn while it sat in a cart) — not a
+    // server fault, and it must not leak the internal count mismatch to the
+    // customer the way the old `server_error` detail string did.
+    console.warn('[checkout] cart holds unavailable variants:',
+      variantIds.filter(id => !(variants ?? []).some(v => v.id === id)));
+    return { ok: false, error: 'item_unavailable' };
   }
 
   const productIds = [...new Set(variants.map(v => v.product_id))];
   const { data: products, error: pErr } = await admin.from('products')
-    .select('id, name, category_id, base_price, slug').in('id', productIds);
+    .select('id, name, category_id, base_price, slug')
+    .in('id', productIds).eq('is_active', true).is('deleted_at', null);
   if (pErr || !products) {
     const msg = `product lookup: ${pErr?.message ?? 'null'}`;
     console.error('[checkout]', msg);
     return { ok: false, error: 'server_error', detail: msg };
+  }
+  if (products.length !== productIds.length) {
+    console.warn('[checkout] cart holds variants of hidden/deleted products:',
+      productIds.filter(id => !products.some(p => p.id === id)));
+    return { ok: false, error: 'item_unavailable' };
   }
   const { data: discounts } = await admin.from('discounts')
     .select('id, scope, product_id, category_id, type, value')

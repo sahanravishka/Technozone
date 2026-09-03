@@ -1,3 +1,7 @@
+// Reads a server secret (RESEND_API_KEY) — 'server-only' makes an accidental
+// import from a client component a build error instead of silently
+// inlining the secret into the browser bundle.
+import 'server-only';
 import { Resend } from 'resend';
 import { SITE, formatLKR } from './site';
 

@@ -41,15 +41,21 @@ export async function submitFacebookOrder(input: {
 
   // ---- Re-price server-side from the current catalog ----
   const variantIds = input.lines.map(l => l.variantId);
+  // Match the storefront reads (and checkout): never let a deactivated
+  // variant, or a hidden/trashed product, be ordered through this form.
   const { data: variants, error: vErr } = await admin.from('product_variants')
-    .select('id, sku, name, price, product_id').in('id', variantIds);
+    .select('id, sku, name, price, product_id')
+    .in('id', variantIds).eq('is_active', true);
   if (vErr || !variants || variants.length !== variantIds.length) {
     return { ok: false, error: 'One or more selected items are no longer available.' };
   }
   const productIds = [...new Set(variants.map(v => v.product_id))];
   const { data: products, error: pErr } = await admin.from('products')
-    .select('id, name').in('id', productIds);
+    .select('id, name').in('id', productIds).eq('is_active', true).is('deleted_at', null);
   if (pErr || !products) return { ok: false, error: 'Could not load product details.' };
+  if (products.length !== productIds.length) {
+    return { ok: false, error: 'One or more selected items are no longer available.' };
+  }
 
   const items = input.lines.map(l => {
     const v = variants.find(x => x.id === l.variantId)!;

@@ -1,7 +1,7 @@
 import { getSupabase } from './supabase';
 import { demoCategories, demoDiscounts, demoProducts, demoSuggestions } from './demo-data';
 import type { Category, DeliveryZone, Discount, Product, Review, ServiceType } from './types';
-import { posEnabled } from './pos/client';
+import { posEnabled, posFallback } from './pos/client';
 import {
   posGetCategories, posGetProducts, posGetProductBySlug,
   posSearchProducts, posGetRelated, posGetProductsByIds,
@@ -23,7 +23,7 @@ const PRODUCT_SELECT = `
 export async function getCategories(): Promise<Category[]> {
   // POS is the source of truth when configured; fall back on any error.
   if (posEnabled()) {
-    try { const c = await posGetCategories(); if (c.length) return c; } catch { /* fall through */ }
+    try { const c = await posGetCategories(); if (c.length) return c; } catch (e) { posFallback('getCategories', e); }
   }
   const sb = getSupabase();
   if (!sb) return demoCategories;
@@ -79,7 +79,7 @@ export async function getActiveDiscounts(): Promise<Discount[]> {
 
 export async function getProducts(opts?: { categorySlug?: string; limit?: number }): Promise<Product[]> {
   if (posEnabled()) {
-    try { const p = await posGetProducts(opts); if (p.length) return p; } catch { /* fall through */ }
+    try { const p = await posGetProducts(opts); if (p.length) return p; } catch (e) { posFallback('getProducts', e); }
   }
   const sb = getSupabase();
   if (sb) {
@@ -106,7 +106,7 @@ export async function getProducts(opts?: { categorySlug?: string; limit?: number
 export async function getProductsByIds(ids: string[]): Promise<Product[]> {
   if (!ids.length) return [];
   if (posEnabled()) {
-    try { const p = await posGetProductsByIds(ids); if (p.length) return p; } catch { /* fall through */ }
+    try { const p = await posGetProductsByIds(ids); if (p.length) return p; } catch (e) { posFallback('getProductsByIds', e); }
   }
   const sb = getSupabase();
   if (sb) {
@@ -118,7 +118,7 @@ export async function getProductsByIds(ids: string[]): Promise<Product[]> {
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   if (posEnabled()) {
-    try { const p = await posGetProductBySlug(slug); if (p) return p; } catch { /* fall through */ }
+    try { const p = await posGetProductBySlug(slug); if (p) return p; } catch (e) { posFallback('getProductBySlug', e); }
   }
   const sb = getSupabase();
   if (sb) {
@@ -132,7 +132,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 /** Manual "related / frequently bought together" pins (admin-curated). */
 export async function getSuggestions(productId: string): Promise<Product[]> {
   if (posEnabled()) {
-    try { const p = await posGetRelated(productId); if (p.length) return p; } catch { /* fall through */ }
+    try { const p = await posGetRelated(productId); if (p.length) return p; } catch (e) { posFallback('getSuggestions', e); }
   }
   const sb = getSupabase();
   if (sb) {
@@ -233,7 +233,7 @@ export async function getCartSuggestions(productIds: string[], limit = 6): Promi
 // ---------------- Search ----------------
 export async function searchProducts(query: string, limit = 60): Promise<Product[]> {
   if (posEnabled()) {
-    try { const p = await posSearchProducts(query, limit); if (p.length) return p; } catch { /* fall through */ }
+    try { const p = await posSearchProducts(query, limit); if (p.length) return p; } catch (e) { posFallback('searchProducts', e); }
   }
   // Whitelist to letters/numbers/space/hyphen. This is what prevents the raw
   // term from injecting PostgREST .or() conditions (commas, parens, dots, :, *).
