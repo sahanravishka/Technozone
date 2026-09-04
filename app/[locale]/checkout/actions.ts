@@ -49,6 +49,23 @@ export async function createOrder(input: {
   }
   const isPickup = input.fulfillment === 'pickup';
   if (!input.lines.length || !input.name || !input.phone) return { ok: false, error: 'invalid' };
+
+  // Denial-of-inventory guard. A PayHere/Koko order reserves its stock BEFORE
+  // payment (correct — it stops overselling during the gateway round trip),
+  // the hold lasts 30 minutes, and nothing capped how many lines one request
+  // could carry. So a single unpaid request listing every variant could lock
+  // the entire sellable catalogue, and repeating it twice an hour kept the
+  // whole storefront showing "out of stock" for free. Per-line qty was already
+  // capped at 99; these cap the order as a whole. Both are far above any real
+  // order — a genuine bulk buyer goes through WhatsApp, not a 20-line cart.
+  const MAX_LINES = 20;
+  const MAX_UNITS = 50;
+  const totalUnits = input.lines.reduce((n, l) => n + Math.max(1, Math.min(l.qty, 99)), 0);
+  if (input.lines.length > MAX_LINES || totalUnits > MAX_UNITS) {
+    console.warn('[checkout] oversized order rejected —',
+      `${input.lines.length} lines / ${totalUnits} units from ${input.phone}`);
+    return { ok: false, error: 'invalid' };
+  }
   if (!isPickup && (!input.address || !input.city)) return { ok: false, error: 'invalid' };
 
 
@@ -167,11 +184,41 @@ export async function createOrder(input: {
   const kokoFee = method === 'koko' ? Math.round(preKokoTotal * 0.12) : 0;
   let total = preKokoTotal + kokoFee;
 
-  // COD gate now that the true total is known
+  // COD gate now that the true total is known.
+  // Fails CLOSED: this is the shop's only protection against a repeat
+  // non-collector, and the previous `if (row && !row.allowed)` skipped the
+  // check entirely whenever the RPC returned nothing — an error, a revoked
+  // grant, a renamed function — silently letting every blocked number back
+  // through exactly when the gate was broken.
   if (method === 'cod') {
-    const { data: cod } = await supabase.rpc('cod_allowed', { p_phone: input.phone, p_total: total });
+    const { data: cod, error: codErr } = await supabase.rpc('cod_allowed',
+      { p_phone: input.phone, p_total: total });
     const row = cod?.[0];
-    if (row && !row.allowed) return { ok: false, error: row.reason === 'blocked' ? 'cod_blocked' : 'cod_limit' };
+    if (codErr || !row) {
+      console.error('[checkout] cod_allowed check failed — refusing COD rather than ' +
+        'bypassing the blocklist:', codErr?.message ?? 'no row returned');
+      return { ok: false, error: 'cod_blocked' };
+    }
+    if (!row.allowed) return { ok: false, error: row.reason === 'blocked' ? 'cod_blocked' : 'cod_limit' };
+  }
+
+  // Cap how much stock one phone number can hold hostage in unpaid gateway
+  // orders at once. Each abandoned PayHere/Koko attempt leaves a 30-minute
+  // reservation behind, so without this a single number can stack them up.
+  // Generous enough for a customer genuinely retrying a failed payment
+  // (which this shop's Koko history shows is a real pattern).
+  if (method === 'payhere' || method === 'koko') {
+    const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    const { count: pendingCount } = await admin.from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('customer_phone', input.phone)
+      .eq('status', 'pending').eq('payment_status', 'unpaid')
+      .in('payment_method', ['payhere', 'koko'])
+      .gte('created_at', since);
+    if ((pendingCount ?? 0) >= 5) {
+      console.warn('[checkout] too many unpaid gateway orders holding stock for', input.phone, pendingCount);
+      return { ok: false, error: 'rate' };
+    }
   }
 
   // ---- 3. Create order + items, reserve stock ----

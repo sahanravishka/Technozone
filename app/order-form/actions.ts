@@ -57,6 +57,13 @@ export async function submitFacebookOrder(input: {
     return { ok: false, error: 'One or more selected items are no longer available.' };
   }
 
+  // Bound the order the same way checkout does — this endpoint is public
+  // (the page is only noindex'd, which is not access control), so it needs
+  // its own limits rather than relying on the Facebook link staying private.
+  if (input.lines.length > 20) {
+    return { ok: false, error: 'Too many items for one order — please contact us on WhatsApp.' };
+  }
+
   const items = input.lines.map(l => {
     const v = variants.find(x => x.id === l.variantId)!;
     const p = products.find(x => x.id === v.product_id)!;
@@ -69,6 +76,27 @@ export async function submitFacebookOrder(input: {
     };
   });
   const subtotal = items.reduce((n, i) => n + i.line_total, 0);
+
+  // These are cash-on-delivery orders, and this path skipped the COD gate the
+  // main checkout enforces — so a number the shop had blocked for repeatedly
+  // not collecting could simply order here instead, straight past the only
+  // control the shop has against that. Same fail-closed handling as checkout.
+  const { data: cod, error: codErr } = await admin.rpc('cod_allowed',
+    { p_phone: phone1, p_total: subtotal });
+  const codRow = cod?.[0];
+  if (codErr || !codRow) {
+    console.error('[order-form] cod_allowed check failed — refusing rather than ' +
+      'bypassing the blocklist:', codErr?.message ?? 'no row returned');
+    return { ok: false, error: 'We could not verify this order. Please contact us on WhatsApp.' };
+  }
+  if (!codRow.allowed) {
+    return {
+      ok: false,
+      error: codRow.reason === 'blocked'
+        ? 'We can\'t take a cash-on-delivery order for this number. Please contact us on WhatsApp.'
+        : 'This order is above our cash-on-delivery limit. Please contact us on WhatsApp.',
+    };
+  }
 
   // ---- Create the order as a Facebook lead — no stock reservation.
   // Staff confirm details by phone, then process it normally from /admin/orders
