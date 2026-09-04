@@ -323,6 +323,69 @@ export async function createOrder(input: {
   }
 }
 
+export type RepricedLine = {
+  variantId: string;
+  /** Current server-side unit price (discounts applied), 0 when unavailable. */
+  unitPrice: number;
+  /** Units still sellable right now (stock minus existing reservations). */
+  stock: number;
+  /** False when the variant/product has since been deactivated or deleted. */
+  available: boolean;
+};
+
+/**
+ * Re-price a cart against the live catalogue, server-side.
+ *
+ * The cart lives in localStorage and stores the price captured at add-to-cart
+ * time, forever — nothing ever refreshes it. So a customer who filled a cart
+ * during a sale, or before a price change, saw the OLD price all the way
+ * through checkout while createOrder() (correctly) charged the CURRENT one.
+ * The money was never wrong, but the customer was shown one number and billed
+ * another, which for a gateway payment first becomes visible on Koko's or
+ * PayHere's own screen. This lets the checkout page show the real figures
+ * before the customer commits.
+ *
+ * Read-only: it never mutates the cart or the catalogue.
+ */
+export async function repriceLines(lines: CartLine[]): Promise<RepricedLine[]> {
+  if (!lines.length) return [];
+  if (!(await rateLimitByIp('reprice', 30, 60))) return [];
+  const admin = getAdminSupabase();
+  if (!admin) return [];
+
+  const variantIds = lines.map(l => l.variantId);
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (variantIds.some(id => !UUID_RE.test(id))) return [];
+
+  const { data: variants } = await admin.from('product_variants')
+    .select('id, price, stock_qty, reserved_qty, product_id')
+    .in('id', variantIds).eq('is_active', true);
+  if (!variants) return [];
+
+  const { data: products } = await admin.from('products')
+    .select('id, name, category_id, base_price, slug')
+    .in('id', [...new Set(variants.map(v => v.product_id))])
+    .eq('is_active', true).is('deleted_at', null);
+
+  const { data: discounts } = await admin.from('discounts')
+    .select('id, scope, product_id, category_id, type, value')
+    .eq('is_active', true).lte('starts_at', new Date().toISOString())
+    .or('ends_at.is.null,ends_at.gt.' + new Date().toISOString());
+
+  return lines.map(l => {
+    const v = variants.find(x => x.id === l.variantId);
+    const p = v ? products?.find(x => x.id === v.product_id) : undefined;
+    if (!v || !p) return { variantId: l.variantId, unitPrice: 0, stock: 0, available: false };
+    const { price } = priceVariant(p as unknown as Product, v.price, (discounts ?? []) as Discount[]);
+    return {
+      variantId: l.variantId,
+      unitPrice: price,
+      stock: Math.max(0, (v.stock_qty ?? 0) - (v.reserved_qty ?? 0)),
+      available: true,
+    };
+  });
+}
+
 const normPhone = (phone: string) => phone.replace(/\D/g, '').replace(/^0/, '94');
 
 /**

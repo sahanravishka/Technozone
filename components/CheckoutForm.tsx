@@ -11,7 +11,7 @@ import type { Locale } from '@/lib/i18n/config';
 import { formatLKR, SITE, waLink, KOKO_ENABLED } from '@/lib/site';
 import { priceProduct } from '@/lib/pricing';
 import { imageUrl } from '@/lib/supabase';
-import { createOrder, saveAbandonedCart } from '@/app/[locale]/checkout/actions';
+import { createOrder, saveAbandonedCart, repriceLines, type RepricedLine } from '@/app/[locale]/checkout/actions';
 import { KokoBadge } from './KokoBadge';
 
 const inputCls = 'h-12 w-full rounded-btn bg-card px-3.5 text-[14px] font-medium outline-none focus:ring-2 focus:ring-volt';
@@ -74,10 +74,49 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
     }
   }, [redirecting]);
 
+  // ---- Re-price the cart against the live catalogue -------------------
+  // Cart prices are captured at add-to-cart time and live in localStorage
+  // forever, so a cart filled during a sale (or before a price change) shows
+  // stale prices right through checkout while the server charges the current
+  // ones. Fetch the real figures and show THOSE, so the number on this page
+  // is the number the customer pays.
+  //
+  // Keyed on a stable signature of the lines rather than `items` itself:
+  // `items` is a new array identity on every cart render, which as a
+  // dependency would refetch in a loop. Nothing here mutates the cart.
+  const linesKey = useMemo(
+    () => items.map(i => `${i.variantId}:${i.qty}`).sort().join(','),
+    [items]
+  );
+  const [repriced, setRepriced] = useState<RepricedLine[] | null>(null);
+  useEffect(() => {
+    if (!linesKey) { setRepriced(null); return; }
+    let cancelled = false;
+    const lines = linesKey.split(',').map(s => {
+      const [variantId, qty] = s.split(':');
+      return { variantId, qty: Number(qty) };
+    });
+    repriceLines(lines)
+      .then(r => { if (!cancelled) setRepriced(r.length ? r : null); })
+      .catch(() => { /* keep showing cart prices — never block checkout */ });
+    return () => { cancelled = true; };
+  }, [linesKey]);
+
+  // Server figures win once they land; until then the cart's own numbers show.
+  const liveSubtotal = useMemo(() => {
+    if (!repriced) return subtotal;
+    return items.reduce((n, i) => {
+      const r = repriced.find(x => x.variantId === i.variantId);
+      return n + (r?.available ? r.unitPrice * i.qty : 0);
+    }, 0);
+  }, [repriced, items, subtotal]);
+  const priceChanged = repriced != null && liveSubtotal !== subtotal;
+  const unavailable = repriced?.filter(r => !r.available).length ?? 0;
+
   const zone = zones.find(z => z.id === f.zoneId) ?? zones[0];
   const delivery = (items.length && fulfillment === 'delivery') ? Number(zone?.fee ?? 0) : 0;
-  const kokoFee = pay === 'koko' ? Math.round((subtotal + delivery) * 0.12) : 0;
-  const grandTotal = subtotal + delivery + kokoFee;
+  const kokoFee = pay === 'koko' ? Math.round((liveSubtotal + delivery) * 0.12) : 0;
+  const grandTotal = liveSubtotal + delivery + kokoFee;
   const kokoInstallment = Math.ceil(grandTotal / 3);
   const inCartIds = useMemo(() => new Set(items.map(i => i.productId)), [items]);
   const suggList = suggestions.filter(s => !inCartIds.has(s.id)).slice(0, 6);
@@ -230,7 +269,7 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
                 saveAbandonedCart({
                   name: f.name, phone: f.phone, email: f.email || undefined,
                   items: items.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
-                  subtotal, locale
+                  subtotal: liveSubtotal, locale
                 }).catch(() => {});
               }}
               inputMode="tel" placeholder="07X XXX XXXX" />
@@ -301,12 +340,26 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
           {items.map(i => (
             <li key={i.variantId} className="flex justify-between gap-3 text-muted">
               <span className="min-w-0 truncate">{i.name} ×{i.qty}</span>
-              <span className="shrink-0">{formatLKR(i.price * i.qty)}</span>
+              <span className="shrink-0">
+                {formatLKR((repriced?.find(r => r.variantId === i.variantId)?.unitPrice ?? i.price) * i.qty)}
+              </span>
             </li>
           ))}
         </ul>
+
+        {/* The cart keeps whatever price was current when the item was added,
+            so say plainly when the live catalogue disagrees rather than
+            letting the customer discover it on the payment gateway's screen. */}
+        {(priceChanged || unavailable > 0) && (
+          <p className="mt-3 rounded-xl bg-warn-soft p-3 text-[12.5px] font-medium text-warn">
+            {unavailable > 0
+              ? `${unavailable} item${unavailable > 1 ? 's are' : ' is'} no longer available and ${unavailable > 1 ? 'have' : 'has'} been left out of this total.`
+              : 'Prices have changed since you added these to your cart — the total below is the current price.'}
+          </p>
+        )}
+
         <dl className="mt-4 space-y-2 border-t border-[#EEF1F6] pt-3 text-[14px]">
-          <div className="flex justify-between text-muted"><dt>{dict.cart.subtotal}</dt><dd>{formatLKR(subtotal)}</dd></div>
+          <div className="flex justify-between text-muted"><dt>{dict.cart.subtotal}</dt><dd>{formatLKR(liveSubtotal)}</dd></div>
           <div className="flex justify-between text-muted"><dt>{dict.cart.delivery}</dt><dd>{formatLKR(delivery)}</dd></div>
           {pay === 'koko' && (
             <div className="flex justify-between text-muted">
@@ -331,7 +384,7 @@ export default function CheckoutForm({ dict, zones, locale, signedIn, suggestion
             payhereOn ? ['payhere', dict.pay.online, dict.pay.onlineSub, '💳'] : null,
             ['cod', fulfillment === 'pickup' ? dict.pay.payAtStore : dict.pay.cod, fulfillment === 'pickup' ? dict.pay.pickupSub : dict.pay.codSub, '💵'],
             ['whatsapp', dict.pay.whatsapp, dict.pay.whatsappSub, '🟢'],
-            (KOKO_ENABLED && kokoOn) ? ['koko', 'Koko', `3 x ${formatLKR(Math.ceil((subtotal + delivery) * 1.12 / 3))} — pay later`, '🟣'] : null
+            (KOKO_ENABLED && kokoOn) ? ['koko', 'Koko', `3 x ${formatLKR(Math.ceil((liveSubtotal + delivery) * 1.12 / 3))} — pay later`, '🟣'] : null
           ].filter(Boolean) as [string, string, string, string][]).map(([m, label, sub, icon]) => (
             <button key={m} onClick={() => setPay(m as typeof pay)}
               className={`flex w-full items-center gap-3 rounded-2xl border-2 p-3 text-left transition-colors ${pay === m ? 'border-volt bg-volt-soft' : 'border-transparent bg-paper'}`}>
