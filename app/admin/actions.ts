@@ -44,6 +44,18 @@ export async function advanceOrder(orderId: string, to: string) {
     const admin = getAdminSupabase()!;
     await admin.rpc('release_order_reservations', { p_order_id: orderId });
   }
+  if (to === 'dispatched') {
+    // Once it's dispatched the goods have physically left, so they must come
+    // out of stock — COD/WhatsApp orders reach this point without ever going
+    // through a payment webhook, and used to be dispatched with stock_qty
+    // untouched. record_order_sale is idempotent (it no-ops when a 'sale'
+    // movement already exists), so a gateway order already deducted at
+    // payment confirmation, or an order later also marked collected, is
+    // never double-deducted.
+    const admin = getAdminSupabase()!;
+    const { error: saleErr } = await admin.rpc('record_order_sale', { p_order_id: orderId });
+    if (saleErr) console.error('[admin] record_order_sale on dispatch failed', orderId, saleErr.message);
+  }
   revalidatePath('/admin/orders');
 }
 

@@ -1,0 +1,34 @@
+-- ============================================================
+-- 0038_revoke_record_order_sale_execute.sql
+-- Follow-up to 0037, recording what actually had to happen — and the
+-- sharper version of the lesson 0035 already learned once.
+--
+-- 0037 issued `revoke ... from anon, authenticated` in the same migration
+-- as the CREATE. Checking afterwards with has_function_privilege showed
+-- anon and authenticated could STILL execute record_order_sale — i.e. any
+-- visitor could have deducted stock for an arbitrary order id straight
+-- through the public API. Two separate mechanisms were involved, and a fix
+-- for one does not close the other:
+--
+--   1. Supabase's default privileges grant EXECUTE directly to
+--      anon/authenticated on every new function in `public`. That grant is
+--      applied around the CREATE, so a revoke issued alongside it in the
+--      same migration does not survive. It needs its own statement,
+--      afterwards. (This was 0035's finding.)
+--   2. PostgreSQL separately grants EXECUTE to PUBLIC by default. proacl
+--      showed "=X/postgres" — the empty grantee is PUBLIC — which anon and
+--      authenticated inherit regardless of their direct grants. Revoking
+--      from the roles removed their direct entries and changed nothing
+--      about the inherited access. (This was 0028's finding.)
+--
+-- So the rule for any new SECURITY DEFINER function that is not meant to
+-- be publicly callable: revoke from PUBLIC *and* from anon/authenticated,
+-- in a statement after the CREATE, then verify with
+-- has_function_privilege rather than by reading the grants.
+--
+-- Verified after this migration: anon/authenticated false, service_role
+-- true, proacl {postgres=X/postgres,service_role=X/postgres}.
+-- ============================================================
+
+revoke execute on function public.record_order_sale(uuid) from public;
+revoke execute on function public.record_order_sale(uuid) from anon, authenticated;
