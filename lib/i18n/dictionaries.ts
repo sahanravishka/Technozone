@@ -21,7 +21,9 @@ const en = {
     spotEyebrow: 'Featured', spotCta: 'View product', from: 'From',
     promoTitle: 'Repairs, done right.', promoSub: 'Cracked screen or weak battery? Trusted technicians, WhatsApp updates every step.',
     ctaTitle: 'Questions? Talk to a human.', ctaSub: 'New arrivals, honest advice and order help — message us on WhatsApp anytime.',
-    ctaBtn: 'Chat on WhatsApp', items: 'items'
+    ctaBtn: 'Chat on WhatsApp', items: 'items',
+    pickEyebrow: 'Pick of the day', pickSub: 'A fresh hand-picked phone every day.', pickEnds: 'Changes in', pickCta: 'Grab it', pickWa: 'Ask on WhatsApp',
+    newIn: 'Just landed', newTag: 'NEW'
   },
   trust: {
     warranty: 'Official warranty', warrantysub: 'Agent-backed, every item',
@@ -136,7 +138,9 @@ const si: typeof en = {
     spotEyebrow: 'විශේෂාංග', spotCta: 'Product එක බලන්න', from: 'සිට',
     promoTitle: 'Repairs, done right.', promoSub: 'Cracked screen or weak battery? Trusted technicians, WhatsApp updates every step.',
     ctaTitle: 'ප්‍රශ්න තිබේද? අපට කතා කරන්න.', ctaSub: 'New arrivals, අවංක උපදෙස් සහ orders පිළිබඳ සහාය සඳහා — ඕනෑම වේලාවක WhatsApp හරහා අපට පණිවිඩයක් එවන්න.',
-    ctaBtn: 'WhatsApp හරහා කතා කරන්න', items: 'items'
+    ctaBtn: 'WhatsApp හරහා කතා කරන්න', items: 'items',
+    pickEyebrow: 'අද දවසේ තෝරාගැනීම', pickSub: 'සෑම දිනකම අලුත් විශේෂ තෝරාගැනීමක්.', pickEnds: 'වෙනස් වීමට', pickCta: 'දැන්ම ගන්න', pickWa: 'WhatsApp හරහා අහන්න',
+    newIn: 'අලුතින් පැමිණියා', newTag: 'නව'
   },
   trust: {
     warranty: 'Official warranty', warrantysub: 'Agent-backed, every item',
@@ -251,7 +255,9 @@ const ta: typeof en = {
     spotEyebrow: 'சிறப்பு', spotCta: 'Product-ஐ காண்க', from: 'இருந்து',
     promoTitle: 'Repairs, done right.', promoSub: 'Cracked screen or weak battery? Trusted technicians, WhatsApp updates every step.',
     ctaTitle: 'கேள்விகள் உள்ளதா? எங்களிடம் பேசுங்கள்.', ctaSub: 'New arrivals, நேர்மையான ஆலோசனை மற்றும் orders உதவிக்கு — எப்போது வேண்டுமானாலும் WhatsApp-ல் தொடர்பு கொள்ளுங்கள்.',
-    ctaBtn: 'WhatsApp-ல் பேசுங்கள்', items: 'items'
+    ctaBtn: 'WhatsApp-ல் பேசுங்கள்', items: 'items',
+    pickEyebrow: 'இன்றைய தேர்வு', pickSub: 'தினமும் ஒரு புதிய சிறப்புத் தேர்வு.', pickEnds: 'மாறும் நேரம்', pickCta: 'இப்போதே வாங்குங்கள்', pickWa: 'WhatsApp-ல் கேளுங்கள்',
+    newIn: 'புதிதாக வந்தவை', newTag: 'புதிது'
   },
   trust: {
     warranty: 'Official warranty', warrantysub: 'Agent-backed, every item',

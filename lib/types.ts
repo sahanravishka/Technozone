@@ -22,6 +22,7 @@ export type Product = {
   faqs?: { q: string; a: string }[];
   search_keywords?: string[];
   updated_at?: string;
+  created_at?: string;
 };
 
 export type Category = { id: string; slug: string; name: string; sort_order: number; image_path?: string | null; description?: string | null };

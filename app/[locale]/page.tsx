@@ -12,6 +12,8 @@ import Reveal from '@/components/Reveal';
 import ProductGrid from '@/components/ProductGrid';
 import RecentlyViewed from '@/components/RecentlyViewed';
 import FeaturedSpotlight from '@/components/FeaturedSpotlight';
+import DailyPick from '@/components/DailyPick';
+import NewInTicker from '@/components/NewInTicker';
 import SectionHeading from '@/components/SectionHeading';
 import { safeJsonLd } from '@/lib/jsonld';
 
@@ -50,10 +52,20 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
   const { locale } = await params;
   const dict = getDict(locale);
   const [categories, discounts, productsRaw, banners, businessProfile, brandTiles] = await Promise.all([
-    getCategories(), getActiveDiscounts(), getProducts({ limit: 12 }), getHomepageBanners(), getBusinessProfile(), getBrandTiles()
+    getCategories(), getActiveDiscounts(), getProducts({ limit: 40 }), getHomepageBanners(), getBusinessProfile(), getBrandTiles()
   ]);
   const products = productsRaw.map(p => localized(p, locale));
   const kokoOn = KOKO_ENABLED && kokoConfigured();
+
+  // ---- Pick of the day: one in-stock product, stable for the whole Colombo day ----
+  // Sorted by slug (not by created_at) so adding a new product mid-day can't
+  // shuffle which one is "today's", and the same date always gives the same pick.
+  const colomboDay = Math.floor((Date.now() + 5.5 * 3600 * 1000) / 86_400_000);
+  const pickPool = products
+    .filter(p => p.product_images?.[0] && priceProduct(p, discounts).stock > 0)
+    .sort((a, b) => a.slug.localeCompare(b.slug));
+  const pick = pickPool.length ? pickPool[colomboDay % pickPool.length] : null;
+  const pickPrice = pick ? priceProduct(pick, discounts) : null;
 
   const hero = products[0];
   const heroImg = hero?.product_images?.[0];
@@ -194,6 +206,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
         </div>
       </section>
 
+      {/* ===================== JUST LANDED — auto-scrolling newest products ===================== */}
+      <NewInTicker products={products} discounts={discounts} locale={locale}
+        title={dict.home.newIn} newTag={dict.home.newTag} />
+
       {/* ===================== KOKO PROMO STRIP — BNPL awareness for Nokia buyers ===================== */}
       {kokoOn && (
         <Reveal>
@@ -204,6 +220,25 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
               <Image src="/banners/koko-promo-wide.jpg" alt="Now accepting Koko — pay for your Nokia phone in 3 easy, interest-free installments"
                 width={2062} height={496} className="h-auto w-full object-cover" priority={false} />
             </Link>
+          </section>
+        </Reveal>
+      )}
+
+      {/* ===================== PICK OF THE DAY — changes daily, with countdown ===================== */}
+      {pick && pickPrice && (
+        <Reveal>
+          <section className="pt-8 md:pt-10" aria-label={dict.home.pickEyebrow}>
+            <DailyPick
+              name={pick.name}
+              brand={pick.brand ?? null}
+              href={`/${locale}/product/${pick.slug}`}
+              waHref={waLink(`Hi! I'm interested in ${pick.name} (pick of the day).`)}
+              imageSrc={imageUrl(pick.product_images[0].storage_path)}
+              price={formatLKR(pickPrice.price)}
+              compareAt={pickPrice.compareAt ? formatLKR(pickPrice.compareAt) : null}
+              installment={kokoOn ? formatLKR(Math.ceil(pickPrice.price * 1.12 / 3)) : null}
+              labels={{ eyebrow: dict.home.pickEyebrow, sub: dict.home.pickSub, ends: dict.home.pickEnds, cta: dict.home.pickCta, wa: dict.home.pickWa }}
+            />
           </section>
         </Reveal>
       )}
@@ -284,7 +319,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: L
       {products.length > 0 && (
         <Reveal>
           <section className="pb-12 md:pb-16" aria-label="Featured product spotlight">
-            <FeaturedSpotlight products={products} discounts={discounts} locale={locale} dict={dict} />
+            <FeaturedSpotlight products={products.slice(0, 12)} discounts={discounts} locale={locale} dict={dict} />
           </section>
         </Reveal>
       )}

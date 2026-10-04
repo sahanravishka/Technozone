@@ -551,6 +551,7 @@ html[data-theme='dark'] .laminated::after {
   .marquee { overflow-x: auto; -webkit-mask-image: none; mask-image: none; scrollbar-width: none; }
   .marquee::-webkit-scrollbar { display: none; }
   .marquee-track { transform: none !important; }
+  .marquee-track > [aria-hidden] { display: none; }
 }
 
 /* ---------- Google-Store-style collage (staggered, reveals on scroll) ---------- */
@@ -604,6 +605,28 @@ html[data-theme='dark'] .laminated::after {
 .marquee:hover .marquee-track, .marquee:focus-within .marquee-track { animation-play-state: paused; }
 @keyframes marqueeX { from { transform: translateX(0); } to { transform: translateX(calc(-50% - 7px)); } }
 @media (min-width: 768px) { @keyframes marqueeX { from { transform: translateX(0); } to { transform: translateX(calc(-50% - 8px)); } } }
+
+/* ---------- "Pick of the day" card: spinning gradient edge + slow float ---------- */
+.pick-card { position: relative; isolation: isolate; overflow: hidden; border-radius: 34px; padding: 2px; }
+.pick-card::before {
+  content: ''; position: absolute; inset: -80%; z-index: -1;
+  background: conic-gradient(from 0deg, var(--volt), #a855f7, var(--accent), #ff8a4b, var(--volt));
+  animation: pickSpin 8s linear infinite;
+}
+.pick-inner { border-radius: 32px; }
+.pick-photo { animation: pickFloat 6s ease-in-out infinite; }
+.pick-shine {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.55) 50%, transparent 60%);
+  transform: translateX(-120%); animation: pickShine 5.5s ease-in-out infinite;
+}
+@keyframes pickSpin { to { transform: rotate(360deg); } }
+@keyframes pickFloat { 0%, 100% { transform: translateY(0) rotate(-1.2deg); } 50% { transform: translateY(-8px) rotate(1.2deg); } }
+@keyframes pickShine { 0%, 60% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+@media (prefers-reduced-motion: reduce) {
+  .pick-card::before, .pick-photo, .pick-shine { animation: none; }
+  .pick-card::before { transform: none; }
+}
 
 /* star rating */
 .stars { color: var(--warn); letter-spacing: 1px; }
