@@ -1,4 +1,5 @@
 import { getStaff } from '@/lib/admin-auth';
+import { REAL_ORDERS_FILTER } from '@/lib/admin-orders';
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 
 // Orders CSV export — filterable by channel (web/facebook/all) and a date
@@ -32,6 +33,7 @@ export async function GET(req: Request) {
              subtotal, discount_total, delivery_fee, total, customer_phone, shipping_address,
              notes, created_at,
              order_items ( qty, product_name, variant_name, sku, unit_price, line_total )`)
+    .or(REAL_ORDERS_FILTER)
     .order('created_at', { ascending: false });
 
   if (channel) q = q.eq('channel', channel);

@@ -5,6 +5,7 @@ import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { getAdminSupabase } from '@/lib/supabase-clients/admin';
 import { getStaff } from '@/lib/admin-auth';
 import { reconcileKokoOrder } from '@/lib/koko-reconcile';
+import { REAL_ORDERS_FILTER } from '@/lib/admin-orders';
 
 // Turns a product name into a short, URL/filename-safe slug for use in
 // uploaded image filenames — e.g. "USB to Type-C Cable — Celebrat CB-32"
@@ -212,6 +213,7 @@ export async function getOrderDependencyReport(
       customer_phone, shipping_address,
       order_items(qty, product_name)
     `)
+    .or(REAL_ORDERS_FILTER)
     .order('created_at', { ascending: false });
 
   if (startDate) query = query.gte('created_at', startDate);

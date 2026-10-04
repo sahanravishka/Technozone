@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { formatLKR } from '@/lib/site';
+import { REAL_ORDERS_FILTER } from '@/lib/admin-orders';
 import PageHeader from '@/components/admin/PageHeader';
 import RevenueChart from '@/components/admin/RevenueChart';
 import DashboardExport from '@/components/admin/DashboardExport';
@@ -44,22 +45,24 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
     supabase.from('orders').select('id', { count: 'exact', head: true })
       .gte('created_at', today.toISOString())
       .neq('status', 'cancelled')
-      .or('payment_method.in.(cod,whatsapp),payment_status.eq.paid'),
+      .or(REAL_ORDERS_FILTER),
     supabase.from('orders').select('total')
       .gte('created_at', monthStart.toISOString())
       .in('status', PAID_STATUSES),
     supabase.from('product_variants').select('id, sku, stock_qty, low_stock_threshold')
       .eq('is_active', true).order('stock_qty').limit(50),
     supabase.from('orders').select('id, order_number, status, total, created_at')
+      .neq('status', 'cancelled').or(REAL_ORDERS_FILTER)
       .order('created_at', { ascending: false }).limit(8),
     supabase.from('orders').select('id, order_number, status, total, created_at, customer_phone, shipping_address')
-      .gte('created_at', rangeStart.toISOString()).order('created_at', { ascending: true }).limit(2000),
+      .gte('created_at', rangeStart.toISOString()).or(REAL_ORDERS_FILTER)
+      .order('created_at', { ascending: true }).limit(2000),
     supabase.from('order_items').select('product_name, qty, line_total, order_id, orders!inner(created_at, status)')
       .gte('orders.created_at', rangeStart.toISOString()).in('orders.status', PAID_STATUSES).limit(5000),
     supabase.from('orders').select('total, status')
       .gte('created_at', prevStart.toISOString()).lt('created_at', rangeStart.toISOString())
       .in('status', PAID_STATUSES).limit(2000),
-    supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending').or(REAL_ORDERS_FILTER),
     supabase.from('returns').select('id', { count: 'exact', head: true }).eq('status', 'requested'),
     supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     supabase.from('service_jobs').select('id', { count: 'exact', head: true }).in('status', OPEN_REPAIR),

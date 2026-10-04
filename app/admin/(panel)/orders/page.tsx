@@ -1,5 +1,6 @@
 import { getServerSupabase } from '@/lib/supabase-clients/server';
 import { notifyLink } from '@/lib/whatsapp';
+import { REAL_ORDERS_FILTER } from '@/lib/admin-orders';
 import OrderBoard from '@/components/admin/OrderBoard';
 import type { AdminOrder } from '@/components/admin/OrderCard';
 
@@ -12,15 +13,18 @@ type Row = {
 
 export default async function AdminOrders() {
   const supabase = (await getServerSupabase())!;
-  // Active orders + recent cancelled (so owners can recall mistakes)
+  // Active orders + recent cancelled (so owners can recall mistakes).
+  // Both exclude Koko/PayHere checkouts that never paid — see REAL_ORDERS_FILTER.
   const [{ data: activeData }, { data: cancelledData }] = await Promise.all([
     supabase.from('orders')
       .select('id, order_number, status, payment_status, payment_method, fulfillment, channel, total, customer_phone, created_at, shipping_address, order_items(qty, product_id, variant_id, product_name)')
       .not('status', 'in', '(cancelled,dispatched)')
+      .or(REAL_ORDERS_FILTER)
       .order('created_at', { ascending: false }).limit(200),
     supabase.from('orders')
       .select('id, order_number, status, payment_status, payment_method, fulfillment, channel, total, customer_phone, created_at, shipping_address, order_items(qty, product_id, variant_id, product_name)')
       .eq('status', 'cancelled')
+      .or(REAL_ORDERS_FILTER)
       .order('created_at', { ascending: false }).limit(30),
   ]);
   const data = [...(activeData ?? []), ...(cancelledData ?? [])];
